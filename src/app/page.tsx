@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   ArrowRight, Mic, BarChart2, Globe,
   MessageSquare, TrendingUp, BrainCircuit,
@@ -334,6 +335,14 @@ export default function LandingPage() {
             <p className="text-zinc-500 text-sm mt-1">
               © 2026 Todos os direitos reservados.
             </p>
+          </div>
+          <div className="flex gap-4 text-xs text-zinc-500">
+            <Link href="/termos" className="hover:text-zinc-300 transition-colors">
+              Termos de Uso
+            </Link>
+            <Link href="/privacidade" className="hover:text-zinc-300 transition-colors">
+              Privacidade
+            </Link>
           </div>
           <button
             onClick={() => router.push('/setup')}
