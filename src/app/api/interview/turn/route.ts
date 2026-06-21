@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAIJSONWithUsage } from '@/lib/services/claude';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import {
   Candidate, Job, InterviewConfig,
   ConversationTurn, InterviewTurnResponse
@@ -284,6 +285,14 @@ Tom: caloroso, profissional, conclusivo. Máximo 4 frases. Zero perguntas. Zero 
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Aguarde alguns minutos e tente novamente.' },
+      { status: 429 }
+    );
+  }
+
   let candidate: TurnRequest['candidate'] | null = null;
   let job: TurnRequest['job'] | null = null;
   let config: TurnRequest['config'] | null = null;

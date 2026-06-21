@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Candidate } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
+import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 function extractName(text: string): string {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -19,6 +20,14 @@ function extractSkills(text: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(parseRateLimit, ip)) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Aguarde alguns minutos.' },
+      { status: 429 }
+    );
+  }
+
   const formData = await req.formData();
   const sessionId = (formData.get('sessionId') as string | null) ?? 'unknown';
   const file = formData.get('file') as File | null;

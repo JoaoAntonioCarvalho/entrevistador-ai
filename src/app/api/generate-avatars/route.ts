@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAIJSON } from '@/lib/services/claude';
 import { Job } from '@/lib/types';
+import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 interface AvatarGeneratedBilingual {
   sarah: {
@@ -19,6 +20,14 @@ interface AvatarGeneratedBilingual {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    if (!await checkRateLimit(parseRateLimit, ip)) {
+      return NextResponse.json(
+        { error: 'Muitas requisições. Aguarde alguns minutos.' },
+        { status: 429 }
+      );
+    }
+
     const { job, sessionId }: { job: Job; sessionId: string } =
       await req.json();
 

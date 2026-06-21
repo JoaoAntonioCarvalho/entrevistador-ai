@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import toast from 'react-hot-toast';
 import {
   UploadCloud, CheckCircle, AlertCircle, Loader2,
   Upload, PenLine, ChevronRight, ArrowRight, ArrowLeft,
@@ -59,6 +60,11 @@ export default function ResumeUpload({ onComplete, onWarning }: Props) {
       formData.append('sessionId', session.id);
       const res  = await fetch('/api/parse-resume', { method: 'POST', body: formData });
       const data = await res.json();
+      if (res.status === 429) {
+        toast.error(data.error ?? 'Muitas requisições. Aguarde alguns minutos e tente novamente.');
+        setStatus('idle');
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? 'Erro ao processar currículo.');
       if (data.warning) onWarning?.(data.warning);
       setCandidate(data.candidate);

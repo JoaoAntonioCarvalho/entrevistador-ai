@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   CheckCircle, AlertCircle, Loader2,
   FileText, Dumbbell, ChevronRight, ArrowLeft,
@@ -165,6 +166,11 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
                   body: JSON.stringify({ jobDescription: text, sessionId: sid }),
                 });
                 const data = await res.json();
+                if (res.status === 429) {
+                  toast.error(data.error ?? 'Muitas requisições. Aguarde alguns minutos.');
+                  setStatus('idle');
+                  return;
+                }
                 if (!res.ok) throw new Error(data.error ?? 'Erro ao analisar vaga.');
                 if (data.warning) onWarning?.(data.warning);
                 setJob(data.job);
@@ -239,8 +245,12 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cargo: cargo.trim(), sessionId: sid }),
       });
-      if (!res.ok) throw new Error('Erro ao gerar vaga');
       const data = await res.json();
+      if (res.status === 429) {
+        toast.error(data.error ?? 'Muitas requisições. Aguarde alguns minutos.');
+        return;
+      }
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao gerar vaga. Tente novamente.');
       setGeneratedJob(data.job);
     } catch {
       setGenError('Não foi possível gerar a vaga. Tente novamente.');

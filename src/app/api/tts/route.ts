@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 const VOICE_IDS: Record<string, { pt: string; en: string }> = {
   sarah: {
@@ -16,6 +17,14 @@ const VOICE_IDS: Record<string, { pt: string; en: string }> = {
 };
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Aguarde alguns minutos e tente novamente.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { text, avatarId, lang } = await req.json();
 

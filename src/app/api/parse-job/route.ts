@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Job } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
+import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 function extractJobTitle(text: string): string {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -18,6 +19,14 @@ function extractSkillsFromText(text: string): string[] {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    if (!await checkRateLimit(parseRateLimit, ip)) {
+      return NextResponse.json(
+        { error: 'Muitas requisições. Aguarde alguns minutos.' },
+        { status: 429 }
+      );
+    }
+
     const { jobDescription, sessionId = 'unknown' } = (await req.json()) as { jobDescription: string; sessionId?: string };
 
     if (!jobDescription || jobDescription.trim().length < 30) {
