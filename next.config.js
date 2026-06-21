@@ -1,0 +1,57 @@
+/** @type {import('next').NextConfig} */
+
+function validateEnv() {
+  const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY?.trim());
+
+  if (hasAnthropic && hasOpenRouter) {
+    console.error('\n');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('  ERRO DE CONFIGURAÇÃO — Entrevistador.ai não pode iniciar');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('  Você configurou DOIS providers de IA ao mesmo tempo:');
+    console.error('  → ANTHROPIC_API_KEY ✓');
+    console.error('  → OPENROUTER_API_KEY ✓');
+    console.error('');
+    console.error('  Mantenha APENAS UM no .env.local e remova o outro.');
+    console.error('');
+    console.error('  Recomendação para testes: use OPENROUTER_API_KEY');
+    console.error('  Recomendação para produção: use ANTHROPIC_API_KEY');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    process.exit(1);
+  }
+
+  if (!hasAnthropic && !hasOpenRouter) {
+    console.error('\n');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('  ERRO DE CONFIGURAÇÃO — Entrevistador.ai não pode iniciar');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('  Nenhum provider de IA configurado no .env.local.');
+    console.error('');
+    console.error('  Adicione UMA das opções abaixo:');
+    console.error('  → ANTHROPIC_API_KEY=sk-ant-...');
+    console.error('  → OPENROUTER_API_KEY=sk-or-...');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    process.exit(1);
+  }
+
+  const provider = hasOpenRouter ? 'OpenRouter' : 'Anthropic (direto)';
+  console.log(`\n✓ Entrevistador.ai — Provider de IA: ${provider}\n`);
+}
+
+const nextConfig = {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
+    }
+    return config;
+  },
+};
+
+// Export as function so Next.js passes `phase` — lets us skip validation during build
+module.exports = (phase) => {
+  if (phase !== 'phase-production-build') {
+    validateEnv();
+  }
+  return nextConfig;
+};

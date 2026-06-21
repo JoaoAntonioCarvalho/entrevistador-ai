@@ -1,0 +1,217 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import type { AvatarProfile, InterviewConfig as IConfig, Job } from '@/lib/types';
+import { resolveAvatarProfile } from '@/lib/types';
+import { AVATAR_PROFILES, DEFAULT_CONFIG } from '@/lib/constants';
+
+interface Props {
+  onComplete:      (config: IConfig) => void;
+  job:             Job;
+  profiles?:       AvatarProfile[];
+  loadingProfiles?: boolean;
+}
+
+type SelectCardProps = {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+};
+
+function SelectCard({ selected, onClick, children, className = '' }: SelectCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg border px-4 py-3 text-left text-sm
+                  transition-colors focus:outline-none
+                  focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 ${
+        selected
+          ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-zinc-900'
+          : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+const AVATAR_COLORS: Record<string, string> = {
+  sarah: 'bg-purple-500',
+  carlos: 'bg-blue-500',
+  alex: 'bg-amber-500',
+};
+
+export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
+  const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
+
+  const resolvedProfiles = useMemo(() => {
+    const source = profiles ?? AVATAR_PROFILES;
+    return source.map(p => resolveAvatarProfile(p, config.idioma));
+  }, [profiles, config.idioma]);
+
+  useEffect(() => {
+    const recommended: IConfig['tipo'] =
+      job.stack_tecnica.length === 0 ? 'comportamental' : 'mista';
+    setConfig((prev) => ({ ...prev, tipo: recommended }));
+  }, [job]);
+
+  function update<K extends keyof IConfig>(key: K, value: IConfig[K]) {
+    setConfig((prev) => ({ ...prev, [key]: value }));
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+
+      {/* Idioma */}
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">Idioma</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <SelectCard selected={config.idioma === 'pt'}
+                      onClick={() => update('idioma', 'pt')}>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold bg-green-600 text-white px-1.5 py-0.5 rounded">PT</span>
+              <span>Português</span>
+            </div>
+          </SelectCard>
+          <SelectCard selected={config.idioma === 'en'}
+                      onClick={() => update('idioma', 'en')}>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">EN</span>
+              <span>English</span>
+            </div>
+          </SelectCard>
+        </div>
+      </section>
+
+      {/* Tipo */}
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+          Tipo de entrevista
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {(['comportamental', 'tecnica', 'mista'] as const).map((tipo) => (
+            <SelectCard key={tipo} selected={config.tipo === tipo}
+                        onClick={() => update('tipo', tipo)}>
+              <span className="capitalize">
+                {tipo === 'tecnica'
+                  ? 'Técnica'
+                  : tipo === 'comportamental'
+                  ? 'Comportamental'
+                  : 'Mista'}
+              </span>
+            </SelectCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Quantidade de perguntas */}
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+          Quantidade de perguntas
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {([5, 10, 15, 20] as const).map((q) => (
+            <SelectCard key={q} selected={config.perguntas === q}
+                        onClick={() => update('perguntas', q)}>
+              {q} perguntas
+            </SelectCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Nível */}
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">Nível</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {(['junior', 'pleno', 'senior'] as const).map((n) => (
+            <SelectCard key={n} selected={config.nivel === n}
+                        onClick={() => update('nivel', n)}>
+              {n === 'junior' ? 'Júnior' : n === 'pleno' ? 'Pleno' : 'Sênior'}
+            </SelectCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Entrevistador */}
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+          Entrevistador
+        </h3>
+        {loadingProfiles ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {(['sarah', 'carlos', 'alex'] as const).map((id) => (
+              <div key={id}
+                   className="rounded-lg border-2 border-zinc-100 bg-zinc-50
+                               p-4 flex sm:flex-col items-center sm:items-start
+                               gap-3 animate-pulse">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0
+                                  ${AVATAR_COLORS[id]} opacity-30`} />
+                <div className="flex-1 sm:flex-none flex flex-col gap-2 w-full">
+                  <div className="h-3 bg-zinc-200 rounded w-3/4" />
+                  <div className="h-2 bg-zinc-100 rounded w-full" />
+                  <div className="h-2 bg-zinc-100 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {resolvedProfiles.map((avatar) => {
+              const sel = config.avatar_id === avatar.id;
+              return (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  onClick={() => update('avatar_id', avatar.id)}
+                  className={`rounded-lg border-2 p-4 text-left
+                              transition-colors focus:outline-none
+                              focus:ring-2 focus:ring-zinc-900/10 ${
+                    sel
+                      ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <div className="flex sm:flex-col items-center sm:items-start gap-3">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0
+                                     ${AVATAR_COLORS[avatar.id]}
+                                     flex items-center justify-center
+                                     text-white font-bold text-lg`}>
+                      {avatar.nome[0]}
+                    </div>
+                    <div className="flex-1 sm:flex-none">
+                      <p className={`font-semibold text-sm ${
+                        sel ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'
+                      }`}>
+                        {avatar.nome}
+                      </p>
+                      <p className={`text-xs mt-0.5 leading-snug ${
+                        sel ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-400'
+                      }`}>
+                        {avatar.titulo}
+                      </p>
+                      <p className={`text-xs mt-1 leading-relaxed hidden sm:block ${
+                        sel ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-400 dark:text-zinc-500'
+                      }`}>
+                        {avatar.descricao}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <button
+        onClick={() => onComplete(config)}
+        className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 py-4 rounded-full
+                   font-medium text-base hover:bg-zinc-700 dark:hover:bg-zinc-100 transition-all mt-8"
+      >
+        Iniciar entrevista
+      </button>
+    </div>
+  );
+}

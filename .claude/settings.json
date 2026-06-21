@@ -1,0 +1,71 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run lint)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(npx tsc*)",
+
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git pull)",
+      "Bash(git fetch*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git remote -v)",
+      "Bash(git checkout -b *)",
+      "Bash(git branch*)",
+
+      "Bash(ls*)",
+      "Bash(pwd)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(cat *)",
+      "Bash(node -v)",
+      "Bash(npm -v)",
+
+      "Bash(vercel --version)",
+      "Bash(vercel ls)",
+      "Bash(vercel logs*)",
+      "Bash(gh repo view*)",
+      "Bash(gh pr list*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push origin main --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(rm -rf*)",
+      "Bash(rm -r /*)",
+      "Bash(curl * | sh*)",
+      "Bash(curl * | bash*)",
+      "Bash(vercel remove*)",
+      "Bash(vercel env rm*)",
+      "Bash(gh repo delete*)",
+      "Bash(supabase db reset*)",
+      "Bash(supabase db push*)",
+      "Bash(stripe * --live*)",
+      "Bash(cat .env*)",
+      "Bash(cat *.pem)",
+      "Edit(.env*)",
+      "Edit(.claude/settings.json)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/verify-build.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
