@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { AvatarProfile, InterviewConfig as IConfig, Job } from '@/lib/types';
 import { resolveAvatarProfile } from '@/lib/types';
 import { AVATAR_PROFILES, DEFAULT_CONFIG } from '@/lib/constants';
+import { useAuth } from '@/hooks/useAuth';
+
+const OPCOES_PERGUNTAS = [7, 10, 15, 20] as const;
 
 interface Props {
   onComplete:      (config: IConfig) => void;
@@ -44,6 +48,8 @@ const AVATAR_COLORS: Record<string, string> = {
 };
 
 export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
 
   const resolvedProfiles = useMemo(() => {
@@ -112,12 +118,53 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
           Quantidade de perguntas
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {([5, 10, 15, 20] as const).map((q) => (
-            <SelectCard key={q} selected={config.perguntas === q}
-                        onClick={() => update('perguntas', q)}>
-              {q} perguntas
-            </SelectCard>
-          ))}
+          {OPCOES_PERGUNTAS.map(n => {
+            const bloqueado = n !== 7 && !user;
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => {
+                  if (bloqueado) {
+                    router.push('/entrar');
+                    return;
+                  }
+                  update('perguntas', n);
+                }}
+                className={`relative flex flex-col items-center justify-center
+                            rounded-xl border py-3 px-4 transition-all
+                            ${config.perguntas === n && !bloqueado
+                              ? 'border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-800'
+                              : 'border-zinc-200 dark:border-zinc-700'
+                            }
+                            ${bloqueado
+                              ? 'opacity-60 cursor-pointer'
+                              : 'hover:border-zinc-400 dark:hover:border-zinc-500'
+                            }`}
+              >
+                {bloqueado && (
+                  <div className="absolute top-1.5 right-1.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round"
+                         className="text-zinc-400">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </div>
+                )}
+                <span className={`text-lg font-bold tabular-nums
+                                  ${bloqueado
+                                    ? 'text-zinc-400 dark:text-zinc-600'
+                                    : 'text-zinc-900 dark:text-white'}`}>
+                  {n}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {bloqueado ? 'Pago' : 'perguntas'}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 

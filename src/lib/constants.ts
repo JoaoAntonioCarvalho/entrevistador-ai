@@ -48,7 +48,7 @@ export const AVATAR_PROFILES: AvatarProfile[] = [
 export const DEFAULT_CONFIG: InterviewConfig = {
   idioma: 'pt',
   tipo: 'mista',
-  perguntas: 10,
+  perguntas: 7,
   nivel: 'pleno',
   avatar_id: 'sarah',
 };

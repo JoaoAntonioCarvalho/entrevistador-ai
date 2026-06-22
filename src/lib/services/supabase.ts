@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createClient as createAuthClient } from '@/lib/services/supabase-client';
 import { InterviewSession } from '../types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '';
@@ -34,11 +35,19 @@ export async function saveSessionToSupabase(session: InterviewSession): Promise<
 
   const userId = getOrCreateUserId();
 
+  let authUserId: string | null = null;
+  try {
+    const authClient = createAuthClient();
+    const { data: { session: authSession } } = await authClient.auth.getSession();
+    authUserId = authSession?.user?.id ?? null;
+  } catch { /* silencioso */ }
+
   const client = getClient(userId);
 
   const row = {
     id:                         session.id,
     user_id:                    userId,
+    auth_user_id:               authUserId,
     created_at:                 session.created_at,
     status:                     session.status,
     job_titulo:                 session.job?.titulo ?? '',
@@ -81,7 +90,6 @@ export interface SessionSummary {
 }
 
 export async function getUserHistory(): Promise<SessionSummary[]> {
-  // Sempre tentar localStorage primeiro como base
   const localData = getLocalHistory();
 
   if (process.env.NEXT_PUBLIC_USE_SUPABASE !== 'true') {
@@ -89,30 +97,48 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
   }
 
   try {
+    const authClient = createAuthClient();
+    const { data: { session: authSession } } = await authClient.auth.getSession();
+
+    const selectFields = `
+      id, created_at, job_titulo, job_empresa,
+      score_geral, total_perguntas, nivel, tipo, idioma
+    `;
+
+    if (authSession?.user) {
+      // Logado — buscar por auth_user_id
+      const { data, error } = await authClient
+        .from('sessions')
+        .select(selectFields)
+        .eq('auth_user_id', authSession.user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error || !data) return localData;
+      return data.map(s => ({
+        id:              s.id,
+        created_at:      s.created_at,
+        job_titulo:      s.job_titulo ?? '',
+        job_empresa:     s.job_empresa ?? '',
+        score_geral:     s.score_geral ?? 0,
+        total_perguntas: s.total_perguntas ?? 0,
+        nivel:           s.nivel ?? '',
+        tipo:            s.tipo ?? '',
+        idioma:          s.idioma,
+      }));
+    }
+
+    // Anônimo — buscar por user_id local
     const userId = getOrCreateUserId();
     const client = getClient(userId);
-
     const { data, error } = await client
       .from('sessions')
-      .select(`
-        id,
-        created_at,
-        job_titulo,
-        job_empresa,
-        score_geral,
-        total_perguntas,
-        nivel,
-        tipo,
-        idioma
-      `)
+      .select(selectFields)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (error) {
-      return localData; // fallback para localStorage
-    }
-
+    if (error || !data) return localData;
     return (data as SessionSummary[]) ?? localData;
 
   } catch {
