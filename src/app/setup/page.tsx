@@ -55,6 +55,13 @@ function Stepper({ current }: { current: number }) {
   );
 }
 
+interface ManualFormData {
+  nome: string;
+  cargo: string;
+  experiencia: string;
+  habilidades: string;
+}
+
 export default function SetupPage() {
   const router = useRouter();
   const { session, initSession, setCandidate, setJob, setConfig, setStatus, setAvatarProfiles } = useSessionStore();
@@ -63,6 +70,7 @@ export default function SetupPage() {
   const [showWarning,     setShowWarning]     = useState(false);
   const [avatarProfiles,  setLocalProfiles]   = useState<AvatarProfile[] | null>(null);
   const [loadingAvatars,  setLoadingAvatars]  = useState(false);
+  const [savedManualData, setSavedManualData] = useState<ManualFormData | null>(null);
 
   useEffect(() => {
     initSession();
@@ -210,7 +218,12 @@ export default function SetupPage() {
         </div>
 
         {step === 1 && (
-          <ResumeUpload onComplete={handleResume} onWarning={handleWarning} />
+          <ResumeUpload
+            onComplete={handleResume}
+            onWarning={handleWarning}
+            initialManualData={savedManualData}
+            onManualDataChange={setSavedManualData}
+          />
         )}
         {step === 2 && (
           <JobInput onComplete={handleJob} onWarning={handleWarning}

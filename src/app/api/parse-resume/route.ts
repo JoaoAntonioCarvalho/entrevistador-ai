@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
 import { Candidate } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { pdfToBase64Images } from '@/lib/pdf-to-images';
 
 function extractName(text: string): string {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -17,6 +19,100 @@ function extractSkills(text: string): string[] {
   return common.filter(skill =>
     text.toLowerCase().includes(skill.toLowerCase())
   ).slice(0, 10);
+}
+
+function parseJSONCandidate(text: string): Candidate {
+  const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+  try { return JSON.parse(clean) as Candidate; } catch { /* fall through */ }
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try { return JSON.parse(jsonMatch[0]) as Candidate; } catch { /* fall through */ }
+  }
+
+  let depth = 0, start = -1, end = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { if (depth === 0) start = i; depth++; }
+    else if (text[i] === '}') { depth--; if (depth === 0 && start !== -1) { end = i; break; } }
+  }
+  if (start !== -1 && end !== -1) {
+    try { return JSON.parse(text.slice(start, end + 1)) as Candidate; } catch { /* fall through */ }
+  }
+
+  throw new Error('JSON inválido na resposta da IA');
+}
+
+async function callVisionForResume(images: string[]): Promise<Candidate> {
+  const systemPrompt =
+    'Você é um parser de currículos. Extraia as informações exatamente como estão. Não invente dados. Se um campo não existir, use string vazia ou array vazio.';
+
+  const extractPrompt = `Este é um currículo em formato de imagem (PDF escaneado).
+Extraia todas as informações e retorne SOMENTE um JSON válido:
+{
+  "nome": "",
+  "cargo_atual": "",
+  "experiencias": [{ "cargo": "", "empresa": "", "periodo": "", "descricao": "" }],
+  "habilidades": [],
+  "formacao": [{ "curso": "", "instituicao": "", "periodo": "" }],
+  "certificacoes": []
+}
+Retorne SOMENTE o JSON, sem texto adicional.`;
+
+  if (process.env.OPENROUTER_API_KEY) {
+    type OAIContent = { type: string; text?: string; image_url?: { url: string } };
+    const imageMessages: OAIContent[] = images.flatMap((img, i) => [
+      { type: 'text', text: `Página ${i + 1} do currículo:` },
+      { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img}` } },
+    ]);
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://entrevistador-ai.com.br',
+        'X-Title': 'Entrevistador.ai',
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-haiku-4.5',
+        max_tokens: 2000,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: [...imageMessages, { type: 'text', text: extractPrompt }] },
+        ],
+      }),
+    });
+
+    const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+    const text = data?.choices?.[0]?.message?.content ?? '';
+    return parseJSONCandidate(text);
+  }
+
+  // Anthropic direto
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const content: Anthropic.MessageParam['content'] = [
+    ...images.flatMap((img, i) => [
+      { type: 'text' as const, text: `Página ${i + 1} do currículo:` },
+      {
+        type: 'image' as const,
+        source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data: img },
+      },
+    ]),
+    { type: 'text' as const, text: extractPrompt },
+  ];
+
+  const message = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 2000,
+    system: systemPrompt,
+    messages: [{ role: 'user', content }],
+  });
+
+  const responseBlock = message.content[0];
+  const text = responseBlock.type === 'text' ? responseBlock.text : '';
+  return parseJSONCandidate(text);
 }
 
 export async function POST(req: NextRequest) {
@@ -65,6 +161,32 @@ export async function POST(req: NextRequest) {
       { error: 'Não foi possível ler o arquivo. Tente com outro PDF ou DOCX.' },
       { status: 422 }
     );
+  }
+
+  // Detectar PDF de imagem (texto extraído insuficiente)
+  if (isPdf && rawText.trim().length < 150) {
+    try {
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength
+      ) as ArrayBuffer;
+      const images = await pdfToBase64Images(arrayBuffer);
+
+      if (images.length === 0) {
+        return NextResponse.json(
+          { error: 'Não foi possível processar o PDF.' },
+          { status: 400 }
+        );
+      }
+
+      const candidate = await callVisionForResume(images);
+      return NextResponse.json({ candidate, isImagePdf: true });
+    } catch {
+      return NextResponse.json(
+        { error: 'Erro ao processar PDF como imagem.' },
+        { status: 500 }
+      );
+    }
   }
 
   if (rawText.trim().length < 50) {
