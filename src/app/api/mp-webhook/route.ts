@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { Payment } from 'mercadopago';
 import { mpConfig, PERGUNTAS_POR_PLANO, type PlanoKey } from '@/lib/mp-config';
@@ -77,7 +78,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
 
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { route: 'mp-webhook' },
+    });
     // Sempre 200 pro MP — senão fica retentando
     return NextResponse.json({ ok: true });
   }

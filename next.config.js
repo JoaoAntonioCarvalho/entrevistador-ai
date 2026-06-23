@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const { withSentryConfig } = require('@sentry/nextjs');
 
 function validateEnv() {
   const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
@@ -49,9 +50,16 @@ const nextConfig = {
 };
 
 // Export as function so Next.js passes `phase` — lets us skip validation during build
-module.exports = (phase) => {
+const configFn = (phase) => {
   if (phase !== 'phase-production-build') {
     validateEnv();
   }
   return nextConfig;
 };
+
+module.exports = withSentryConfig(configFn, {
+  org:     'entrevistador-ai',
+  project: 'entrevistador-ai',
+  silent:  true,
+  sourcemaps: { disable: true },
+});

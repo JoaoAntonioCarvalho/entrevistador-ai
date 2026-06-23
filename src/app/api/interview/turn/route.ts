@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { callAIJSONWithUsage } from '@/lib/services/claude';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
@@ -433,6 +434,13 @@ Com base na resposta acima e no histórico completo, gere a próxima fala do ent
     });
   } catch (error) {
     console.error('[interview/turn]', error);
+    Sentry.captureException(error, {
+      tags: { route: 'interview/turn' },
+      extra: {
+        sessionId,
+        perguntasRespondidas,
+      },
+    });
     const fallbackFala = isFirstTurn
       ? (config?.idioma === 'en'
         ? `Hello ${candidate?.nome ?? 'candidate'}. Thank you for being here. Could you start by telling me a bit about yourself and your professional background?`

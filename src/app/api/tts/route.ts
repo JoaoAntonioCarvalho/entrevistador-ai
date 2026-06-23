@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 const VOICE_IDS: Record<string, { pt: string; en: string }> = {
@@ -89,7 +90,13 @@ export async function POST(req: NextRequest) {
         'X-Chars-Used':   charCount.toString(),
       },
     });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        route:    'tts',
+        provider: 'elevenlabs',
+      },
+    });
     return NextResponse.json(
       { error: 'TTS indisponível. Usando voz do navegador.' },
       { status: 503 }
