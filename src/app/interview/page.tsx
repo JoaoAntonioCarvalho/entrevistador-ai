@@ -14,6 +14,7 @@ import AvatarDisplay from '@/components/interview/AvatarDisplay';
 import TranscriptPanel from '@/components/interview/TranscriptPanel';
 import MicrophoneButton from '@/components/interview/MicrophoneButton';
 import CameraWidget from '@/components/interview/CameraWidget';
+import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
 import type { InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
 
@@ -43,6 +44,7 @@ export default function InterviewPage() {
   const [showEscape, setShowEscape] = useState(false);
   const [showVoiceTip, setShowVoiceTip] = useState(true);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [showPaymentGate, setShowPaymentGate] = useState(false);
 
   const isIOS = typeof window !== 'undefined' &&
     /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -126,7 +128,10 @@ export default function InterviewPage() {
 
       if (!res.ok) {
         if (res.status === 402) {
-          router.push('/planos');
+          setShowPaymentGate(true);
+          setInterviewState('waiting');
+          setIsThinking(false);
+          isProcessingTurnRef.current = false;
           return;
         }
         const errData = await res.json().catch(() => ({}));
@@ -326,6 +331,20 @@ export default function InterviewPage() {
     return () => {
       audioContextRef.current?.close().catch(() => {});
     };
+  }, []);
+
+  // Retomada após pagamento — limpar params da URL (roda uma vez no mount)
+  // A sessão já está no store (Zustand persist)
+  // O useEffect do primeiro turno verifica conversation.length === 0
+  // então não vai reiniciar se a conversa já tem mensagens
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('resume') !== 'true') return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('resume');
+    url.searchParams.delete('sessionId');
+    window.history.replaceState({}, '', url.toString());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -665,6 +684,13 @@ export default function InterviewPage() {
           </>
         )}
       </footer>
+
+      {showPaymentGate && (
+        <PaymentGateModal
+          sessionId={session.id}
+          onClose={() => setShowPaymentGate(false)}
+        />
+      )}
     </div>
   );
 }
