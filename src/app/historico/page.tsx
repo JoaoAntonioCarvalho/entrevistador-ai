@@ -16,6 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { ClipboardList } from 'lucide-react';
 import { getUserHistory, getHistoryByJob, type SessionSummary } from '@/lib/services/supabase';
 import { Header } from '@/components/layout/Header';
+import { useRouteGuard } from '@/hooks/useRouteGuard';
 
 function scoreBadgeClass(score: number): string {
   if (score >= 80) return 'bg-green-50 text-green-700 border border-green-200';
@@ -54,6 +55,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export default function HistoricoPage() {
+  useRouteGuard({ requireAuth: true });
+
   const router = useRouter();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
