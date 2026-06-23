@@ -286,6 +286,14 @@ export default function PlanosPage() {
               Garantia de 7 dias conforme CDC art. 49
             </span>
           </p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-3">
+            Dúvidas?{' '}
+            <a href="mailto:suporte@entrevistador-ai.com.br"
+               className="underline hover:text-zinc-600
+                          dark:hover:text-zinc-400 transition-colors">
+              suporte@entrevistador-ai.com.br
+            </a>
+          </p>
         </div>
 
       </div>

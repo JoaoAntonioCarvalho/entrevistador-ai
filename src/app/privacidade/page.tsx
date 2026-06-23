@@ -92,9 +92,16 @@ export default function PrivacidadePage() {
 
         <h2>7. Contato do Encarregado de Dados</h2>
         <p>
-          Para exercer seus direitos ou esclarecer dúvidas sobre o
-          tratamento de dados, entre em contato pelo e-mail de suporte
-          disponível no rodapé do site.
+          Para exercer seus direitos previstos na LGPD ou
+          esclarecer dúvidas sobre o tratamento de dados,
+          entre em contato pelo email:{' '}
+          <a href="mailto:suporte@entrevistador-ai.com.br"
+             className="text-zinc-900 dark:text-white underline
+                        hover:opacity-70">
+            suporte@entrevistador-ai.com.br
+          </a>
+          {'. '}
+          Respondemos em até 2 dias úteis.
         </p>
 
       </div>

@@ -82,8 +82,13 @@ export default function TermosPage() {
 
         <h2>8. Contato</h2>
         <p>
-          Dúvidas sobre estes termos podem ser enviadas para o e-mail
-          de suporte disponível no rodapé do site.
+          Dúvidas sobre estes termos ou solicitações relacionadas
+          à sua conta podem ser enviadas para:{' '}
+          <a href="mailto:suporte@entrevistador-ai.com.br"
+             className="text-zinc-900 dark:text-white underline
+                        hover:opacity-70">
+            suporte@entrevistador-ai.com.br
+          </a>
         </p>
 
       </div>

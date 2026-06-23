@@ -498,11 +498,28 @@ export default function LandingPage() {
               © 2026 Todos os direitos reservados.
             </p>
           </div>
-          <div className="flex gap-4 text-xs text-zinc-500">
-            <Link href="/termos" className="hover:text-zinc-300 transition-colors">
+          <div className="flex flex-wrap items-center justify-center
+                          gap-4 text-xs text-zinc-500">
+            <a href="mailto:suporte@entrevistador-ai.com.br"
+               className="hover:text-zinc-300 transition-colors
+                          flex items-center gap-1.5">
+              <svg width="13" height="13" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" strokeWidth="2"
+                   strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2
+                         2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              suporte@entrevistador-ai.com.br
+            </a>
+            <span className="text-zinc-700">·</span>
+            <Link href="/termos"
+              className="hover:text-zinc-300 transition-colors">
               Termos de Uso
             </Link>
-            <Link href="/privacidade" className="hover:text-zinc-300 transition-colors">
+            <span className="text-zinc-700">·</span>
+            <Link href="/privacidade"
+              className="hover:text-zinc-300 transition-colors">
               Privacidade
             </Link>
           </div>
