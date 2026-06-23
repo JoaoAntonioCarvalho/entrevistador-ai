@@ -67,6 +67,7 @@ export default function InterviewPage() {
   const prevVoiceStateRef = useRef<string>('idle');
   const firstTurnCalledRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const creditConsumedRef = useRef(false);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -302,6 +303,22 @@ export default function InterviewPage() {
       return () => clearTimeout(t);
     }
     setShowEscape(false);
+  }, [interviewState]);
+
+  // Consumir crédito ao encerrar entrevista (fire-and-forget)
+  useEffect(() => {
+    if (interviewState !== 'ended') return;
+    if (creditConsumedRef.current || !user?.id) return;
+    creditConsumedRef.current = true;
+    fetch('/api/credits/consume', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authUserId: user.id,
+        sessionId:  session.id,
+      }),
+    }).catch(() => { /* silencioso */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewState]);
 
   // Cleanup AudioContext ao sair da página (iOS)
