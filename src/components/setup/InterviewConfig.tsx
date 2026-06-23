@@ -126,7 +126,7 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
                 type="button"
                 onClick={() => {
                   if (bloqueado) {
-                    router.push('/entrar');
+                    router.push('/planos');
                     return;
                   }
                   update('perguntas', n);
