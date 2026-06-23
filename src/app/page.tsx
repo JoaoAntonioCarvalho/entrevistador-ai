@@ -324,6 +324,168 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── PREÇOS ── */}
+      <section className="py-24 px-6 bg-zinc-50 dark:bg-zinc-900/50">
+        <div className="max-w-4xl mx-auto">
+
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-zinc-900 dark:text-white
+                           tracking-tight mb-3">
+              Simples e acessível
+            </h2>
+            <p className="text-zinc-500 dark:text-zinc-400 text-lg">
+              Comece grátis. Pague só quando quiser ir mais fundo.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+            {/* Grátis */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6
+                            border border-zinc-200 dark:border-zinc-800">
+              <p className="text-xs font-semibold text-zinc-400
+                           uppercase tracking-widest mb-3">
+                Grátis
+              </p>
+              <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-1">
+                R$0
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+                sem cartão necessário
+              </p>
+              <ul className="space-y-2.5 mb-8">
+                {[
+                  '3 perguntas de entrevista',
+                  'Escolha a vaga que quiser',
+                  'Português e inglês',
+                  'Voz humana real',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm
+                                         text-zinc-600 dark:text-zinc-400">
+                    <svg className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         strokeWidth="2" strokeLinecap="round"
+                         strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/setup"
+                className="block w-full text-center border border-zinc-200
+                           dark:border-zinc-700 text-zinc-700 dark:text-zinc-300
+                           py-3 rounded-full text-sm font-medium
+                           hover:bg-zinc-50 dark:hover:bg-zinc-800
+                           transition-colors">
+                Começar grátis
+              </Link>
+            </div>
+
+            {/* Avulso */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6
+                            border-2 border-zinc-900 dark:border-white
+                            relative">
+              <div className="absolute -top-3 left-6">
+                <span className="bg-zinc-900 dark:bg-white text-white
+                                 dark:text-zinc-900 text-xs font-semibold
+                                 px-3 py-1 rounded-full">
+                  Mais popular
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-zinc-400
+                           uppercase tracking-widest mb-3">
+                Avulso
+              </p>
+              <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-1">
+                R$9,90
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+                por entrevista de 7 perguntas
+              </p>
+              <ul className="space-y-2.5 mb-8">
+                {[
+                  'Entrevista completa de 7 perguntas',
+                  'Relatório com nota e feedback',
+                  'Análise por pergunta',
+                  'Resposta ideal personalizada',
+                  'Resultado compartilhável',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm
+                                         text-zinc-600 dark:text-zinc-400">
+                    <svg className="w-4 h-4 text-zinc-900 dark:text-white
+                                    shrink-0 mt-0.5"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         strokeWidth="2" strokeLinecap="round"
+                         strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/planos"
+                className="block w-full text-center bg-zinc-900 dark:bg-white
+                           text-white dark:text-zinc-900 py-3 rounded-full
+                           text-sm font-semibold hover:bg-zinc-700
+                           dark:hover:bg-zinc-100 transition-colors">
+                Ver planos
+              </Link>
+            </div>
+
+            {/* Mensal */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6
+                            border border-zinc-200 dark:border-zinc-800">
+              <p className="text-xs font-semibold text-zinc-400
+                           uppercase tracking-widest mb-3">
+                Mensal
+              </p>
+              <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-1">
+                R$39,90
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+                por mês · 6 entrevistas
+              </p>
+              <ul className="space-y-2.5 mb-8">
+                {[
+                  '6 entrevistas por mês',
+                  'Histórico de evolução',
+                  'Todos os entrevistadores',
+                  'Resultado compartilhável',
+                  'Suporte por email',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm
+                                         text-zinc-600 dark:text-zinc-400">
+                    <svg className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         strokeWidth="2" strokeLinecap="round"
+                         strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/planos"
+                className="block w-full text-center border border-zinc-200
+                           dark:border-zinc-700 text-zinc-700 dark:text-zinc-300
+                           py-3 rounded-full text-sm font-medium
+                           hover:bg-zinc-50 dark:hover:bg-zinc-800
+                           transition-colors">
+                Ver planos
+              </Link>
+            </div>
+
+          </div>
+
+          <p className="text-center text-sm text-zinc-400 dark:text-zinc-500">
+            🔒 Pagamento via Mercado Pago · Pix disponível ·
+            Garantia de 7 dias conforme CDC art. 49
+          </p>
+
+        </div>
+      </section>
+
       {/* ── FOOTER ── */}
       <footer className="bg-zinc-950 dark:bg-black py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row
