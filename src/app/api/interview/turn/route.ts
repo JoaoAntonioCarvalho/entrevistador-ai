@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { callAIJSONWithUsage } from '@/lib/services/claude';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import {
@@ -17,6 +18,7 @@ interface TurnRequest {
   sessionId?: string;
   perguntasRespondidas: number;
   totalPerguntas: number;
+  authUserId?: string | null;
 }
 
 interface Blocos {
@@ -303,6 +305,7 @@ export async function POST(req: NextRequest) {
   let sessionId = 'unknown';
   let perguntasRespondidas = 0;
   let totalPerguntas = 10;
+  let authUserId: string | null = null;
 
   try {
     const body: TurnRequest = await req.json();
@@ -316,12 +319,52 @@ export async function POST(req: NextRequest) {
     sessionId             = body.sessionId ?? 'unknown';
     perguntasRespondidas  = body.perguntasRespondidas ?? 0;
     totalPerguntas        = body.totalPerguntas ?? 10;
+    authUserId            = body.authUserId ?? null;
   } catch {
     return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });
   }
 
   if (!candidate || !job || !config) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });
+  }
+
+  // Gate de pagamento: a partir da pergunta 4, verificar crédito ou sessão paga
+  if (!isFirstTurn && perguntasRespondidas >= 3) {
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    let liberado = false;
+
+    if (sessionId && sessionId !== 'unknown') {
+      const { data: sess } = await supabaseAdmin
+        .from('sessions')
+        .select('payment_status')
+        .eq('id', sessionId)
+        .single();
+      if (sess?.payment_status === 'paid') liberado = true;
+    }
+
+    if (!liberado && authUserId) {
+      const { data: credit } = await supabaseAdmin
+        .from('credits')
+        .select('id, expires_at')
+        .eq('auth_user_id', authUserId)
+        .eq('usado', false)
+        .eq('mp_status', 'approved')
+        .or('expires_at.is.null,expires_at.gt.now()')
+        .limit(1)
+        .single();
+      if (credit) liberado = true;
+    }
+
+    if (!liberado) {
+      return NextResponse.json(
+        { error: 'payment_required', message: 'Pagamento necessário para continuar.' },
+        { status: 402 }
+      );
+    }
   }
 
   try {

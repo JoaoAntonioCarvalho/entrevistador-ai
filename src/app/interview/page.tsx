@@ -7,6 +7,7 @@ import { AlertTriangle, Send, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useSessionStore } from '@/lib/store';
 import { useRouteGuard } from '@/hooks/useRouteGuard';
+import { useAuth } from '@/hooks/useAuth';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useVoiceOutput } from '@/hooks/useVoiceOutput';
 import AvatarDisplay from '@/components/interview/AvatarDisplay';
@@ -23,6 +24,7 @@ export default function InterviewPage() {
   const { session, addConversationTurn, addEvaluation, setStatus } = useSessionStore();
   const addCustoIA  = useSessionStore(s => s.addCustoIA);
   const addCustoTTS = useSessionStore(s => s.addCustoTTS);
+  const { user } = useAuth();
 
   useRouteGuard({ needsCandidate: true, needsJob: true });
 
@@ -117,10 +119,15 @@ export default function InterviewPage() {
           perguntasRespondidas: perguntasParaCalculo,
           totalPerguntas:       totalPerguntas,
           sessionId:            session.id,
+          authUserId:           user?.id ?? null,
         }),
       });
 
       if (!res.ok) {
+        if (res.status === 402) {
+          router.push('/planos');
+          return;
+        }
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData?.error ?? `HTTP ${res.status}`);
       }

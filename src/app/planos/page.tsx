@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/layout/Header';
 import { Check } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useSessionStore } from '@/lib/store';
 
 const PLANOS = {
   avulso: {
@@ -76,13 +78,31 @@ export default function PlanosPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  function handleComprar(plano: string) {
+  async function handleComprar(plano: string) {
     if (!user) {
       router.push(`/entrar?return=/planos&plano=${plano}`);
       return;
     }
-    // TODO: integrar Mercado Pago
-    alert(`Pagamento em breve disponível — plano: ${plano}`);
+
+    try {
+      const sessionId = useSessionStore.getState().session?.id ?? null;
+
+      const res = await fetch('/api/mp-criar-preferencia', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plano, sessionId, authUserId: user.id }),
+      });
+
+      const data = await res.json();
+
+      if (data.initPoint) {
+        window.location.href = data.initPoint;
+      } else {
+        toast.error('Erro ao iniciar pagamento. Tente novamente.');
+      }
+    } catch {
+      toast.error('Erro ao iniciar pagamento. Tente novamente.');
+    }
   }
 
   return (
