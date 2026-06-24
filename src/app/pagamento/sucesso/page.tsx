@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/hooks/useAuth';
 
+export const dynamic = 'force-dynamic';
+
 type Status = 'aguardando' | 'confirmado' | 'timeout';
 
 function SucessoContent() {

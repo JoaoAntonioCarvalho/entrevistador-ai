@@ -38,8 +38,10 @@ export async function saveSessionToSupabase(session: InterviewSession): Promise<
   let authUserId: string | null = null;
   try {
     const authClient = createAuthClient();
-    const { data: { session: authSession } } = await authClient.auth.getSession();
-    authUserId = authSession?.user?.id ?? null;
+    if (authClient) {
+      const { data: { session: authSession } } = await authClient.auth.getSession();
+      authUserId = authSession?.user?.id ?? null;
+    }
   } catch { /* silencioso */ }
 
   const client = getClient(userId);
@@ -98,6 +100,7 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
 
   try {
     const authClient = createAuthClient();
+    if (!authClient) return localData;
     const { data: { session: authSession } } = await authClient.auth.getSession();
 
     const selectFields = `
@@ -115,7 +118,7 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
         .limit(50);
 
       if (error || !data) return localData;
-      return data.map(s => ({
+      return data.map((s: SessionSummary) => ({
         id:              s.id,
         created_at:      s.created_at,
         job_titulo:      s.job_titulo ?? '',

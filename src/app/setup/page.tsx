@@ -10,6 +10,8 @@ import { AvatarProfile, Candidate, InterviewConfig as IConfig, Job } from '@/lib
 import { Header } from '@/components/layout/Header';
 import { notifycurriculo, notifyVaga } from '@/lib/services/telegram';
 
+export const dynamic = 'force-dynamic';
+
 const STEPS = [
   { label: 'Currículo' },
   { label: 'Vaga' },

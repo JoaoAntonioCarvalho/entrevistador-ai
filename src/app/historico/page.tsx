@@ -18,6 +18,8 @@ import { getUserHistory, getHistoryByJob, type SessionSummary } from '@/lib/serv
 import { Header } from '@/components/layout/Header';
 import { useRouteGuard } from '@/hooks/useRouteGuard';
 
+export const dynamic = 'force-dynamic';
+
 function scoreBadgeClass(score: number): string {
   if (score >= 80) return 'bg-green-50 text-green-700 border border-green-200';
   if (score >= 60) return 'bg-blue-50 text-blue-700 border border-blue-200';

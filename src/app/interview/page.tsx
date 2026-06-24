@@ -18,6 +18,8 @@ import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
 import type { InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
 
+export const dynamic = 'force-dynamic';
+
 type InterviewState = 'loading' | 'speaking' | 'waiting' | 'processing' | 'ended';
 
 export default function InterviewPage() {

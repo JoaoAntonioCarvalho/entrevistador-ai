@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 function PendenteContent() {
   const router    = useRouter();
   const params    = useSearchParams();

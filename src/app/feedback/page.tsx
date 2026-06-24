@@ -6,6 +6,8 @@ import { useSessionStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 import { Header } from '@/components/layout/Header';
 
+export const dynamic = 'force-dynamic';
+
 const STEPS = {
   pt: [
     'Analisando suas respostas...',

@@ -17,6 +17,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Header } from '@/components/layout/Header';
 
+export const dynamic = 'force-dynamic';
+
 function qualityLabel(geral: number) {
   if (geral >= 80) return { text: 'Excelente', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
   if (geral >= 60) return { text: 'Bom',       classes: 'bg-blue-50 text-blue-700 border-blue-200' };

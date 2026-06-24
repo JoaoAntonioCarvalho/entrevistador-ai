@@ -6,6 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { createClient } from '@/lib/services/supabase-client';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 function EntrarContent() {
   const router = useRouter();
@@ -14,8 +17,9 @@ function EntrarContent() {
 
   useEffect(() => {
     const supabase = createClient();
+    if (!supabase) return;
     const { data: { subscription } } =
-      supabase.auth.onAuthStateChange((event, session) => {
+      supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
         if (event === 'SIGNED_IN' && session) {
           router.push(returnUrl);
         }

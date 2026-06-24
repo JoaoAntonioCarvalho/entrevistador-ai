@@ -6,6 +6,8 @@ import { Camera, CameraOff } from 'lucide-react';
 import { useSessionStore } from '@/lib/store';
 import { Header } from '@/components/layout/Header';
 
+export const dynamic = 'force-dynamic';
+
 type Choice = 'pending' | 'granted' | 'denied';
 
 export default function CameraCheckPage() {

@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 
+export const dynamic = 'force-dynamic';
+
 export default function PagamentoFaLhouPage() {
   const router = useRouter();
 

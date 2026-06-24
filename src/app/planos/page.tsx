@@ -7,6 +7,8 @@ import { Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSessionStore } from '@/lib/store';
 
+export const dynamic = 'force-dynamic';
+
 const PLANOS = {
   avulso: {
     finalizarAtual: {

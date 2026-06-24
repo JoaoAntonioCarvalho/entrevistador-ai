@@ -18,6 +18,8 @@ import { useRouteGuard } from '@/hooks/useRouteGuard';
 import { saveSessionToSupabase, saveToLocalHistory } from '@/lib/services/supabase';
 import type { CompetencyScores } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 type CompetencyKey = keyof CompetencyScores;
 
 const COMPETENCY_LABELS: Record<CompetencyKey, string> = {

@@ -12,6 +12,8 @@ import {
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 
+export const dynamic = 'force-dynamic';
+
 export default function LandingPage() {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
