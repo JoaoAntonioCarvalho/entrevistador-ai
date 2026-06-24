@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export default function TermosPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
+    <div className="min-h-dvh bg-background">
       <Header backTo="/" backLabel="← Início" />
       <div className="max-w-3xl mx-auto px-6 py-12 prose prose-zinc dark:prose-invert">
 

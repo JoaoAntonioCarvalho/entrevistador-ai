@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ClipboardList } from 'lucide-react';
@@ -21,10 +22,10 @@ import { useRouteGuard } from '@/hooks/useRouteGuard';
 export const dynamic = 'force-dynamic';
 
 function scoreBadgeClass(score: number): string {
-  if (score >= 80) return 'bg-green-50 text-green-700 border border-green-200';
-  if (score >= 60) return 'bg-blue-50 text-blue-700 border border-blue-200';
-  if (score >= 40) return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
-  return 'bg-red-50 text-red-700 border border-red-200';
+  if (score >= 80) return 'bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]';
+  if (score >= 60) return 'bg-muted text-foreground border border-border';
+  if (score >= 40) return 'bg-[#fffbeb] text-[#92400e] border border-[#fde68a]';
+  return 'bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]';
 }
 
 function formatDateLong(iso: string) {
@@ -46,11 +47,11 @@ interface TooltipProps {
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-md text-sm">
-      <p className="text-zinc-500 text-xs mb-1">{label}</p>
-      <p className="font-semibold text-zinc-900">Pontuação: {payload[0].value}/100</p>
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-card text-sm">
+      <p className="text-muted-fg text-xs mb-1">{label}</p>
+      <p className="font-semibold text-foreground">Pontuação: {payload[0].value}/100</p>
       {payload[0].payload.vaga && (
-        <p className="text-zinc-500 text-xs mt-0.5 truncate max-w-[160px]">{payload[0].payload.vaga}</p>
+        <p className="text-muted-fg text-xs mt-0.5 truncate max-w-[160px]">{payload[0].payload.vaga}</p>
       )}
     </div>
   );
@@ -60,6 +61,9 @@ export default function HistoricoPage() {
   useRouteGuard({ requireAuth: true });
 
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
@@ -109,18 +113,24 @@ export default function HistoricoPage() {
       vaga: s.job_titulo,
     }));
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white
-                    transition-colors duration-200">
-      <Header backTo="/" backLabel="← Início" />
-      <div className="max-w-5xl mx-auto px-4 py-10 flex flex-col gap-10">
+  const lineColor = isDark ? '#F7F7F5' : '#0C0C0A';
+  const gridColor = isDark ? '#232321' : '#E4E4E1';
+  const tickColor = isDark ? '#8A8A82' : '#737373';
 
-        {/* Título da página */}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Seu histórico de entrevistas
+  return (
+    <div className="min-h-dvh bg-background transition-colors duration-200">
+      <Header backTo="/" backLabel="← Início" />
+      <div className="max-w-[1120px] mx-auto px-6 py-10 flex flex-col gap-10">
+
+        {/* Cabeçalho */}
+        <div>
+          <p className="text-[11px] font-semibold tracking-eyebrow uppercase text-muted-fg mb-3">
+            Histórico
+          </p>
+          <h1 className="text-[32px] font-bold tracking-heading text-foreground leading-tight">
+            Suas entrevistas
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+          <p className="text-muted-fg text-sm mt-1">
             Acompanhe sua evolução ao longo do tempo
           </p>
         </div>
@@ -128,24 +138,25 @@ export default function HistoricoPage() {
         {loading && (
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin mx-auto" />
-              <p className="text-sm text-zinc-400 mt-4">Carregando histórico...</p>
+              <div className="w-8 h-8 border-2 border-border border-t-foreground rounded-full animate-spin mx-auto" />
+              <p className="text-sm text-muted-fg mt-4">Carregando histórico...</p>
             </div>
           </div>
         )}
 
         {!loading && sessions.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-              <ClipboardList className="w-8 h-8 text-zinc-400" />
+            <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mb-4">
+              <ClipboardList className="w-8 h-8 text-muted-fg" />
             </div>
-            <h3 className="text-lg font-semibold text-zinc-900">Nenhuma entrevista ainda</h3>
-            <p className="text-sm text-zinc-500 mt-2 max-w-xs">
+            <h3 className="text-lg font-semibold text-foreground">Nenhuma entrevista ainda</h3>
+            <p className="text-sm text-muted-fg mt-2 max-w-xs">
               Complete sua primeira entrevista para ver seu histórico e acompanhar sua evolução aqui.
             </p>
             <button
               onClick={() => router.push('/setup')}
-              className="mt-6 bg-zinc-900 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
+              className="mt-6 bg-foreground text-background px-6 py-3 rounded-lg
+                         text-sm font-medium hover:opacity-90 transition-opacity"
             >
               Fazer primeira entrevista
             </button>
@@ -154,30 +165,43 @@ export default function HistoricoPage() {
 
         {!loading && sessions.length > 0 && (
           <>
-            {/* Resumo geral */}
+            {/* Resumo */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6 flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">Total</span>
-                <span className="text-4xl font-bold tabular-nums text-zinc-900 dark:text-white">{sessions.length}</span>
-                <span className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">entrevista{sessions.length !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6 flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">Melhor pontuação</span>
-                <span className="text-4xl font-bold tabular-nums text-zinc-900 dark:text-white">{bestScore ?? '—'}</span>
-                <span className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">de 100 pontos</span>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6 flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">Evolução</span>
-                <span className={`text-4xl font-bold tabular-nums ${
-                  evolution === null ? 'text-zinc-400'
-                  : evolution > 0 ? 'text-green-600'
-                  : evolution < 0 ? 'text-red-500'
-                  : 'text-zinc-900'
-                }`}>
-                  {evolution === null ? '—' : evolution > 0 ? `+${evolution}` : `${evolution}`}
-                </span>
-                <span className="text-sm text-zinc-500 mt-1">pontos desde a 1ª sessão</span>
-              </div>
+              {[
+                {
+                  label: 'Total',
+                  value: sessions.length.toString(),
+                  sub: `entrevista${sessions.length !== 1 ? 's' : ''}`,
+                },
+                {
+                  label: 'Melhor pontuação',
+                  value: bestScore?.toString() ?? '—',
+                  sub: 'de 100 pontos',
+                },
+                {
+                  label: 'Evolução',
+                  value: evolution === null ? '—' : evolution > 0 ? `+${evolution}` : `${evolution}`,
+                  sub: 'pontos desde a 1ª sessão',
+                  valueClass:
+                    evolution === null ? 'text-muted-fg' :
+                    evolution > 0 ? 'text-[#16a34a]' :
+                    evolution < 0 ? 'text-[#dc2626]' : 'text-foreground',
+                },
+              ].map((stat, i) => (
+                <div key={i}
+                     className="bg-card border border-border rounded-xl p-6 flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-muted-fg
+                                   uppercase tracking-eyebrow mb-2">
+                    {stat.label}
+                  </span>
+                  <span className={`text-4xl font-bold font-mono tabular-nums ${
+                    stat.valueClass ?? 'text-foreground'
+                  }`}>
+                    {stat.value}
+                  </span>
+                  <span className="text-sm text-muted-fg mt-1">{stat.sub}</span>
+                </div>
+              ))}
             </div>
 
             {/* Filtro por vaga */}
@@ -187,8 +211,8 @@ export default function HistoricoPage() {
                   onClick={() => setSelectedJob(null)}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                     selectedJob === null
-                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                      : 'border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      ? 'bg-foreground text-background'
+                      : 'border border-border text-muted-fg hover:border-border-strong hover:text-foreground'
                   }`}
                 >
                   Todas
@@ -199,8 +223,8 @@ export default function HistoricoPage() {
                     onClick={() => setSelectedJob(job)}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors max-w-[200px] truncate ${
                       selectedJob === job
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                        : 'border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                        ? 'bg-foreground text-background'
+                        : 'border border-border text-muted-fg hover:border-border-strong hover:text-foreground'
                     }`}
                   >
                     {job}
@@ -212,20 +236,25 @@ export default function HistoricoPage() {
             {/* Gráfico de evolução */}
             {chartData.length >= 2 ? (
               <div className="flex flex-col gap-3">
-                <h2 className="text-base font-semibold text-zinc-900">Evolução da pontuação</h2>
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                <p className="text-[11px] font-semibold tracking-eyebrow uppercase text-muted-fg">
+                  Evolução
+                </p>
+                <h2 className="text-base font-bold text-foreground -mt-2">
+                  Pontuação ao longo do tempo
+                </h2>
+                <div className="rounded-xl border border-border bg-muted p-4">
                   <ResponsiveContainer width="100%" height={280}>
                     <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                       <XAxis
                         dataKey="data"
-                        tick={{ fill: '#a1a1aa', fontSize: 11 }}
+                        tick={{ fill: tickColor, fontSize: 11 }}
                         axisLine={false}
                         tickLine={false}
                       />
                       <YAxis
                         domain={[0, 100]}
-                        tick={{ fill: '#a1a1aa', fontSize: 11 }}
+                        tick={{ fill: tickColor, fontSize: 11 }}
                         axisLine={false}
                         tickLine={false}
                         width={32}
@@ -234,9 +263,9 @@ export default function HistoricoPage() {
                       <Line
                         type="monotone"
                         dataKey="score"
-                        stroke="#18181b"
+                        stroke={lineColor}
                         strokeWidth={2}
-                        dot={{ fill: '#18181b', r: 4 }}
+                        dot={{ fill: lineColor, r: 4 }}
                         activeDot={{ r: 6 }}
                         isAnimationActive={true}
                       />
@@ -245,8 +274,8 @@ export default function HistoricoPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-6 py-8 text-center">
-                <p className="text-zinc-400 text-sm">
+              <div className="rounded-xl border border-border bg-muted px-6 py-8 text-center">
+                <p className="text-muted-fg text-sm">
                   Faça mais entrevistas para esta vaga para ver sua evolução aqui.
                 </p>
               </div>
@@ -254,36 +283,47 @@ export default function HistoricoPage() {
 
             {/* Lista de sessões */}
             <div className="flex flex-col gap-3">
-              <h2 className="text-base font-semibold text-zinc-900">Entrevistas realizadas</h2>
-              <div className="flex flex-col gap-3">
+              <p className="text-[11px] font-semibold tracking-eyebrow uppercase text-muted-fg">
+                Sessões
+              </p>
+              <h2 className="text-base font-bold text-foreground -mt-2">
+                Entrevistas realizadas
+              </h2>
+              <div className="flex flex-col gap-3 mt-1">
                 {[...filteredSessions]
                   .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                   .map(s => (
                     <div
                       key={s.id}
-                      className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-card transition-all duration-200 flex items-start justify-between gap-4"
+                      className="bg-card border border-border rounded-xl p-5
+                                 hover:border-border-strong hover:shadow-card
+                                 transition-all duration-200 flex items-start
+                                 justify-between gap-4"
                     >
                       <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                        <p className="font-semibold text-zinc-900 dark:text-white truncate">
+                        <p className="font-semibold text-foreground truncate">
                           {s.job_titulo || 'Vaga não identificada'}
                         </p>
                         {s.job_empresa && (
-                          <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{s.job_empresa}</p>
+                          <p className="text-sm text-muted-fg truncate">{s.job_empresa}</p>
                         )}
-                        <p className="text-xs text-zinc-400">{formatDateLong(s.created_at)}</p>
+                        <p className="text-xs text-muted-fg">{formatDateLong(s.created_at)}</p>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {s.nivel && (
-                            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[11px] text-zinc-500 capitalize">
+                            <span className="rounded-full border border-border bg-muted
+                                             px-2.5 py-0.5 text-[11px] text-muted-fg capitalize">
                               {s.nivel}
                             </span>
                           )}
                           {s.tipo && (
-                            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[11px] text-zinc-500 capitalize">
+                            <span className="rounded-full border border-border bg-muted
+                                             px-2.5 py-0.5 text-[11px] text-muted-fg capitalize">
                               {s.tipo}
                             </span>
                           )}
                           {s.total_perguntas > 0 && (
-                            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[11px] text-zinc-500">
+                            <span className="rounded-full border border-border bg-muted
+                                             px-2.5 py-0.5 text-[11px] text-muted-fg">
                               {s.total_perguntas} pergunta{s.total_perguntas !== 1 ? 's' : ''}
                             </span>
                           )}
@@ -291,12 +331,14 @@ export default function HistoricoPage() {
                       </div>
 
                       <div className="flex flex-col items-end gap-3 shrink-0">
-                        <span className={`rounded-xl px-3 py-1.5 font-semibold text-lg ${scoreBadgeClass(s.score_geral)}`}>
+                        <span className={`rounded-xl px-3 py-1.5 font-bold font-mono
+                                          tabular-nums text-lg ${scoreBadgeClass(s.score_geral)}`}>
                           {s.score_geral}
                         </span>
                         <button
                           onClick={() => router.push(`/resultado/${s.id}`)}
-                          className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 transition-colors"
+                          className="text-xs bg-foreground text-background px-3 py-1.5
+                                     rounded-lg hover:opacity-90 transition-opacity"
                         >
                           Ver relatório →
                         </button>

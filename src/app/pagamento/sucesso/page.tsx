@@ -81,14 +81,12 @@ function SucessoContent() {
 
       {status === 'aguardando' && (
         <>
-          <div className="w-12 h-12 border-2 border-zinc-300
-                          border-t-zinc-900 dark:border-t-white
-                          rounded-full animate-spin mb-6" />
-          <h1 className="text-xl font-semibold text-zinc-900
-                         dark:text-white mb-2">
+          <div className="w-12 h-12 border-2 border-border
+                          border-t-foreground rounded-full animate-spin mb-6" />
+          <h1 className="text-xl font-semibold text-foreground mb-2">
             Confirmando pagamento...
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-fg">
             Em instantes você volta para sua entrevista.
           </p>
         </>
@@ -96,20 +94,18 @@ function SucessoContent() {
 
       {status === 'confirmado' && (
         <>
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30
-                          rounded-full flex items-center justify-center mb-6">
+          <div className="w-16 h-16 bg-[#f0fdf4] rounded-xl flex items-center justify-center mb-6">
             <svg width="32" height="32" viewBox="0 0 24 24"
                  fill="none" stroke="currentColor" strokeWidth="2.5"
                  strokeLinecap="round" strokeLinejoin="round"
-                 className="text-green-600 dark:text-green-400">
+                 className="text-[#16a34a]">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900
-                         dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Pagamento confirmado!
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-fg">
             Voltando para sua entrevista...
           </p>
         </>
@@ -117,22 +113,20 @@ function SucessoContent() {
 
       {status === 'timeout' && (
         <>
-          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30
-                          rounded-full flex items-center justify-center mb-6">
+          <div className="w-16 h-16 bg-[#fffbeb] rounded-xl flex items-center justify-center mb-6">
             <svg width="32" height="32" viewBox="0 0 24 24"
                  fill="none" stroke="currentColor" strokeWidth="2"
                  strokeLinecap="round" strokeLinejoin="round"
-                 className="text-amber-600 dark:text-amber-400">
+                 className="text-[#92400e]">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-zinc-900
-                         dark:text-white mb-2">
+          <h1 className="text-xl font-bold text-foreground mb-2">
             Pagamento recebido
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-fg">
             Confirmação em processamento.
             Voltando para sua entrevista...
           </p>
@@ -145,13 +139,12 @@ function SucessoContent() {
 
 export default function PagamentoSucessoPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
+    <div className="min-h-dvh bg-background">
       <Header />
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="w-8 h-8 border-2 border-zinc-300
-                          border-t-zinc-900 dark:border-t-white
-                          rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-border
+                          border-t-foreground rounded-full animate-spin" />
         </div>
       }>
         <SucessoContent />

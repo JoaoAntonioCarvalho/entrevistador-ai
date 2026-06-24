@@ -29,10 +29,10 @@ function EntrarContent() {
 
   return (
     <div className="flex flex-col items-center justify-center px-6 py-20">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 tracking-tight">
+      <h1 className="text-2xl font-bold text-foreground mb-2 tracking-heading-sm">
         Acesse sua conta
       </h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
+      <p className="text-sm text-muted-fg mb-8">
         Digite seu email e senha para continuar.
       </p>
       <AuthForm onSuccess={() => router.push(returnUrl)} />
@@ -42,11 +42,11 @@ function EntrarContent() {
 
 export default function EntrarPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
+    <div className="min-h-dvh bg-background">
       <Header backTo="/" backLabel="← Início" />
       <Suspense fallback={
         <div className="flex items-center justify-center py-24">
-          <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-border border-t-foreground rounded-full animate-spin" />
         </div>
       }>
         <EntrarContent />

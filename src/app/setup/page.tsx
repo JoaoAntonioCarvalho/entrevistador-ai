@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AlertTriangle } from 'lucide-react';
 import { useSessionStore } from '@/lib/store';
 import ResumeUpload from '@/components/setup/ResumeUpload';
 import JobInput from '@/components/setup/JobInput';
@@ -32,22 +33,29 @@ function Stepper({ current }: { current: number }) {
                               justify-center text-sm font-semibold
                               transition-all ${
                 done
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                  ? 'bg-foreground text-background'
                   : active
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ring-4 ring-zinc-900/10 dark:ring-white/20'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500'
+                  ? 'bg-foreground text-background ring-4 ring-foreground/10'
+                  : 'bg-muted text-muted-fg'
               }`}>
-                {done ? '✓' : num}
+                {done ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="2.5"
+                       strokeLinecap="round" strokeLinejoin="round"
+                       aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : num}
               </div>
               <span className={`text-xs font-medium ${
-                active ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-600'
+                active ? 'text-foreground' : 'text-muted-fg'
               }`}>
                 {step.label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
               <div className={`w-24 h-px mx-2 mb-5 transition-colors ${
-                done ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-800'
+                done ? 'bg-foreground' : 'bg-border'
               }`} />
             )}
           </div>
@@ -189,7 +197,7 @@ export default function SetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-200">
+    <div className="min-h-dvh bg-background transition-colors duration-200">
 
       <Header backTo="/" backLabel="← Início" />
 
@@ -199,14 +207,14 @@ export default function SetupPage() {
 
         {warning && (
           <div className="mb-6 flex items-start gap-2 rounded-lg border
-                          border-yellow-200 bg-yellow-50 px-4 py-3 text-sm
-                          text-yellow-700">
-            <span className="shrink-0 mt-0.5">⚠</span>
+                          border-[#fde68a] bg-[#fefce8] px-4 py-3 text-sm
+                          text-[#92400e]">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
             <span>{warning} Revise os dados antes de continuar.</span>
             <button
               onClick={() => setWarning(null)}
-              className="ml-auto shrink-0 text-yellow-600 hover:text-yellow-800
-                         transition-colors text-xs"
+              className="ml-auto shrink-0 hover:opacity-70 transition-opacity text-xs"
+              aria-label="Fechar aviso"
             >
               ✕
             </button>
@@ -217,13 +225,13 @@ export default function SetupPage() {
           {step > 1 && (
             <button
               onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
-              className="text-sm text-zinc-500 hover:text-zinc-700
+              className="text-sm text-muted-fg hover:text-foreground
                          transition-colors"
             >
               ← Voltar
             </button>
           )}
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+          <h1 className="text-2xl font-bold tracking-heading-sm text-foreground">
             {stepTitles[step]}
           </h1>
         </div>
@@ -254,18 +262,15 @@ export default function SetupPage() {
       {showWarning && (
         <div className="fixed inset-0 bg-black/50 flex items-center
                         justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full
-                          shadow-2xl">
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex
+          <div className="bg-card rounded-xl p-6 max-w-sm w-full shadow-modal">
+            <div className="w-12 h-12 bg-[#fefce8] rounded-lg flex
                             items-center justify-center mx-auto mb-4">
-              <span className="text-yellow-600 text-xl">⚠</span>
+              <AlertTriangle className="w-6 h-6 text-[#92400e]" aria-hidden="true" />
             </div>
-            <h3 className="text-lg font-semibold text-zinc-900 text-center
-                           mb-2">
+            <h3 className="text-lg font-semibold text-foreground text-center mb-2">
               Entrevista menos personalizada
             </h3>
-            <p className="text-sm text-zinc-500 text-center leading-relaxed
-                          mb-6">
+            <p className="text-sm text-muted-fg text-center leading-relaxed mb-6">
               Você não enviou um currículo e está usando uma vaga gerada
               pela IA. A entrevista funcionará normalmente, mas as perguntas
               serão mais genéricas e menos focadas no seu perfil real.
@@ -273,8 +278,8 @@ export default function SetupPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowWarning(false)}
-                className="flex-1 border border-zinc-200 text-zinc-600
-                           py-2.5 rounded-xl text-sm hover:bg-zinc-50
+                className="flex-1 border border-border text-foreground
+                           py-2.5 rounded-lg text-sm hover:bg-muted
                            transition-colors"
               >
                 Voltar e melhorar
@@ -285,9 +290,9 @@ export default function SetupPage() {
                   setStatus('active');
                   router.push('/camera-check');
                 }}
-                className="flex-1 bg-zinc-900 text-white py-2.5 rounded-xl
-                           text-sm font-medium hover:bg-zinc-700
-                           transition-colors"
+                className="flex-1 bg-foreground text-background py-2.5 rounded-lg
+                           text-sm font-medium hover:opacity-90
+                           transition-opacity"
               >
                 Continuar assim
               </button>

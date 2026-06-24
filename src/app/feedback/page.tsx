@@ -121,7 +121,7 @@ export default function FeedbackPage() {
   return (
     <>
       <Header />
-      <div className="min-h-[calc(100vh-65px)] bg-white dark:bg-zinc-950
+      <div className="min-h-[calc(100dvh-65px)] bg-background
                       flex items-center justify-center px-6
                       transition-colors duration-200">
         <div className="w-full max-w-md text-center">
@@ -129,12 +129,11 @@ export default function FeedbackPage() {
           {/* Spinner / checkmark */}
           <div className="w-16 h-16 mx-auto mb-8 relative">
             <div className={`w-16 h-16 rounded-full border-4
-                            border-zinc-200 dark:border-zinc-700
-                            border-t-zinc-900 dark:border-t-white
+                            border-border border-t-foreground
                             ${done ? '' : 'animate-spin'}`} />
             {done && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-8 h-8 text-zinc-900 dark:text-white" fill="none"
+                <svg className="w-8 h-8 text-foreground" fill="none"
                      viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round"
                         d="M5 13l4 4L19 7" />
@@ -144,30 +143,28 @@ export default function FeedbackPage() {
           </div>
 
           {/* Step atual */}
-          <p className="text-lg font-medium text-zinc-900 dark:text-white
+          <p className="text-lg font-medium text-foreground
                         mb-2 min-h-[28px] transition-all duration-300">
             {done
               ? (lang === 'pt' ? 'Relatório pronto!' : 'Report ready!')
               : steps[stepIndex]}
           </p>
 
-          <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-8">
+          <p className="text-sm text-muted-fg mb-8">
             {lang === 'pt'
               ? 'Analisando sua performance com inteligência artificial'
               : 'Analyzing your performance with artificial intelligence'}
           </p>
 
           {/* Barra de progresso */}
-          <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800
-                          rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-zinc-900 dark:bg-white rounded-full
-                         transition-all duration-300"
+              className="h-full bg-foreground rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3">
+          <p className="text-xs text-muted-fg mt-3">
             {progress < 100
               ? (lang === 'pt' ? 'Isso leva alguns segundos...' : 'This takes a few seconds...')
               : (lang === 'pt' ? 'Redirecionando...' : 'Redirecting...')}

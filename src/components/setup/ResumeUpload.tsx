@@ -34,12 +34,10 @@ export default function ResumeUpload({
 }: Props) {
   const { session } = useSessionStore();
 
-  // ── modo ──────────────────────────────────────────────────
   const [mode,          setMode]          = useState<Mode>('choose');
   const [skipMode,      setSkipMode]      = useState(false);
   const [mostrarUploader, setMostrarUploader] = useState(false);
 
-  // ── upload ────────────────────────────────────────────────
   const [file,      setFile]      = useState<File | null>(null);
   const [status,    setStatus]    = useState<Status>('idle');
   const [candidate, setCandidate] = useState<Candidate | null>(null);
@@ -47,20 +45,17 @@ export default function ResumeUpload({
   const [isScanning, setIsScanning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── manual ────────────────────────────────────────────────
   const [nome,        setNome]        = useState(initialManualData?.nome        ?? '');
   const [cargo,       setCargo]       = useState(initialManualData?.cargo       ?? '');
   const [experiencia, setExperiencia] = useState(initialManualData?.experiencia ?? '');
   const [habilidades, setHabilidades] = useState(initialManualData?.habilidades ?? '');
 
-  // Mostrar banner de scanning se upload demorar > 3s
   useEffect(() => {
     if (status !== 'uploading') { setIsScanning(false); return; }
     const t = setTimeout(() => setIsScanning(true), 3000);
     return () => clearTimeout(t);
   }, [status]);
 
-  // ── helpers manual form ───────────────────────────────────
   function updateNome(v: string) {
     setNome(v);
     onManualDataChange?.({ nome: v, cargo, experiencia, habilidades });
@@ -78,7 +73,6 @@ export default function ResumeUpload({
     onManualDataChange?.({ nome, cargo, experiencia, habilidades: v });
   }
 
-  // ── helpers upload ────────────────────────────────────────
   function validate(f: File): string | null {
     const allowed = [
       'application/pdf',
@@ -128,57 +122,46 @@ export default function ResumeUpload({
     if (f) processFile(f);
   }
 
-  // ── CARD: currículo já carregado ──────────────────────────
   const existingCandidate = session.candidate;
 
   if (mode === 'choose' && existingCandidate && !mostrarUploader) {
     return (
-      <div className="border border-zinc-200 dark:border-zinc-700
-                      rounded-2xl p-6 bg-zinc-50 dark:bg-zinc-900">
-        {/* Header */}
+      <div className="border border-border rounded-xl p-6 bg-card">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs font-semibold text-zinc-500
-                         dark:text-zinc-400 uppercase tracking-widest mb-1">
+            <p className="text-[11px] font-semibold text-muted-fg
+                         uppercase tracking-eyebrow mb-1">
               Currículo carregado
             </p>
-            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
+            <h3 className="text-xl font-bold text-foreground">
               {existingCandidate.nome}
             </h3>
             {existingCandidate.cargo_atual && (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <p className="text-sm text-muted-fg mt-0.5">
                 {existingCandidate.cargo_atual}
               </p>
             )}
           </div>
-          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30
-                          rounded-full flex items-center justify-center shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" strokeWidth="2"
-                 strokeLinecap="round" strokeLinejoin="round"
-                 className="text-green-600 dark:text-green-400">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
+          <div className="w-10 h-10 bg-[#f0fdf4] rounded-lg
+                          flex items-center justify-center shrink-0">
+            <CheckCircle className="w-5 h-5 text-[#16a34a]" aria-hidden="true" />
           </div>
         </div>
 
-        {/* Experiências */}
         {existingCandidate.experiencias?.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-medium text-zinc-500
-                         dark:text-zinc-400 mb-2">
+            <p className="text-xs font-medium text-muted-fg mb-2">
               {existingCandidate.experiencias.length} experiência(s) identificada(s)
             </p>
             <div className="space-y-1.5">
               {existingCandidate.experiencias.slice(0, 3).map((exp, i) => (
-                <div key={i} className="text-sm text-zinc-700
-                                        dark:text-zinc-300 flex items-center gap-2">
-                  <div className="w-1 h-1 bg-zinc-400 rounded-full shrink-0" />
+                <div key={i} className="text-sm text-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 bg-border-strong rounded-full shrink-0" />
                   {exp.cargo}{exp.empresa ? ` — ${exp.empresa}` : ''}
                 </div>
               ))}
               {existingCandidate.experiencias.length > 3 && (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                <p className="text-xs text-muted-fg">
                   +{existingCandidate.experiencias.length - 3} outras experiências
                 </p>
               )}
@@ -186,24 +169,21 @@ export default function ResumeUpload({
           </div>
         )}
 
-        {/* Habilidades */}
         {existingCandidate.habilidades?.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-medium text-zinc-500
-                         dark:text-zinc-400 mb-2">
+            <p className="text-xs font-medium text-muted-fg mb-2">
               Habilidades identificadas
             </p>
             <div className="flex flex-wrap gap-1.5">
               {existingCandidate.habilidades.slice(0, 8).map((h, i) => (
                 <span key={i}
-                      className="text-xs bg-zinc-100 dark:bg-zinc-800
-                                 text-zinc-600 dark:text-zinc-400
+                      className="text-xs bg-muted text-muted-fg
                                  px-2.5 py-1 rounded-full">
                   {h}
                 </span>
               ))}
               {existingCandidate.habilidades.length > 8 && (
-                <span className="text-xs text-zinc-400 dark:text-zinc-500 px-2 py-1">
+                <span className="text-xs text-muted-fg px-2 py-1">
                   +{existingCandidate.habilidades.length - 8}
                 </span>
               )}
@@ -211,38 +191,29 @@ export default function ResumeUpload({
           </div>
         )}
 
-        {/* Formação */}
         {existingCandidate.formacao?.length > 0 && (
           <div className="mb-6">
-            <p className="text-xs font-medium text-zinc-500
-                         dark:text-zinc-400 mb-2">
-              Formação
-            </p>
+            <p className="text-xs font-medium text-muted-fg mb-2">Formação</p>
             {existingCandidate.formacao.slice(0, 2).map((f, i) => (
-              <p key={i} className="text-sm text-zinc-700 dark:text-zinc-300">
+              <p key={i} className="text-sm text-foreground">
                 {f.curso}{f.instituicao ? ` — ${f.instituicao}` : ''}
               </p>
             ))}
           </div>
         )}
 
-        {/* Botões */}
         <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => onComplete(existingCandidate, 'upload')}
-            className="flex-1 bg-zinc-900 dark:bg-white text-white
-                       dark:text-zinc-900 py-3 rounded-full font-semibold
-                       text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100
-                       transition-colors"
+            className="flex-1 bg-foreground text-background py-3 rounded-lg font-semibold
+                       text-sm hover:opacity-90 transition-opacity"
           >
             Usar este currículo →
           </button>
           <button
             onClick={() => setMostrarUploader(true)}
-            className="flex-1 border border-zinc-200 dark:border-zinc-700
-                       text-zinc-600 dark:text-zinc-400 py-3 rounded-full
-                       text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800
-                       transition-colors"
+            className="flex-1 border border-border text-foreground py-3 rounded-lg
+                       text-sm hover:bg-muted transition-colors"
           >
             Fazer upload de outro
           </button>
@@ -251,94 +222,91 @@ export default function ResumeUpload({
     );
   }
 
-  // ── TELA INICIAL ──────────────────────────────────────────
   if (mode === 'choose') {
     return (
       <div className="space-y-3">
         {mostrarUploader && (
           <button
             onClick={() => setMostrarUploader(false)}
-            className="flex items-center gap-1 text-sm text-zinc-500
-                       hover:text-zinc-700 mb-2"
+            className="flex items-center gap-1 text-sm text-muted-fg
+                       hover:text-foreground mb-2 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Voltar ao currículo atual
           </button>
         )}
-        <p className="text-sm text-zinc-500 text-center mb-4">Como quer começar?</p>
+        <p className="text-sm text-muted-fg text-center mb-4">Como quer começar?</p>
 
         <button
           onClick={() => setMode('upload')}
-          className="w-full flex items-center gap-4 p-4 border border-zinc-200 dark:border-zinc-700
-                     rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800
+          className="w-full flex items-center gap-4 p-4 border border-border
+                     rounded-xl hover:border-border-strong hover:bg-muted
                      transition-all text-left"
         >
-          <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center
+          <div className="w-10 h-10 bg-muted rounded-lg flex items-center
                           justify-center flex-shrink-0">
-            <Upload className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+            <Upload className="w-5 h-5 text-muted-fg" />
           </div>
           <div>
-            <p className="font-medium text-zinc-900 dark:text-white text-sm">Enviar meu currículo</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">PDF ou DOCX — entrevista mais personalizada</p>
+            <p className="font-medium text-foreground text-sm">Enviar meu currículo</p>
+            <p className="text-xs text-muted-fg mt-0.5">PDF ou DOCX — entrevista mais personalizada</p>
           </div>
-          <ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" />
+          <ChevronRight className="w-4 h-4 text-muted-fg ml-auto" />
         </button>
 
         <button
           onClick={() => setMode('manual')}
-          className="w-full flex items-center gap-4 p-4 border border-zinc-200 dark:border-zinc-700
-                     rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800
+          className="w-full flex items-center gap-4 p-4 border border-border
+                     rounded-xl hover:border-border-strong hover:bg-muted
                      transition-all text-left"
         >
-          <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center
+          <div className="w-10 h-10 bg-muted rounded-lg flex items-center
                           justify-center flex-shrink-0">
-            <PenLine className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+            <PenLine className="w-5 h-5 text-muted-fg" />
           </div>
           <div>
-            <p className="font-medium text-zinc-900 dark:text-white text-sm">Preencher manualmente</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Responda 4 perguntas rápidas</p>
+            <p className="font-medium text-foreground text-sm">Preencher manualmente</p>
+            <p className="text-xs text-muted-fg mt-0.5">Responda 4 perguntas rápidas</p>
           </div>
-          <ChevronRight className="w-4 h-4 text-zinc-400 ml-auto" />
+          <ChevronRight className="w-4 h-4 text-muted-fg ml-auto" />
         </button>
 
         <button
           onClick={() => { setSkipMode(true); setMode('manual'); }}
           className="w-full flex items-center gap-4 p-4 border border-dashed
-                     border-zinc-200 rounded-xl hover:border-zinc-300
-                     hover:bg-zinc-50 transition-all text-left"
+                     border-border rounded-xl hover:border-border-strong
+                     hover:bg-muted transition-all text-left"
         >
-          <div className="w-10 h-10 bg-zinc-50 rounded-lg flex items-center
+          <div className="w-10 h-10 bg-muted rounded-lg flex items-center
                           justify-center flex-shrink-0">
-            <ArrowRight className="w-5 h-5 text-zinc-400" />
+            <ArrowRight className="w-5 h-5 text-muted-fg" />
           </div>
           <div>
-            <p className="font-medium text-zinc-500 text-sm">Pular esta etapa</p>
-            <p className="text-xs text-zinc-500 mt-0.5">A entrevista será menos personalizada</p>
+            <p className="font-medium text-muted-fg text-sm">Pular esta etapa</p>
+            <p className="text-xs text-muted-fg mt-0.5">A entrevista será menos personalizada</p>
           </div>
         </button>
       </div>
     );
   }
 
-  // ── MODO MANUAL ───────────────────────────────────────────
   if (mode === 'manual') {
     if (skipMode) {
       return (
         <div className="space-y-4">
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-muted-fg">
             Tudo bem! Só precisamos do seu nome para personalizar a entrevista.
           </p>
 
           <div>
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Seu nome</label>
+            <label className="text-sm font-medium text-foreground">Seu nome</label>
             <input
               value={nome}
               onChange={e => updateNome(e.target.value)}
               placeholder="Ex: João Silva"
-              className="mt-1 w-full border border-zinc-200 rounded-lg px-3
-                         py-2.5 text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600
-                         focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500
-                         focus:ring-2 focus:ring-zinc-900/5 bg-white dark:bg-zinc-900
-                         border-zinc-200 dark:border-zinc-700"
+              className="mt-1 w-full border border-border rounded-lg px-3
+                         py-2.5 text-base text-foreground placeholder:text-muted-fg
+                         focus:outline-none focus:border-border-strong
+                         focus:ring-2 focus:ring-foreground/5 bg-card"
             />
           </div>
 
@@ -356,17 +324,17 @@ export default function ResumeUpload({
               onComplete(c, 'pulou');
             }}
             disabled={!nome.trim()}
-            className="w-full bg-zinc-900 text-white py-3 rounded-xl
-                       font-medium text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100
+            className="w-full bg-foreground text-background py-3 rounded-lg
+                       font-medium text-sm hover:opacity-90
                        disabled:opacity-40 disabled:cursor-not-allowed
-                       transition-colors"
+                       transition-opacity"
           >
             Continuar →
           </button>
 
           <button
             onClick={() => { setSkipMode(false); setMode('choose'); }}
-            className="w-full text-sm text-zinc-500 hover:text-zinc-700"
+            className="w-full text-sm text-muted-fg hover:text-foreground transition-colors"
           >
             ← Voltar
           </button>
@@ -379,51 +347,51 @@ export default function ResumeUpload({
       <div className="space-y-4">
         <button
           onClick={() => setMode('choose')}
-          className="flex items-center gap-1 text-sm text-zinc-500
-                     hover:text-zinc-700 mb-2"
+          className="flex items-center gap-1 text-sm text-muted-fg
+                     hover:text-foreground mb-2 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar
         </button>
 
         <div>
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Seu nome</label>
+          <label className="text-sm font-medium text-foreground">Seu nome</label>
           <input
             value={nome}
             onChange={e => updateNome(e.target.value)}
             placeholder="Ex: João Silva"
-            className="mt-1 w-full border border-zinc-200 rounded-lg px-3
-                       py-2.5 text-base text-zinc-900 placeholder:text-zinc-400
-                       focus:outline-none focus:border-zinc-400
-                       focus:ring-2 focus:ring-zinc-900/5 bg-white"
+            className="mt-1 w-full border border-border rounded-lg px-3
+                       py-2.5 text-base text-foreground placeholder:text-muted-fg
+                       focus:outline-none focus:border-border-strong
+                       focus:ring-2 focus:ring-foreground/5 bg-card"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className="text-sm font-medium text-foreground">
             Cargo atual ou área de atuação
           </label>
           <input
             value={cargo}
             onChange={e => updateCargo(e.target.value)}
             placeholder="Ex: Desenvolvedor Frontend, Analista de Marketing"
-            className="mt-1 w-full border border-zinc-200 rounded-lg px-3
-                       py-2.5 text-base text-zinc-900 placeholder:text-zinc-400
-                       focus:outline-none focus:border-zinc-400
-                       focus:ring-2 focus:ring-zinc-900/5 bg-white"
+            className="mt-1 w-full border border-border rounded-lg px-3
+                       py-2.5 text-base text-foreground placeholder:text-muted-fg
+                       focus:outline-none focus:border-border-strong
+                       focus:ring-2 focus:ring-foreground/5 bg-card"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className="text-sm font-medium text-foreground">
             Anos de experiência
           </label>
           <select
             value={experiencia}
             onChange={e => updateExperiencia(e.target.value)}
-            className="mt-1 w-full border border-zinc-200 rounded-lg px-3
-                       py-2.5 text-base text-zinc-900 focus:outline-none
-                       focus:border-zinc-400 focus:ring-2
-                       focus:ring-zinc-900/5 bg-white"
+            className="mt-1 w-full border border-border rounded-lg px-3
+                       py-2.5 text-base text-foreground focus:outline-none
+                       focus:border-border-strong focus:ring-2
+                       focus:ring-foreground/5 bg-card"
           >
             <option value="">Selecione...</option>
             <option value="Menos de 1 ano">Menos de 1 ano</option>
@@ -435,19 +403,19 @@ export default function ResumeUpload({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className="text-sm font-medium text-foreground">
             Principais habilidades
           </label>
           <input
             value={habilidades}
             onChange={e => updateHabilidades(e.target.value)}
             placeholder="Ex: React, Node.js, liderança, vendas consultivas"
-            className="mt-1 w-full border border-zinc-200 rounded-lg px-3
-                       py-2.5 text-base text-zinc-900 placeholder:text-zinc-400
-                       focus:outline-none focus:border-zinc-400
-                       focus:ring-2 focus:ring-zinc-900/5 bg-white"
+            className="mt-1 w-full border border-border rounded-lg px-3
+                       py-2.5 text-base text-foreground placeholder:text-muted-fg
+                       focus:outline-none focus:border-border-strong
+                       focus:ring-2 focus:ring-foreground/5 bg-card"
           />
-          <p className="text-xs text-zinc-500 mt-1">Separe por vírgula</p>
+          <p className="text-xs text-muted-fg mt-1">Separe por vírgula</p>
         </div>
 
         <button
@@ -469,9 +437,9 @@ export default function ResumeUpload({
             onComplete(c, 'manual');
           }}
           disabled={!canSubmit}
-          className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3 rounded-xl font-medium
-                     text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100 disabled:opacity-40
-                     disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-foreground text-background py-3 rounded-lg font-medium
+                     text-sm hover:opacity-90 disabled:opacity-40
+                     disabled:cursor-not-allowed transition-opacity"
         >
           Continuar →
         </button>
@@ -479,24 +447,23 @@ export default function ResumeUpload({
     );
   }
 
-  // ── MODO UPLOAD ───────────────────────────────────────────
   if (status === 'success' && candidate) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-6
+      <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] p-6
                       flex flex-col gap-4">
-        <div className="flex items-center gap-3 text-green-700">
+        <div className="flex items-center gap-3 text-[#16a34a]">
           <CheckCircle className="w-5 h-5 shrink-0" />
           <span className="font-semibold">Currículo analisado com sucesso</span>
         </div>
         <div className="space-y-1">
-          <p className="text-zinc-900 font-medium text-lg">
+          <p className="text-foreground font-medium text-lg">
             {candidate.nome || '—'}
           </p>
-          <p className="text-zinc-500 text-sm">
+          <p className="text-muted-fg text-sm">
             {candidate.cargo_atual || 'Cargo não identificado'}
           </p>
           {candidate.habilidades.length > 0 && (
-            <p className="text-zinc-500 text-xs mt-2">
+            <p className="text-muted-fg text-xs mt-2">
               {candidate.habilidades.slice(0, 5).join(' · ')}
               {candidate.habilidades.length > 5 &&
                 ` · +${candidate.habilidades.length - 5}`}
@@ -505,8 +472,8 @@ export default function ResumeUpload({
         </div>
         <button
           onClick={() => onComplete(candidate, 'upload')}
-          className="mt-2 w-full bg-zinc-900 text-white px-4 py-2.5 text-sm
-                     font-medium rounded-xl hover:bg-zinc-700 transition-colors"
+          className="mt-2 w-full bg-foreground text-background px-4 py-2.5 text-sm
+                     font-medium rounded-lg hover:opacity-90 transition-opacity"
         >
           Confirmar e continuar
         </button>
@@ -516,9 +483,9 @@ export default function ResumeUpload({
 
   if (status === 'error') {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6
+      <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] p-6
                       flex flex-col gap-4">
-        <div className="flex items-center gap-3 text-red-600">
+        <div className="flex items-center gap-3 text-[#dc2626]">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <span className="font-semibold">{errorMsg}</span>
         </div>
@@ -530,9 +497,9 @@ export default function ResumeUpload({
               setErrorMsg('');
               if (inputRef.current) inputRef.current.value = '';
             }}
-            className="flex-1 rounded-md border border-zinc-200
-                       hover:bg-zinc-50 px-4 py-2.5 text-sm font-medium
-                       text-zinc-700 transition-colors"
+            className="flex-1 rounded-lg border border-border
+                       hover:bg-muted px-4 py-2.5 text-sm font-medium
+                       text-foreground transition-colors"
           >
             Tentar novamente
           </button>
@@ -543,9 +510,9 @@ export default function ResumeUpload({
               setErrorMsg('');
               setMode('choose');
             }}
-            className="flex-1 rounded-md border border-zinc-200
-                       hover:bg-zinc-50 px-4 py-2.5 text-sm font-medium
-                       text-zinc-700 transition-colors"
+            className="flex-1 rounded-lg border border-border
+                       hover:bg-muted px-4 py-2.5 text-sm font-medium
+                       text-foreground transition-colors"
           >
             Voltar
           </button>
@@ -558,8 +525,8 @@ export default function ResumeUpload({
     <div className="space-y-4">
       <button
         onClick={() => setMode('choose')}
-        className="flex items-center gap-1 text-sm text-zinc-500
-                   hover:text-zinc-700"
+        className="flex items-center gap-1 text-sm text-muted-fg
+                   hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Voltar
       </button>
@@ -567,44 +534,43 @@ export default function ResumeUpload({
         onDrop={onDrop}
         onDragOver={onDragOver}
         onClick={() => status === 'idle' && inputRef.current?.click()}
-        className="rounded-lg border-2 border-dashed border-zinc-200
-                   hover:border-zinc-400 transition-colors p-10 flex
+        className="rounded-xl border-2 border-dashed border-border
+                   hover:border-border-strong transition-colors p-10 flex
                    flex-col items-center gap-3 text-center cursor-pointer
-                   select-none dark:border-zinc-700 dark:hover:border-zinc-500"
+                   select-none"
       >
         <input ref={inputRef} type="file" accept=".pdf,.docx"
                className="hidden" onChange={onChange} />
         {status === 'uploading' ? (
           <>
-            <Loader2 className="w-10 h-10 text-zinc-900 animate-spin" />
-            <p className="text-sm text-zinc-500">Analisando currículo com IA...</p>
-            {file && <p className="text-xs text-zinc-500">{file.name}</p>}
+            <Loader2 className="w-10 h-10 text-foreground animate-spin" />
+            <p className="text-sm text-muted-fg">Analisando currículo com IA...</p>
+            {file && <p className="text-xs text-muted-fg">{file.name}</p>}
           </>
         ) : (
           <>
-            <UploadCloud className="w-10 h-10 text-zinc-400 dark:text-zinc-500" />
+            <UploadCloud className="w-10 h-10 text-muted-fg" />
             <div>
-              <p className="font-medium text-zinc-900 dark:text-white">Arraste seu currículo aqui</p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">ou clique para selecionar</p>
+              <p className="font-medium text-foreground">Arraste seu currículo aqui</p>
+              <p className="text-sm text-muted-fg mt-1">ou clique para selecionar</p>
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">PDF ou DOCX · máx. 5MB</p>
+            <p className="text-xs text-muted-fg">PDF ou DOCX · máx. 5MB</p>
           </>
         )}
       </div>
 
       {isScanning && (
         <div className="flex items-center gap-3 p-4
-                        bg-amber-50 dark:bg-amber-900/20 rounded-xl
-                        border border-amber-200 dark:border-amber-800">
-          <div className="w-5 h-5 border-2 border-amber-500
+                        bg-[#fffbeb] rounded-xl
+                        border border-[#fde68a]">
+          <div className="w-5 h-5 border-2 border-[#d97706]
                           border-t-transparent rounded-full animate-spin
                           shrink-0" />
           <div>
-            <p className="text-sm font-medium text-amber-700
-                         dark:text-amber-400">
+            <p className="text-sm font-medium text-[#92400e]">
               PDF com imagem detectado
             </p>
-            <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+            <p className="text-xs text-[#b45309] mt-0.5">
               Fazendo análise visual do documento... isso pode levar alguns segundos.
             </p>
           </div>

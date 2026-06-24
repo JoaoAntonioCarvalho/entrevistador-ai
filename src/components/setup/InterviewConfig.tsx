@@ -254,8 +254,8 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
 
       <button
         onClick={() => onComplete(config)}
-        className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 py-4 rounded-full
-                   font-medium text-base hover:bg-zinc-700 dark:hover:bg-zinc-100 transition-all mt-8"
+        className="w-full bg-foreground text-background px-8 py-4 rounded-lg
+                   font-medium text-base hover:opacity-90 transition-opacity mt-8"
       >
         Iniciar entrevista
       </button>
