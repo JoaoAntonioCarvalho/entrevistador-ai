@@ -14,23 +14,64 @@
 
 ```
 main
-├── e7b5632  feat: projeto inicial — Entrevistador.ai
-├── be9c51e  feat: rate limiting nas rotas de IA
-├── c7a5bad  feat: páginas legais (termos, privacidade, cookies)
-├── a4424f6  feat: auth conectado ao fluxo + cadeado nas opções de perguntas
-├── fca42ec  feat: página de planos e preços
-├── d9eefa0  feat: integração Mercado Pago + sistema de créditos
-├── 62a4242  feat: preservar dados do setup ao navegar + OCR PDF via Claude Vision
-├── 5dc2992  feat: consumir crédito ao encerrar entrevista paga
-├── 2c51079  feat: login com Google OAuth
-├── 7a2327f  feat: seção de preços na landing page
-├── 042ce5c  feat: proteção de rota /historico (requireAuth)
-├── bf938e2  feat: pagamento/sucesso com polling + pagamento/pendente
-├── b0f8d0a  feat: modal de gate de pagamento + retomar entrevista após pagar
-├── ca92316  feat: SEO básico (metadata, sitemap, robots, og:image)
-├── 3cfa7af  feat: email de suporte no footer e páginas legais
-└── c8047c4  feat: Sentry para monitoramento de erros em produção  ← último commit
+├── ...     (commits anteriores)
+├── c8047c4  feat: Sentry para monitoramento de erros em produção
+├── e14afd0  fix: esconder opcao finalizar-atual sem entrevista ativa
+├── aae9673  fix: botao login na landing + otimizacao de performance
+├── 02c6af8  fix: redirect apos login + mensagem de confirmacao de email
+├── 5e2cb5e  fix: adicionar supabase-client.ts e sentry hook ao repositorio
+├── 5ca8a54  fix: mover createClient para dentro do handler em credits/consume
+└── 54b408f  fix: force-dynamic em todas as paginas + supabase client seguro  ← último commit
 ```
+
+## O que foi feito na sessão de 24/06/2026
+
+### 1. Sentry — hook de navegação (`5e2cb5e`)
+
+- `instrumentation-client.ts`: adicionado `export const onRouterTransitionStart = Sentry.captureRouterTransitionStart` (eliminava warning ACTION REQUIRED no `npm run dev`)
+
+### 2. Planos — esconder "Finalizar atual" sem entrevista ativa (`e14afd0`)
+
+- `planos/page.tsx`: `temEntrevistaAtiva` verifica `candidate.nome` + `status === 'active'` + `conversation.length > 0`
+- Card "Finalizar atual" envolvido em `{temEntrevistaAtiva && (...)}` — some quando não há sessão em andamento
+- Grid ajusta de `md:grid-cols-3` para `md:grid-cols-2 max-w-2xl` quando só há 2 cards
+- `handleComprar('finalizar-atual')` redireciona para `/setup` se acessado por URL direta sem entrevista
+
+### 3. Botão de login na landing page (`aae9673`)
+
+- `page.tsx`: importa `useAuth`, substitui o link `temHistorico` (localStorage) pelo botão Entrar/Meu histórico baseado em auth real
+- Remove `useState(temHistorico)` e `localStorage.getItem` do `useEffect` (só `setMounted(true)` fica)
+
+### 4. Redirect após login + mensagem de confirmação de email (`02c6af8`)
+
+- `AuthForm.tsx`: signup e login separados — signup mostra toast de confirmação e **não** chama `onSuccess`; login chama `onSuccess` só após sucesso com mensagens específicas (`Invalid login`, `Email not confirmed`)
+- `entrar/page.tsx`: `useEffect` com `onAuthStateChange` redireciona ao `SIGNED_IN` — cobre retorno do link de email
+
+### 5. Arquivos não commitados no GitHub (`5e2cb5e`)
+
+- `src/lib/services/supabase-client.ts` estava `untracked` — causava falha no Vercel
+- `src/components/layout/Header.tsx` com botões Entrar/Sair baseados em auth adicionado ao commit
+
+### 6. `createClient` fora do handler em credits/consume (`5ca8a54`)
+
+- `api/credits/consume/route.ts`: `createClient(...)` era chamado no nível do módulo (build time, sem env vars); movido para dentro do `POST`
+
+### 7. Fix crítico de build: `@supabase/ssr` sem env vars (`54b408f`)
+
+Causa raiz: `createBrowserClient` lança erro se `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` são `undefined` durante o prerender do Next.js.
+
+**`src/lib/services/supabase-client.ts`** — retorna `BrowserClient | null` (via `ReturnType<typeof createBrowserClient>`) quando vars ausentes; sem `any`, sem eslint-disable
+
+**`src/hooks/useAuth.ts`** — `createClient()` movido para dentro do `useEffect` e de cada função de auth; null guards em todos os pontos; tipos `Session` e `AuthChangeEvent` explicitados
+
+**`src/lib/services/supabase.ts`** — dois null guards em `createAuthClient()`; `SessionSummary` como tipo no `.map()`
+
+**`src/app/entrar/page.tsx`** — null guard antes de `onAuthStateChange`; tipos `AuthChangeEvent` / `Session | null` no callback
+
+**Todas as 15 páginas** — `export const dynamic = 'force-dynamic'` adicionado após imports:
+`/`, `/setup`, `/interview`, `/dashboard`, `/feedback`, `/historico`, `/planos`, `/entrar`, `/termos`, `/privacidade`, `/pagamento/sucesso`, `/pagamento/falhou`, `/pagamento/pendente`, `/camera-check`, `/resultado/[id]`
+
+---
 
 ## O que foi feito na sessão de 23/06/2026
 
