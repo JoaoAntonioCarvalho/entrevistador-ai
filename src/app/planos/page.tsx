@@ -77,8 +77,19 @@ const PLANOS = {
 export default function PlanosPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const session = useSessionStore(s => s.session);
+
+  const temEntrevistaAtiva =
+    !!session?.candidate?.nome &&
+    session?.status === 'active' &&
+    (session?.conversation?.length ?? 0) > 0;
 
   async function handleComprar(plano: string) {
+    if (plano === 'finalizar-atual' && !temEntrevistaAtiva) {
+      router.push('/setup');
+      return;
+    }
+
     if (!user) {
       router.push(`/entrar?return=/planos&plano=${plano}`);
       return;
@@ -128,9 +139,14 @@ export default function PlanosPage() {
                          uppercase tracking-widest mb-6">
             Compra avulsa
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 gap-4 ${
+            temEntrevistaAtiva
+              ? 'md:grid-cols-3'
+              : 'md:grid-cols-2 max-w-2xl'
+          }`}>
 
             {/* Finalizar atual */}
+            {temEntrevistaAtiva && (
             <div className="border-2 border-zinc-900 dark:border-white rounded-2xl p-6 relative">
               <div className="absolute -top-3 left-6">
                 <span className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900
@@ -162,6 +178,7 @@ export default function PlanosPage() {
                 Finalizar por R$9,90
               </button>
             </div>
+            )}
 
             {/* Crédito 7 perguntas */}
             <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
