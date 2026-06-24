@@ -38,7 +38,7 @@ export default function LandingPage() {
                         justify-between">
 
           <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
-            Entrevistador.ai
+            Entrevistador.IA
           </span>
 
           <div className="flex items-center gap-4">
@@ -165,7 +165,7 @@ export default function LandingPage() {
                 {/* Screenshot real */}
                 <Image
                   src="/entrevista-ai.png"
-                  alt="Tela de entrevista do Entrevistador.ai"
+                  alt="Tela de entrevista do Entrevistador.IA"
                   width={1280}
                   height={800}
                   className="w-full h-auto block"
@@ -256,7 +256,7 @@ export default function LandingPage() {
             importante amanhã.
           </h2>
           <p className="text-zinc-400 text-lg leading-relaxed mb-10">
-            Em 20 minutos, o Entrevistador.ai simula a entrevista com
+            Em 20 minutos, o Entrevistador.IA simula a entrevista com
             base no seu currículo e na vaga real. Você descobre onde
             está fraco, o que melhorar — e aparece no dia seguinte
             muito mais preparado.
@@ -498,7 +498,7 @@ export default function LandingPage() {
                         items-center justify-between gap-6">
           <div>
             <span className="text-xl font-semibold tracking-tight text-white">
-              Entrevistador.ai
+              Entrevistador.IA
             </span>
             <p className="text-zinc-500 text-sm mt-1">
               © 2026 Todos os direitos reservados.

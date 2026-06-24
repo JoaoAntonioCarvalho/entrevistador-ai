@@ -18,7 +18,7 @@ export default function PrivacidadePage() {
         </p>
 
         <p>
-          Esta política descreve como o Entrevistador.ai coleta, usa e
+          Esta política descreve como o Entrevistador.IA coleta, usa e
           protege seus dados pessoais, em conformidade com a Lei Geral
           de Proteção de Dados (LGPD — Lei nº 13.709/2018).
         </p>

@@ -77,7 +77,7 @@ async function callOpenRouterRaw(
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'http://localhost:3000',
-      'X-Title': 'Entrevistador.ai',
+      'X-Title': 'Entrevistador.IA',
     },
     body: JSON.stringify({
       model,

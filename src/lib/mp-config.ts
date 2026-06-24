@@ -21,11 +21,11 @@ export const PRECOS = {
 } as const;
 
 export const DESCRICOES = {
-  'finalizar-atual': 'Entrevistador.ai — Finalizar entrevista (7 perguntas)',
-  'credito-7':       'Entrevistador.ai — 1 entrevista de 7 perguntas',
-  'credito-10':      'Entrevistador.ai — 1 entrevista de 10 perguntas',
-  'mensal-starter':  'Entrevistador.ai — Plano Starter (6 entrevistas/mês)',
-  'mensal-pro':      'Entrevistador.ai — Plano Pro (6 entrevistas/mês)',
+  'finalizar-atual': 'Entrevistador.IA — Finalizar entrevista (7 perguntas)',
+  'credito-7':       'Entrevistador.IA — 1 entrevista de 7 perguntas',
+  'credito-10':      'Entrevistador.IA — 1 entrevista de 10 perguntas',
+  'mensal-starter':  'Entrevistador.IA — Plano Starter (6 entrevistas/mês)',
+  'mensal-pro':      'Entrevistador.IA — Plano Pro (6 entrevistas/mês)',
 } as const;
 
 export const PERGUNTAS_POR_PLANO = {

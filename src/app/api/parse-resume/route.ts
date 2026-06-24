@@ -72,7 +72,7 @@ Retorne SOMENTE o JSON, sem texto adicional.`;
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://entrevistador-ai.com.br',
-        'X-Title': 'Entrevistador.ai',
+        'X-Title': 'Entrevistador.IA',
       },
       body: JSON.stringify({
         model: 'anthropic/claude-haiku-4.5',

@@ -15,8 +15,8 @@ export const metadata: Metadata = {
     ?? 'https://entrevistador-ai.vercel.app'
   ),
   title: {
-    default:  'Entrevistador.ai — Simule entrevistas de emprego com IA',
-    template: '%s | Entrevistador.ai',
+    default:  'Entrevistador.IA — Simule entrevistas de emprego com IA',
+    template: '%s | Entrevistador.IA',
   },
   description:
     'Pratique entrevistas de emprego com um entrevistador virtual que fala, ' +
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
     'praticar entrevista',
     'entrevista com IA',
   ],
-  authors: [{ name: 'Entrevistador.ai' }],
-  creator: 'Entrevistador.ai',
+  authors: [{ name: 'Entrevistador.IA' }],
+  creator: 'Entrevistador.IA',
   openGraph: {
     type:        'website',
     locale:      'pt_BR',
     url:         '/',
-    siteName:    'Entrevistador.ai',
-    title:       'Entrevistador.ai — Simule entrevistas de emprego com IA',
+    siteName:    'Entrevistador.IA',
+    title:       'Entrevistador.IA — Simule entrevistas de emprego com IA',
     description:
       'Pratique entrevistas de emprego com um entrevistador virtual ' +
       'que fala, ouve e reage em tempo real. Receba nota e feedback ' +
@@ -49,13 +49,13 @@ export const metadata: Metadata = {
         url:    '/og-image.png',
         width:  1200,
         height: 630,
-        alt:    'Entrevistador.ai — Simulador de entrevistas com IA',
+        alt:    'Entrevistador.IA — Simulador de entrevistas com IA',
       },
     ],
   },
   twitter: {
     card:        'summary_large_image',
-    title:       'Entrevistador.ai — Simule entrevistas de emprego com IA',
+    title:       'Entrevistador.IA — Simule entrevistas de emprego com IA',
     description:
       'Pratique entrevistas de emprego com IA. Voz real, perguntas ' +
       'personalizadas, feedback detalhado.',

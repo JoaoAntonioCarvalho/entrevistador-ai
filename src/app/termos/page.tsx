@@ -19,7 +19,7 @@ export default function TermosPage() {
 
         <h2>1. Sobre o serviço</h2>
         <p>
-          O Entrevistador.ai é uma plataforma de simulação de entrevistas
+          O Entrevistador.IA é uma plataforma de simulação de entrevistas
           de emprego que utiliza inteligência artificial para gerar
           perguntas personalizadas e fornecer feedback sobre o desempenho
           do usuário. O serviço é oferecido por pessoa física, sem
@@ -39,7 +39,7 @@ export default function TermosPage() {
           a opção de compra avulsa de entrevistas individuais. Os
           valores vigentes estão sempre disponíveis na página de preços
           antes da confirmação da compra. Pagamentos são processados
-          por terceiro (Mercado Pago), e o Entrevistador.ai não
+          por terceiro (Mercado Pago), e o Entrevistador.IA não
           armazena dados de cartão de crédito.
         </p>
 
@@ -70,7 +70,7 @@ export default function TermosPage() {
           O feedback gerado pela inteligência artificial é uma
           ferramenta de apoio à preparação para entrevistas e não
           garante aprovação em processos seletivos reais. O
-          Entrevistador.ai não se responsabiliza por decisões de
+          Entrevistador.IA não se responsabiliza por decisões de
           contratação de terceiros.
         </p>
 

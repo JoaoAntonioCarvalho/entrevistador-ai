@@ -41,7 +41,7 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
           className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white
                      hover:opacity-70 transition-opacity"
         >
-          Entrevistador.ai
+          Entrevistador.IA
         </button>
 
         {/* Direita */}

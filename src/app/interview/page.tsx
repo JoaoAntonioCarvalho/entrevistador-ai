@@ -495,7 +495,7 @@ export default function InterviewPage() {
       {/* Header */}
       <header className={`flex items-center justify-between px-5 border-b flex-shrink-0 h-14 ${isDark ? 'border-zinc-800/50 bg-zinc-950' : 'border-zinc-200 bg-zinc-100'}`}>
         <span className={`text-base font-semibold tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-          Entrevistador.ai
+          Entrevistador.IA
         </span>
         <div className="flex items-center gap-2 text-sm">
           <span className={`text-sm ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Pergunta</span>
