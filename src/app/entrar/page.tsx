@@ -1,15 +1,27 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { AuthForm } from '@/components/auth/AuthForm';
+import { createClient } from '@/lib/services/supabase-client';
 
 function EntrarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('return') ?? '/historico';
+
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          router.push(returnUrl);
+        }
+      });
+    return () => subscription.unsubscribe();
+  }, [returnUrl, router]);
 
   return (
     <div className="flex flex-col items-center justify-center px-6 py-20">

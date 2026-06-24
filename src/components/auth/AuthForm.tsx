@@ -25,27 +25,42 @@ export function AuthForm({ onSuccess, defaultMode = 'signup' }: AuthFormProps) {
     }
 
     setLoading(true);
-    const { error } = mode === 'signup'
-      ? await signUp(email.trim(), password)
-      : await signIn(email.trim(), password);
-    setLoading(false);
 
-    if (error) {
-      toast.error(
-        error.message.includes('already registered')
-          ? 'Este email já tem cadastro. Tente fazer login.'
-          : error.message.includes('Invalid login')
-          ? 'Email ou senha incorretos.'
-          : 'Erro ao processar. Tente novamente.'
+    if (mode === 'signup') {
+      const { error } = await signUp(email.trim(), password);
+      setLoading(false);
+
+      if (error) {
+        toast.error(
+          error.message.includes('already registered')
+            ? 'Este email já tem cadastro. Tente fazer login.'
+            : 'Erro ao criar conta. Tente novamente.'
+        );
+        return;
+      }
+
+      toast.success(
+        'Conta criada! Verifique seu email para confirmar o cadastro.',
+        { duration: 6000 }
       );
       return;
     }
 
-    if (mode === 'signup') {
-      toast.success('Conta criada! Verifique seu email para confirmar.');
-    } else {
-      toast.success('Login realizado!');
+    const { error } = await signIn(email.trim(), password);
+    setLoading(false);
+
+    if (error) {
+      toast.error(
+        error.message.includes('Invalid login')
+          ? 'Email ou senha incorretos.'
+          : error.message.includes('Email not confirmed')
+          ? 'Confirme seu email antes de fazer login.'
+          : 'Erro ao fazer login. Tente novamente.'
+      );
+      return;
     }
+
+    toast.success('Login realizado!');
     onSuccess?.();
   }
 
