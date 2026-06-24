@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderProps {
   backTo?:       string;
@@ -15,6 +16,7 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { user, loading, signOut } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -58,22 +60,46 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
 
           {rightContent}
 
-          {/* Toggle — só renderiza após montar para evitar hydration mismatch */}
+          {/* Auth + Toggle — só renderiza após montar para evitar hydration mismatch */}
           {mounted ? (
-            <button
-              onClick={toggleTheme}
-              className="w-9 h-9 flex items-center justify-center
-                         rounded-full border border-zinc-200 dark:border-zinc-700
-                         text-zinc-500 dark:text-zinc-400
-                         hover:bg-zinc-50 dark:hover:bg-zinc-800
-                         transition-all duration-200"
-              aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
-            >
-              {isDark
-                ? <Sun  className="w-4 h-4" />
-                : <Moon className="w-4 h-4" />
-              }
-            </button>
+            <>
+              {!loading && (
+                user ? (
+                  <button
+                    onClick={signOut}
+                    className="text-sm text-zinc-500 dark:text-zinc-400
+                               hover:text-zinc-700 dark:hover:text-zinc-200
+                               transition-colors hidden md:block"
+                  >
+                    Sair
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => router.push('/entrar')}
+                    className="text-sm text-zinc-500 dark:text-zinc-400
+                               hover:text-zinc-700 dark:hover:text-zinc-200
+                               transition-colors hidden md:block"
+                  >
+                    Entrar
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={toggleTheme}
+                className="w-9 h-9 flex items-center justify-center
+                           rounded-full border border-zinc-200 dark:border-zinc-700
+                           text-zinc-500 dark:text-zinc-400
+                           hover:bg-zinc-50 dark:hover:bg-zinc-800
+                           transition-all duration-200"
+                aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              >
+                {isDark
+                  ? <Sun  className="w-4 h-4" />
+                  : <Moon className="w-4 h-4" />
+                }
+              </button>
+            </>
           ) : (
             <div className="w-9 h-9" />
           )}
