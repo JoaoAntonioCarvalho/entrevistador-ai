@@ -29,11 +29,11 @@ function EntrarContent() {
 
   return (
     <div className="flex flex-col items-center justify-center px-6 py-20">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-2">
-        Entrar ou criar conta
+      <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 tracking-tight">
+        Acesse sua conta
       </h1>
       <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-        Acesse seu histórico de entrevistas e relatórios
+        Digite seu email e senha para continuar.
       </p>
       <AuthForm onSuccess={() => router.push(returnUrl)} />
     </div>

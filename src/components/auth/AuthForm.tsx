@@ -7,65 +7,80 @@ import toast from 'react-hot-toast';
 
 interface AuthFormProps {
   onSuccess?: () => void;
-  defaultMode?: 'login' | 'signup';
 }
 
-export function AuthForm({ onSuccess, defaultMode = 'signup' }: AuthFormProps) {
-  const { signUp, signIn, signInWithGoogle } = useAuth();
-  const [mode, setMode]         = useState<'login' | 'signup'>(defaultMode);
-  const [email, setEmail]       = useState('');
+export function AuthForm({ onSuccess }: AuthFormProps) {
+  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || password.length < 6) {
-      toast.error('Email válido e senha com no mínimo 6 caracteres.');
+
+    if (!email.trim()) {
+      toast.error('Digite seu email.');
+      return;
+    }
+    if (password.length < 6) {
+      toast.error('A senha precisa ter no mínimo 6 caracteres.');
       return;
     }
 
     setLoading(true);
 
-    if (mode === 'signup') {
-      const { error } = await signUp(email.trim(), password);
+    // Tentar login primeiro
+    const loginResult = await signIn(email.trim(), password);
+
+    if (!loginResult.error) {
+      toast.success('Bem-vindo de volta!');
+      onSuccess?.();
       setLoading(false);
-
-      if (error) {
-        toast.error(
-          error.message.includes('already registered')
-            ? 'Este email já tem cadastro. Tente fazer login.'
-            : 'Erro ao criar conta. Tente novamente.'
-        );
-        return;
-      }
-
-      toast.success(
-        'Conta criada! Verifique seu email para confirmar o cadastro.',
-        { duration: 6000 }
-      );
       return;
     }
 
-    const { error } = await signIn(email.trim(), password);
-    setLoading(false);
+    const errorMsg = loginResult.error.message ?? '';
 
-    if (error) {
+    // Senha incorreta — usuário existe mas senha errada
+    if (
+      errorMsg.includes('Invalid login credentials') ||
+      errorMsg.includes('invalid_credentials') ||
+      errorMsg.includes('Email not confirmed')
+    ) {
+      toast.error('Senha incorreta. Tente novamente.', { duration: 4000 });
+      setLoading(false);
+      return;
+    }
+
+    // Usuário não existe — criar conta automaticamente
+    const signUpResult = await signUp(email.trim(), password);
+
+    if (signUpResult.error) {
       toast.error(
-        error.message.includes('Invalid login')
-          ? 'Email ou senha incorretos.'
-          : error.message.includes('Email not confirmed')
-          ? 'Confirme seu email antes de fazer login.'
-          : 'Erro ao fazer login. Tente novamente.'
+        signUpResult.error.message?.includes('already registered')
+          ? 'Senha incorreta. Tente novamente.'
+          : 'Erro ao criar conta. Tente novamente.'
       );
+      setLoading(false);
       return;
     }
 
-    toast.success('Login realizado!');
-    onSuccess?.();
+    // Cadastro bem-sucedido — tentar login imediatamente
+    const loginAfterSignup = await signIn(email.trim(), password);
+
+    if (!loginAfterSignup.error) {
+      toast.success('Conta criada com sucesso!');
+      onSuccess?.();
+    } else {
+      toast.success('Conta criada! Faça login para continuar.', { duration: 5000 });
+    }
+
+    setLoading(false);
   }
 
   return (
     <div className="w-full max-w-sm space-y-4">
+
       {/* Botão Google */}
       <button
         type="button"
@@ -100,63 +115,59 @@ export function AuthForm({ onSuccess, defaultMode = 'signup' }: AuthFormProps) {
         <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
       </div>
 
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Email
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="mt-1 w-full border border-zinc-200 dark:border-zinc-700
-                     rounded-lg px-3 py-2.5 text-base text-zinc-900
-                     dark:text-white bg-white dark:bg-zinc-900
-                     focus:outline-none focus:border-zinc-400"
-          placeholder="voce@email.com"
-        />
-      </div>
+      {/* Formulário unificado */}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Seu email"
+            autoComplete="email"
+            className="w-full border border-zinc-200 dark:border-zinc-700
+                       rounded-xl px-4 py-3 text-base text-zinc-900
+                       dark:text-white bg-white dark:bg-zinc-900
+                       placeholder-zinc-400 dark:placeholder-zinc-500
+                       focus:outline-none focus:border-zinc-400
+                       dark:focus:border-zinc-500 transition-colors"
+          />
+        </div>
+        <div>
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Sua senha (mínimo 6 caracteres)"
+            autoComplete="current-password"
+            className="w-full border border-zinc-200 dark:border-zinc-700
+                       rounded-xl px-4 py-3 text-base text-zinc-900
+                       dark:text-white bg-white dark:bg-zinc-900
+                       placeholder-zinc-400 dark:placeholder-zinc-500
+                       focus:outline-none focus:border-zinc-400
+                       dark:focus:border-zinc-500 transition-colors"
+          />
+        </div>
 
-      <div>
-        <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Senha
-        </label>
-        <input
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          className="mt-1 w-full border border-zinc-200 dark:border-zinc-700
-                     rounded-lg px-3 py-2.5 text-base text-zinc-900
-                     dark:text-white bg-white dark:bg-zinc-900
-                     focus:outline-none focus:border-zinc-400"
-          placeholder="Mínimo 6 caracteres"
-        />
-      </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-zinc-900 dark:bg-white text-white
+                     dark:text-zinc-900 py-3 rounded-full font-semibold
+                     text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100
+                     disabled:opacity-50 transition-colors
+                     flex items-center justify-center gap-2"
+        >
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading ? 'Entrando...' : 'Entrar / Criar conta'}
+        </button>
+      </form>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-zinc-900 dark:bg-white text-white
-                   dark:text-zinc-900 py-3 rounded-full font-medium
-                   text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100
-                   disabled:opacity-50 transition-colors
-                   flex items-center justify-center gap-2"
-      >
-        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-        {mode === 'signup' ? 'Criar conta' : 'Entrar'}
-      </button>
+      {/* Nota explicativa */}
+      <p className="text-xs text-center text-zinc-400 dark:text-zinc-500 leading-relaxed">
+        Se você já tem conta, fazemos login automaticamente.
+        Se não tem, criamos sua conta agora.
+      </p>
 
-      <button
-        type="button"
-        onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
-        className="w-full text-xs text-zinc-500 dark:text-zinc-400
-                   hover:text-zinc-700 dark:hover:text-zinc-200"
-      >
-        {mode === 'signup'
-          ? 'Já tem conta? Entrar'
-          : 'Não tem conta? Criar agora'}
-      </button>
-    </form>
     </div>
   );
 }
