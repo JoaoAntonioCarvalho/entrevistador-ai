@@ -256,7 +256,14 @@ export default function InterviewPage() {
         firstTurnCalledRef.current = true;
         notifyEntrevistaIniciada(
           session.candidate?.nome || 'Candidato',
-          session.job?.titulo    || 'Vaga não informada'
+          session.job?.titulo    || 'Vaga não informada',
+          {
+            avatar:    session.config?.avatar_id  ?? 'sarah',
+            idioma:    session.config?.idioma     ?? 'pt',
+            perguntas: session.config?.perguntas  ?? 0,
+            nivel:     session.config?.nivel      ?? '',
+            tipo:      session.config?.tipo       ?? '',
+          }
         );
         callTurn(true);
       }

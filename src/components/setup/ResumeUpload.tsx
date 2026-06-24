@@ -17,7 +17,7 @@ interface ManualFormData {
 }
 
 interface Props {
-  onComplete: (candidate: Candidate) => void;
+  onComplete: (candidate: Candidate, mode: 'upload' | 'manual' | 'pulou') => void;
   onWarning?: (msg: string) => void;
   initialManualData?: ManualFormData | null;
   onManualDataChange?: (data: ManualFormData) => void;
@@ -229,7 +229,7 @@ export default function ResumeUpload({
         {/* Botões */}
         <div className="flex flex-col sm:flex-row gap-2">
           <button
-            onClick={() => onComplete(existingCandidate)}
+            onClick={() => onComplete(existingCandidate, 'upload')}
             className="flex-1 bg-zinc-900 dark:bg-white text-white
                        dark:text-zinc-900 py-3 rounded-full font-semibold
                        text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100
@@ -353,7 +353,7 @@ export default function ResumeUpload({
                 formacao:      [],
                 certificacoes: [],
               };
-              onComplete(c);
+              onComplete(c, 'pulou');
             }}
             disabled={!nome.trim()}
             className="w-full bg-zinc-900 text-white py-3 rounded-xl
@@ -466,7 +466,7 @@ export default function ResumeUpload({
               formacao:      [],
               certificacoes: [],
             };
-            onComplete(c);
+            onComplete(c, 'manual');
           }}
           disabled={!canSubmit}
           className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3 rounded-xl font-medium
@@ -504,7 +504,7 @@ export default function ResumeUpload({
           )}
         </div>
         <button
-          onClick={() => onComplete(candidate)}
+          onClick={() => onComplete(candidate, 'upload')}
           className="mt-2 w-full bg-zinc-900 text-white px-4 py-2.5 text-sm
                      font-medium rounded-xl hover:bg-zinc-700 transition-colors"
         >

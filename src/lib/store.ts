@@ -182,7 +182,8 @@ export const useSessionStore = create<SessionStore>()(
       },
 
       addCustoTTS: (chars) => {
-        const custo = (chars / 1000) * 0.10;
+        // OpenAI TTS-1-HD: $0.015 por 1.000 chars
+        const custo = (chars / 1000) * 0.015;
         set(state => ({
           custoSessao: {
             ...state.custoSessao,

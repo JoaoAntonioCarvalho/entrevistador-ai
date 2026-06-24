@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
-import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import OpenAI from 'openai';
+import { checkRateLimit, aiRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
-const VOICE_IDS: Record<string, { pt: string; en: string }> = {
-  sarah: {
-    pt: process.env.ELEVENLABS_VOICE_ID_SARAH    ?? '',
-    en: process.env.ELEVENLABS_VOICE_ID_SARAH_EN ?? '',
-  },
-  carlos: {
-    pt: process.env.ELEVENLABS_VOICE_ID_CARLOS    ?? '',
-    en: process.env.ELEVENLABS_VOICE_ID_CARLOS_EN ?? '',
-  },
-  alex: {
-    pt: process.env.ELEVENLABS_VOICE_ID_ALEX    ?? '',
-    en: process.env.ELEVENLABS_VOICE_ID_ALEX_EN ?? '',
-  },
+export const dynamic = 'force-dynamic';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
+
+type OpenAIVoice = 'alloy' | 'ash' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer';
+
+const VOICE_MAP: Record<string, Record<string, OpenAIVoice>> = {
+  sarah:  { 'pt-BR': 'nova',   'en-US': 'shimmer' },
+  carlos: { 'pt-BR': 'onyx',   'en-US': 'echo'    },
+  alex:   { 'pt-BR': 'fable',  'en-US': 'alloy'   },
 };
 
 export async function POST(req: NextRequest) {
@@ -29,72 +29,40 @@ export async function POST(req: NextRequest) {
   try {
     const { text, avatarId, lang } = await req.json();
 
-    if (!process.env.ELEVENLABS_API_KEY) {
-      return NextResponse.json({ error: 'ELEVENLABS_API_KEY não configurada.' }, { status: 503 });
+    if (!text?.trim()) {
+      return NextResponse.json({ error: 'Texto vazio.' }, { status: 400 });
     }
 
-    // Mapear idioma para código ElevenLabs
-    const languageCode = (lang as string)?.startsWith('pt') ? 'pt' : 'en';
+    const languageCode = (lang as string)?.startsWith('en') ? 'en-US' : 'pt-BR';
+    const avatar       = ((avatarId as string) ?? 'sarah').toLowerCase();
+    const voice        = VOICE_MAP[avatar]?.[languageCode] ?? VOICE_MAP.sarah[languageCode];
 
-    const avatarVoices = VOICE_IDS[avatarId as string] ?? VOICE_IDS.sarah;
-    const voiceId = languageCode === 'en'
-      ? (avatarVoices.en || avatarVoices.pt)
-      : (avatarVoices.pt || avatarVoices.en);
+    const mp3Response = await openai.audio.speech.create({
+      model:           'tts-1-hd',
+      voice,
+      input:           text.trim(),
+      response_format: 'mp3',
+      speed:           0.95,
+    });
 
-    if (!voiceId) {
-      return NextResponse.json(
-        { error: 'Voice ID não encontrado.' },
-        { status: 400 }
-      );
-    }
-
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': process.env.ELEVENLABS_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_multilingual_v2',
-          language_code: languageCode,
-          voice_settings: {
-            stability: 0.45,
-            similarity_boost: 0.80,
-            style: 0.35,
-            use_speaker_boost: true,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('[tts] ElevenLabs error:', err);
-      return NextResponse.json(
-        { error: 'TTS indisponível. Usando voz do navegador.' },
-        { status: 503 }
-      );
-    }
-
-    const audioBuffer = await response.arrayBuffer();
-
+    const buffer   = Buffer.from(await mp3Response.arrayBuffer());
     const charCount = typeof text === 'string' ? text.length : 0;
 
-    return new NextResponse(audioBuffer, {
+    return new NextResponse(buffer, {
+      status: 200,
       headers: {
         'Content-Type':   'audio/mpeg',
-        'Content-Length': audioBuffer.byteLength.toString(),
+        'Content-Length': buffer.length.toString(),
         'X-Chars-Used':   charCount.toString(),
+        'Cache-Control':  'no-store',
       },
     });
+
   } catch (error) {
     Sentry.captureException(error, {
       tags: {
         route:    'tts',
-        provider: 'elevenlabs',
+        provider: 'openai',
       },
     });
     return NextResponse.json(

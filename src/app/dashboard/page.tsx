@@ -59,9 +59,11 @@ export default function DashboardPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sessionId:  session.id,
-              jobTitulo:  session.job?.titulo   ?? 'Não informado',
-              jobEmpresa: session.job?.empresa  ?? '',
+              jobTitulo:  session.job?.titulo     ?? 'Não informado',
+              jobEmpresa: session.job?.empresa    ?? '',
               candidato:  session.candidate?.nome ?? 'Candidato',
+              avatar:     session.config?.avatar_id ?? 'sarah',
+              idioma:     session.config?.idioma    ?? 'pt',
               custoIA:    custoSessao.ia,
               custoTTS:   custoSessao.tts,
               custoTotal: custoSessao.total,

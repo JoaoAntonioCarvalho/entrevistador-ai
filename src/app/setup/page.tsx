@@ -8,7 +8,7 @@ import JobInput from '@/components/setup/JobInput';
 import InterviewConfig from '@/components/setup/InterviewConfig';
 import { AvatarProfile, Candidate, InterviewConfig as IConfig, Job } from '@/lib/types';
 import { Header } from '@/components/layout/Header';
-import { notifycurriculo, notifyVaga } from '@/lib/services/telegram';
+import { notifyCurriculo, notifyVaga } from '@/lib/services/telegram';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,15 +85,24 @@ export default function SetupPage() {
     }
   }, [step, session.job]);
 
-  function handleResume(candidate: Candidate) {
+  function handleResume(candidate: Candidate, mode: 'upload' | 'manual' | 'pulou') {
     setCandidate(candidate);
-    notifycurriculo(candidate.nome || 'Candidato');
+    notifyCurriculo(
+      candidate.nome || 'Candidato',
+      mode,
+      candidate.cargo_atual || undefined,
+      candidate.experiencias?.length || undefined,
+      candidate.habilidades?.length ? candidate.habilidades : undefined,
+    );
     setStep(2);
   }
 
   async function handleJob(job: Job) {
     setJob(job);
-    notifyVaga(job.titulo || 'Vaga não informada', job.empresa || '');
+    const modoVaga = job.descricao_completa && job.descricao_completa.length >= 100
+      ? 'colou' as const
+      : 'gerada' as const;
+    notifyVaga(job.titulo || 'Vaga não informada', job.empresa || '', modoVaga);
     setStep(3);
     setLoadingAvatars(true);
     setLocalProfiles(null);

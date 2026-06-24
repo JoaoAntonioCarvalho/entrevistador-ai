@@ -143,11 +143,9 @@ export function useVoiceOutput(
       audioRef.current = null;
     }
 
-    const useElevenLabs =
-      process.env.NEXT_PUBLIC_USE_ELEVENLABS === 'true' &&
-      options?.voiceId;
+    const useTTS = !!options?.avatarId;
 
-    if (useElevenLabs) {
+    if (useTTS) {
       setState('loading');
       options.onTTSChars?.(text.length);
 
