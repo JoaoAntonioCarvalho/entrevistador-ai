@@ -30,29 +30,25 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
   }
 
   return (
-    <header className="border-b border-zinc-100 dark:border-zinc-800
-                       bg-white dark:bg-zinc-950 px-6 py-4
+    <header className="border-b border-border bg-background px-6 py-4
                        transition-colors duration-200 sticky top-0 z-40">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="max-w-[1120px] mx-auto flex items-center justify-between">
 
-        {/* Logo */}
         <button
           onClick={() => router.push('/')}
-          className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white
-                     hover:opacity-70 transition-opacity"
+          className="text-[15px] font-semibold tracking-tight text-foreground
+                     hover:opacity-70 transition-opacity duration-150"
         >
           Entrevistador.IA
         </button>
 
-        {/* Direita */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
 
           {backTo && (
             <button
               onClick={() => router.push(backTo)}
-              className="text-sm text-zinc-500 dark:text-zinc-400
-                         hover:text-zinc-700 dark:hover:text-zinc-200
-                         transition-colors hidden md:block"
+              className="text-sm text-muted-fg hover:text-foreground
+                         transition-colors duration-150 hidden md:block"
             >
               {backLabel ?? '← Voltar'}
             </button>
@@ -60,25 +56,22 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
 
           {rightContent}
 
-          {/* Auth + Toggle — só renderiza após montar para evitar hydration mismatch */}
           {mounted ? (
             <>
               {!loading && (
                 user ? (
                   <button
                     onClick={signOut}
-                    className="text-sm text-zinc-500 dark:text-zinc-400
-                               hover:text-zinc-700 dark:hover:text-zinc-200
-                               transition-colors hidden md:block"
+                    className="text-sm text-muted-fg hover:text-foreground
+                               transition-colors duration-150 hidden md:block"
                   >
                     Sair
                   </button>
                 ) : (
                   <button
                     onClick={() => router.push('/entrar')}
-                    className="text-sm text-zinc-500 dark:text-zinc-400
-                               hover:text-zinc-700 dark:hover:text-zinc-200
-                               transition-colors hidden md:block"
+                    className="text-sm text-muted-fg hover:text-foreground
+                               transition-colors duration-150 hidden md:block"
                   >
                     Entrar
                   </button>
@@ -87,21 +80,20 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
 
               <button
                 onClick={toggleTheme}
-                className="w-9 h-9 flex items-center justify-center
-                           rounded-full border border-zinc-200 dark:border-zinc-700
-                           text-zinc-500 dark:text-zinc-400
-                           hover:bg-zinc-50 dark:hover:bg-zinc-800
-                           transition-all duration-200"
+                className="w-8 h-8 flex items-center justify-center
+                           rounded-full border border-border text-muted-fg
+                           hover:text-foreground hover:bg-muted
+                           transition-all duration-150"
                 aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
               >
                 {isDark
-                  ? <Sun  className="w-4 h-4" />
-                  : <Moon className="w-4 h-4" />
+                  ? <Sun  className="w-3.5 h-3.5" />
+                  : <Moon className="w-3.5 h-3.5" />
                 }
               </button>
             </>
           ) : (
-            <div className="w-9 h-9" />
+            <div className="w-8 h-8" />
           )}
 
         </div>

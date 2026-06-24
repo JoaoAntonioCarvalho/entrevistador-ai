@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  ArrowRight, Mic, BarChart2, Globe,
-  MessageSquare, TrendingUp, BrainCircuit,
-  Sun, Moon,
+  ArrowRight, Sun, Moon, Lock,
+  BrainCircuit, MessageSquare, TrendingUp, Globe,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,142 +26,124 @@ export default function LandingPage() {
   const isDark = (resolvedTheme ?? theme) === 'dark';
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-200">
+    <div className="min-h-dvh bg-background transition-colors duration-200">
 
-      {/* ── HEADER DA LANDING ── */}
+      {/* ── HEADER ── */}
       <header className="fixed top-0 left-0 right-0 z-50
-                         bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md
-                         border-b border-zinc-100 dark:border-zinc-800
-                         transition-colors duration-200">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center
-                        justify-between">
+                         bg-[#F7F7F5]/95 dark:bg-[#0C0C0A]/95 backdrop-blur-md
+                         border-b border-border transition-colors duration-200">
+        <div className="max-w-[1120px] mx-auto px-6 h-16
+                        flex items-center justify-between">
 
-          <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
+          <span className="text-[15px] font-semibold tracking-tight
+                           text-foreground select-none">
             Entrevistador.IA
           </span>
 
-          <div className="flex items-center gap-4">
-
+          <div className="flex items-center gap-6">
             <a href="#como-funciona"
-               className="hidden md:block text-sm text-zinc-500
-                          dark:text-zinc-400 hover:text-zinc-900
-                          dark:hover:text-white transition-colors">
+               className="hidden md:block text-sm text-muted-fg
+                          hover:text-foreground transition-colors duration-150">
               Como funciona
             </a>
 
             {!user ? (
               <button
                 onClick={() => router.push('/entrar')}
-                className="text-sm text-zinc-500 dark:text-zinc-400
-                           hover:text-zinc-700 dark:hover:text-zinc-200
-                           transition-colors hidden md:block">
+                className="hidden md:block text-sm text-muted-fg
+                           hover:text-foreground transition-colors duration-150">
                 Entrar
               </button>
             ) : (
               <button
                 onClick={() => router.push('/historico')}
-                className="text-sm text-zinc-500 dark:text-zinc-400
-                           hover:text-zinc-700 dark:hover:text-zinc-200
-                           transition-colors hidden md:block">
+                className="hidden md:block text-sm text-muted-fg
+                           hover:text-foreground transition-colors duration-150">
                 Meu histórico
               </button>
             )}
 
             <button
               onClick={() => router.push('/setup')}
-              className="text-sm bg-zinc-900 dark:bg-white text-white
-                         dark:text-zinc-900 px-4 py-2 rounded-full
-                         hover:bg-zinc-700 dark:hover:bg-zinc-100
-                         transition-colors font-medium">
+              className="text-sm bg-foreground text-background
+                         px-4 py-2 rounded-lg font-medium
+                         hover:opacity-90 transition-opacity duration-150">
               Começar agora
             </button>
 
             {mounted ? (
               <button
                 onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                className="w-9 h-9 flex items-center justify-center
-                           rounded-full border border-zinc-200
-                           dark:border-zinc-700 text-zinc-500
-                           dark:text-zinc-400 hover:bg-zinc-50
-                           dark:hover:bg-zinc-800 transition-all"
+                className="w-8 h-8 flex items-center justify-center
+                           rounded-full border border-border text-muted-fg
+                           hover:text-foreground hover:bg-muted
+                           transition-all duration-150"
                 aria-label="Alternar tema"
               >
                 {isDark
-                  ? <Sun  className="w-4 h-4" />
-                  : <Moon className="w-4 h-4" />
-                }
+                  ? <Sun  className="w-3.5 h-3.5" />
+                  : <Moon className="w-3.5 h-3.5" />}
               </button>
-            ) : <div className="w-9 h-9" />}
-
+            ) : <div className="w-8 h-8" />}
           </div>
         </div>
       </header>
 
       {/* ── HERO ── */}
-      <section className="pt-32 pb-24 px-6 bg-white dark:bg-zinc-950">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="pt-36 pb-28 px-6 bg-background">
+        <div className="max-w-[1120px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
 
             {/* Esquerda */}
             <div className="animate-fade-in">
-              <h1 className="text-5xl lg:text-6xl font-bold text-zinc-900
-                             dark:text-white leading-[1.08] tracking-tight mb-6">
+              <h1 className="text-[52px] lg:text-[72px] font-bold text-foreground
+                             leading-[1.02] tracking-display mb-7">
                 Sua próxima<br />
                 entrevista<br />
                 começa aqui.
               </h1>
 
-              <p className="text-lg text-zinc-500 dark:text-zinc-400
-                            leading-relaxed mb-8 max-w-md">
+              <p className="text-lg text-muted-fg leading-[1.7] mb-9 max-w-[440px]">
                 Pratique com um entrevistador virtual que conhece o seu
                 currículo e a vaga real. Receba feedback detalhado.
                 Apareça preparado.
               </p>
 
-              <div className="flex flex-wrap gap-3 mb-10">
+              <div className="flex flex-wrap items-center gap-4">
                 <button
                   onClick={() => router.push('/setup')}
                   className="inline-flex items-center gap-2
-                             bg-zinc-900 dark:bg-white
-                             text-white dark:text-zinc-900
-                             px-6 py-3 rounded-full font-medium
-                             hover:bg-zinc-700 dark:hover:bg-zinc-100
-                             transition-all duration-200 hover:gap-3">
-                  Começar agora
+                             bg-foreground text-background
+                             px-6 py-3 rounded-lg font-semibold text-sm
+                             hover:opacity-90 transition-opacity duration-150">
+                  Começar grátis
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
                 <a href="#como-funciona"
-                   className="inline-flex items-center gap-2 border
-                              border-zinc-200 dark:border-zinc-700
-                              text-zinc-700 dark:text-zinc-300
-                              px-6 py-3 rounded-full font-medium
-                              hover:bg-zinc-50 dark:hover:bg-zinc-800
-                              transition-colors text-sm">
-                  Ver como funciona
+                   className="inline-flex items-center gap-1.5 text-sm
+                              text-muted-fg hover:text-foreground
+                              transition-colors duration-150">
+                  Como funciona
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>
-
             </div>
 
-            {/* Direita — Screenshot real */}
+            {/* Direita — screenshot */}
             <div className="animate-fade-in [animation-delay:200ms]
                             opacity-0 relative">
-              <div className="rounded-2xl overflow-hidden shadow-2xl
-                              border border-zinc-200 dark:border-zinc-800
-                              ring-1 ring-zinc-100 dark:ring-zinc-900">
-                {/* Barra estilo browser */}
+              <div className="rounded-2xl overflow-hidden
+                              border border-border shadow-modal">
                 <div className="flex items-center gap-1.5 px-4 py-2.5
-                                bg-zinc-100 dark:bg-zinc-800 border-b
-                                border-zinc-200 dark:border-zinc-700">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                  <span className="ml-3 text-xs text-zinc-400
-                                   dark:text-zinc-500 font-mono">
+                                bg-muted border-b border-border">
+                  <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
+                  <span className="ml-3 text-xs text-muted-fg font-mono">
                     entrevistador.ai/entrevista
                   </span>
                 </div>
-                {/* Screenshot real */}
                 <Image
                   src="/entrevista-ai.png"
                   alt="Tela de entrevista do Entrevistador.IA"
@@ -173,14 +154,12 @@ export default function LandingPage() {
                 />
               </div>
 
-              {/* Badge flutuante */}
-              <div className="absolute -bottom-4 -right-4 bg-white
-                              dark:bg-zinc-800 border border-zinc-100
-                              dark:border-zinc-700 rounded-xl px-4 py-2.5
-                              shadow-lg hidden md:flex items-center gap-2.5">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-zinc-700
-                                 dark:text-zinc-300">
+              <div className="absolute -bottom-4 -right-4
+                              bg-card border border-border rounded-xl
+                              px-4 py-2.5 shadow-card
+                              hidden md:flex items-center gap-2.5">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-xs font-medium text-foreground">
                   Entrevista em andamento
                 </span>
               </div>
@@ -191,54 +170,53 @@ export default function LandingPage() {
       </section>
 
       {/* ── COMO FUNCIONA ── */}
-      <section id="como-funciona"
-               className="py-24 bg-zinc-50 dark:bg-zinc-900 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-zinc-900 dark:text-white
-                           tracking-tight mb-3">
+      <section id="como-funciona" className="py-28 bg-muted px-6">
+        <div className="max-w-[1120px] mx-auto">
+
+          <div className="mb-14">
+            <p className="text-[11px] font-semibold uppercase
+                          tracking-eyebrow text-muted-fg mb-4">
               Como funciona
-            </h2>
-            <p className="text-zinc-500 dark:text-zinc-400">
-              Três passos para chegar preparado
             </p>
+            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
+                           tracking-heading leading-[1.1]">
+              Três passos para chegar preparado
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
                 num: '01',
                 title: 'Envie seu currículo e a vaga',
                 desc: 'Nossa IA analisa sua experiência e os requisitos da vaga para criar uma entrevista personalizada para você.',
-                icon: <BarChart2 className="w-5 h-5" />,
               },
               {
                 num: '02',
                 title: 'Pratique com o entrevistador',
                 desc: 'Responda perguntas reais por voz. O entrevistador reage, aprofunda e desafia — como numa entrevista de verdade.',
-                icon: <Mic className="w-5 h-5" />,
               },
               {
                 num: '03',
                 title: 'Receba feedback detalhado',
                 desc: 'Veja sua pontuação, análise por resposta, mapa de competências e o que você poderia ter dito melhor.',
-                icon: <MessageSquare className="w-5 h-5" />,
               },
             ].map((item, i) => (
               <div key={i}
-                   className="bg-white dark:bg-zinc-800
-                              rounded-2xl p-8
-                              border border-zinc-100 dark:border-zinc-700
-                              shadow-card hover:shadow-card-hover
-                              hover:-translate-y-0.5 transition-all duration-200">
-                <span className="text-6xl font-bold tabular-nums
-                                 text-zinc-200 dark:text-zinc-600 block mb-4">
+                   className="bg-card rounded-xl p-8 border border-border
+                              hover:border-border-strong hover:shadow-card-hover
+                              transition-all duration-200">
+                <span aria-hidden="true"
+                      className="block text-[48px] font-bold font-mono
+                                 tabular-nums text-zinc-200 dark:text-zinc-700
+                                 leading-none mb-6">
                   {item.num}
                 </span>
-                <h3 className="font-semibold text-zinc-900 dark:text-white mb-3 text-lg">
+                <h3 className="font-semibold text-foreground text-[15px]
+                               leading-snug mb-3">
                   {item.title}
                 </h3>
-                <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+                <p className="text-muted-fg text-sm leading-[1.65]">
                   {item.desc}
                 </p>
               </div>
@@ -248,14 +226,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── ARGUMENTO ── */}
-      <section className="py-24 px-6 bg-zinc-900 dark:bg-black">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl lg:text-5xl font-bold text-white
-                         tracking-tight leading-tight mb-6">
+      <section className="py-28 px-6 bg-zinc-950 dark:bg-black">
+        <div className="max-w-[720px] mx-auto">
+          <h2 className="text-[36px] lg:text-[52px] font-bold text-white
+                         tracking-heading leading-[1.06] mb-6">
             Você tem uma entrevista
             importante amanhã.
           </h2>
-          <p className="text-zinc-400 text-lg leading-relaxed mb-10">
+          <p className="text-zinc-400 text-[17px] leading-[1.7] mb-10 max-w-lg">
             Em 20 minutos, o Entrevistador.IA simula a entrevista com
             base no seu currículo e na vaga real. Você descobre onde
             está fraco, o que melhorar — e aparece no dia seguinte
@@ -263,9 +241,9 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => router.push('/setup')}
-            className="inline-flex items-center gap-2 bg-white text-zinc-900
-                       px-8 py-4 rounded-full text-base font-semibold
-                       hover:bg-zinc-100 transition-colors">
+            className="inline-flex items-center gap-2 bg-white text-zinc-950
+                       px-7 py-3 rounded-lg text-sm font-semibold
+                       hover:bg-zinc-100 transition-colors duration-150">
             Começar agora — é grátis
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -273,54 +251,54 @@ export default function LandingPage() {
       </section>
 
       {/* ── DIFERENCIAIS ── */}
-      <section className="py-24 px-6 bg-white dark:bg-zinc-950">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-zinc-900 dark:text-white
-                           tracking-tight mb-3">
+      <section className="py-28 px-6 bg-background">
+        <div className="max-w-[1120px] mx-auto">
+
+          <div className="mb-14">
+            <p className="text-[11px] font-semibold uppercase
+                          tracking-eyebrow text-muted-fg mb-4">
               Por que é diferente
+            </p>
+            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
+                           tracking-heading leading-[1.1]">
+              Feito para a sua entrevista,<br className="hidden lg:block" />
+              não para qualquer candidato.
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               {
-                icon: <BrainCircuit className="w-5 h-5 text-accent dark:text-blue-400" />,
+                icon: <BrainCircuit className="w-4 h-4 text-muted-fg" />,
                 title: 'Perguntas baseadas no seu perfil',
-                desc: 'Não são perguntas genéricas. São baseadas na sua experiência real cruzada com os requisitos da vaga.',
+                desc: 'Não são perguntas genéricas. São geradas a partir da sua experiência real cruzada com os requisitos da vaga.',
               },
               {
-                icon: <MessageSquare className="w-5 h-5 text-accent dark:text-blue-400" />,
+                icon: <MessageSquare className="w-4 h-4 text-muted-fg" />,
                 title: 'Feedback de verdade',
                 desc: 'Para cada resposta: o que estava bom, o que faltou, e como você deveria ter respondido.',
               },
               {
-                icon: <TrendingUp className="w-5 h-5 text-accent dark:text-blue-400" />,
+                icon: <TrendingUp className="w-4 h-4 text-muted-fg" />,
                 title: 'Acompanhe sua evolução',
-                desc: 'Veja seu progresso entrevista a entrevista. Identifique os pontos que melhoraram.',
+                desc: 'Veja seu progresso entrevista a entrevista. Identifique padrões e os pontos que melhoraram.',
               },
               {
-                icon: <Globe className="w-5 h-5 text-accent dark:text-blue-400" />,
+                icon: <Globe className="w-4 h-4 text-muted-fg" />,
                 title: 'Português e inglês',
                 desc: 'Pratique em português ou em inglês — ideal para vagas em empresas internacionais.',
               },
             ].map((item, i) => (
               <div key={i}
-                   className="flex gap-5 p-6 rounded-2xl
-                              border border-zinc-100 dark:border-zinc-800
-                              hover:border-zinc-200 dark:hover:border-zinc-700
-                              hover:bg-zinc-50 dark:hover:bg-zinc-900
+                   className="flex gap-5 p-7 rounded-xl border border-border
+                              hover:border-border-strong hover:bg-card
                               transition-all duration-200">
-                <div className="w-10 h-10 bg-accent-light dark:bg-zinc-800
-                                rounded-xl flex items-center justify-center
-                                flex-shrink-0">
-                  {item.icon}
-                </div>
+                <div className="mt-0.5 shrink-0">{item.icon}</div>
                 <div>
-                  <h3 className="font-semibold text-zinc-900 dark:text-white mb-1">
+                  <h3 className="font-semibold text-foreground text-[15px] mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+                  <p className="text-muted-fg text-sm leading-[1.65]">
                     {item.desc}
                   </p>
                 </div>
@@ -331,47 +309,50 @@ export default function LandingPage() {
       </section>
 
       {/* ── PREÇOS ── */}
-      <section className="py-24 px-6 bg-zinc-50 dark:bg-zinc-900/50">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-28 px-6 bg-muted">
+        <div className="max-w-[1120px] mx-auto">
 
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-zinc-900 dark:text-white
-                           tracking-tight mb-3">
+          <div className="mb-14">
+            <p className="text-[11px] font-semibold uppercase
+                          tracking-eyebrow text-muted-fg mb-4">
+              Preços
+            </p>
+            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
+                           tracking-heading leading-[1.1] mb-2">
               Simples e acessível
             </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 text-lg">
+            <p className="text-muted-fg text-lg leading-relaxed">
               Comece grátis. Pague só quando quiser ir mais fundo.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
 
             {/* Grátis */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6
-                            border border-zinc-200 dark:border-zinc-800">
-              <p className="text-xs font-semibold text-zinc-400
-                           uppercase tracking-widest mb-3">
+            <div className="bg-card rounded-xl p-7 border border-border flex flex-col">
+              <p className="text-[11px] font-semibold uppercase
+                            tracking-eyebrow text-muted-fg mb-5">
                 Grátis
               </p>
-              <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-1">
-                R$0
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                sem cartão necessário
-              </p>
-              <ul className="space-y-2.5 mb-8">
+              <div className="mb-6">
+                <p className="text-[44px] font-bold font-mono tabular-nums
+                               text-foreground leading-none mb-1">
+                  R$0
+                </p>
+                <p className="text-sm text-muted-fg">sem cartão necessário</p>
+              </div>
+              <ul className="space-y-2.5 mb-8 flex-1">
                 {[
                   '3 perguntas de entrevista',
                   'Escolha a vaga que quiser',
                   'Português e inglês',
                   'Voz humana real',
                 ].map(f => (
-                  <li key={f} className="flex items-start gap-2 text-sm
-                                         text-zinc-600 dark:text-zinc-400">
-                    <svg className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5"
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
+                    <svg className="w-4 h-4 text-border-strong shrink-0 mt-0.5"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2" strokeLinecap="round"
-                         strokeLinejoin="round">
+                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                         aria-hidden="true">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     {f}
@@ -379,37 +360,39 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link href="/setup"
-                className="block w-full text-center border border-zinc-200
-                           dark:border-zinc-700 text-zinc-700 dark:text-zinc-300
-                           py-3 rounded-full text-sm font-medium
-                           hover:bg-zinc-50 dark:hover:bg-zinc-800
-                           transition-colors">
+                className="block w-full text-center border border-border
+                           text-muted-fg py-2.5 rounded-lg text-sm font-medium
+                           hover:border-border-strong hover:text-foreground
+                           transition-all duration-150">
                 Começar grátis
               </Link>
             </div>
 
-            {/* Avulso */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6
-                            border-2 border-zinc-900 dark:border-white
-                            relative">
+            {/* Avulso — destaque */}
+            <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-7
+                            border border-transparent relative flex flex-col">
               <div className="absolute -top-3 left-6">
-                <span className="bg-zinc-900 dark:bg-white text-white
-                                 dark:text-zinc-900 text-xs font-semibold
+                <span className="bg-zinc-950 dark:bg-zinc-100
+                                 text-white dark:text-zinc-950
+                                 text-[11px] font-semibold
                                  px-3 py-1 rounded-full">
                   Mais popular
                 </span>
               </div>
-              <p className="text-xs font-semibold text-zinc-400
-                           uppercase tracking-widest mb-3">
+              <p className="text-[11px] font-semibold uppercase
+                            tracking-eyebrow text-zinc-500 mb-5">
                 Avulso
               </p>
-              <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-1">
-                R$9,90
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                por entrevista de 7 perguntas
-              </p>
-              <ul className="space-y-2.5 mb-8">
+              <div className="mb-6">
+                <p className="text-[44px] font-bold font-mono tabular-nums
+                               text-white dark:text-zinc-950 leading-none mb-1">
+                  R$9,90
+                </p>
+                <p className="text-sm text-zinc-400 dark:text-zinc-500">
+                  por entrevista de 7 perguntas
+                </p>
+              </div>
+              <ul className="space-y-2.5 mb-8 flex-1">
                 {[
                   'Entrevista completa de 7 perguntas',
                   'Relatório com nota e feedback',
@@ -417,13 +400,12 @@ export default function LandingPage() {
                   'Resposta ideal personalizada',
                   'Resultado compartilhável',
                 ].map(f => (
-                  <li key={f} className="flex items-start gap-2 text-sm
-                                         text-zinc-600 dark:text-zinc-400">
-                    <svg className="w-4 h-4 text-zinc-900 dark:text-white
-                                    shrink-0 mt-0.5"
+                  <li key={f} className="flex items-start gap-2.5 text-sm
+                                         text-zinc-300 dark:text-zinc-600">
+                    <svg className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2" strokeLinecap="round"
-                         strokeLinejoin="round">
+                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                         aria-hidden="true">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     {f}
@@ -431,28 +413,29 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link href="/planos"
-                className="block w-full text-center bg-zinc-900 dark:bg-white
-                           text-white dark:text-zinc-900 py-3 rounded-full
-                           text-sm font-semibold hover:bg-zinc-700
-                           dark:hover:bg-zinc-100 transition-colors">
+                className="block w-full text-center
+                           bg-white dark:bg-zinc-950
+                           text-zinc-950 dark:text-white
+                           py-2.5 rounded-lg text-sm font-semibold
+                           hover:opacity-90 transition-opacity duration-150">
                 Ver planos
               </Link>
             </div>
 
             {/* Mensal */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6
-                            border border-zinc-200 dark:border-zinc-800">
-              <p className="text-xs font-semibold text-zinc-400
-                           uppercase tracking-widest mb-3">
+            <div className="bg-card rounded-xl p-7 border border-border flex flex-col">
+              <p className="text-[11px] font-semibold uppercase
+                            tracking-eyebrow text-muted-fg mb-5">
                 Mensal
               </p>
-              <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-1">
-                R$39,90
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                por mês · 6 entrevistas
-              </p>
-              <ul className="space-y-2.5 mb-8">
+              <div className="mb-6">
+                <p className="text-[44px] font-bold font-mono tabular-nums
+                               text-foreground leading-none mb-1">
+                  R$39,90
+                </p>
+                <p className="text-sm text-muted-fg">por mês · 6 entrevistas</p>
+              </div>
+              <ul className="space-y-2.5 mb-8 flex-1">
                 {[
                   '6 entrevistas por mês',
                   'Histórico de evolução',
@@ -460,12 +443,11 @@ export default function LandingPage() {
                   'Resultado compartilhável',
                   'Suporte por email',
                 ].map(f => (
-                  <li key={f} className="flex items-start gap-2 text-sm
-                                         text-zinc-600 dark:text-zinc-400">
-                    <svg className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5"
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
+                    <svg className="w-4 h-4 text-border-strong shrink-0 mt-0.5"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2" strokeLinecap="round"
-                         strokeLinejoin="round">
+                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                         aria-hidden="true">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     {f}
@@ -473,69 +455,66 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link href="/planos"
-                className="block w-full text-center border border-zinc-200
-                           dark:border-zinc-700 text-zinc-700 dark:text-zinc-300
-                           py-3 rounded-full text-sm font-medium
-                           hover:bg-zinc-50 dark:hover:bg-zinc-800
-                           transition-colors">
+                className="block w-full text-center border border-border
+                           text-muted-fg py-2.5 rounded-lg text-sm font-medium
+                           hover:border-border-strong hover:text-foreground
+                           transition-all duration-150">
                 Ver planos
               </Link>
             </div>
 
           </div>
 
-          <p className="text-center text-sm text-zinc-400 dark:text-zinc-500">
-            🔒 Pagamento via Mercado Pago · Pix disponível ·
-            Garantia de 7 dias conforme CDC art. 49
-          </p>
+          <div className="flex items-center gap-2 text-sm text-muted-fg">
+            <Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span>
+              Pagamento via Mercado Pago · Pix disponível ·
+              Garantia de 7 dias conforme CDC art. 49
+            </span>
+          </div>
 
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-zinc-950 dark:bg-black py-12 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row
-                        items-center justify-between gap-6">
-          <div>
-            <span className="text-xl font-semibold tracking-tight text-white">
-              Entrevistador.IA
-            </span>
-            <p className="text-zinc-500 text-sm mt-1">
-              © 2026 Todos os direitos reservados.
-            </p>
+      <footer className="bg-zinc-950 dark:bg-black py-14 px-6">
+        <div className="max-w-[1120px] mx-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center
+                          justify-between gap-8">
+
+            <div>
+              <span className="text-[15px] font-semibold tracking-tight text-white">
+                Entrevistador.IA
+              </span>
+              <p className="text-zinc-500 text-sm mt-1.5">
+                © 2026 Todos os direitos reservados.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-5 text-sm text-zinc-500">
+              <a href="mailto:suporte@entrevistador-ai.com.br"
+                 className="hover:text-zinc-300 transition-colors duration-150">
+                suporte@entrevistador-ai.com.br
+              </a>
+              <Link href="/termos"
+                className="hover:text-zinc-300 transition-colors duration-150">
+                Termos de Uso
+              </Link>
+              <Link href="/privacidade"
+                className="hover:text-zinc-300 transition-colors duration-150">
+                Privacidade
+              </Link>
+            </div>
+
+            <button
+              onClick={() => router.push('/setup')}
+              className="text-sm border border-zinc-700 text-zinc-300
+                         px-5 py-2.5 rounded-lg hover:border-zinc-500
+                         hover:text-white transition-all duration-150 shrink-0">
+              Começar agora →
+            </button>
+
           </div>
-          <div className="flex flex-wrap items-center justify-center
-                          gap-4 text-xs text-zinc-500">
-            <a href="mailto:suporte@entrevistador-ai.com.br"
-               className="hover:text-zinc-300 transition-colors
-                          flex items-center gap-1.5">
-              <svg width="13" height="13" viewBox="0 0 24 24"
-                   fill="none" stroke="currentColor" strokeWidth="2"
-                   strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2
-                         2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-              suporte@entrevistador-ai.com.br
-            </a>
-            <span className="text-zinc-700">·</span>
-            <Link href="/termos"
-              className="hover:text-zinc-300 transition-colors">
-              Termos de Uso
-            </Link>
-            <span className="text-zinc-700">·</span>
-            <Link href="/privacidade"
-              className="hover:text-zinc-300 transition-colors">
-              Privacidade
-            </Link>
-          </div>
-          <button
-            onClick={() => router.push('/setup')}
-            className="text-sm border border-zinc-700 text-zinc-300
-                       px-5 py-2.5 rounded-full hover:border-zinc-500
-                       hover:text-white transition-colors">
-            Começar agora →
-          </button>
         </div>
       </footer>
 
