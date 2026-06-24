@@ -10,20 +10,16 @@ import {
   Sun, Moon,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LandingPage() {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [temHistorico, setTemHistorico] = useState(false);
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    try {
-      const raw = localStorage.getItem('entrevistador-ai-sessions');
-      const sessions = raw ? JSON.parse(raw) : [];
-      setTemHistorico(sessions.length > 0);
-    } catch { setTemHistorico(false); }
   }, []);
 
   const isDark = (resolvedTheme ?? theme) === 'dark';
@@ -52,14 +48,22 @@ export default function LandingPage() {
               Como funciona
             </a>
 
-            {temHistorico && (
-              <a href="/historico"
-                 className="hidden md:block text-sm text-zinc-500
-                            dark:text-zinc-400 hover:text-zinc-900
-                            dark:hover:text-white transition-colors
-                            border-l border-zinc-200 dark:border-zinc-700 pl-4">
+            {!user ? (
+              <button
+                onClick={() => router.push('/entrar')}
+                className="text-sm text-zinc-500 dark:text-zinc-400
+                           hover:text-zinc-700 dark:hover:text-zinc-200
+                           transition-colors hidden md:block">
+                Entrar
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/historico')}
+                className="text-sm text-zinc-500 dark:text-zinc-400
+                           hover:text-zinc-700 dark:hover:text-zinc-200
+                           transition-colors hidden md:block">
                 Meu histórico
-              </a>
+              </button>
             )}
 
             <button
