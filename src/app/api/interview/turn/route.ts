@@ -350,11 +350,13 @@ export async function POST(req: NextRequest) {
     if (!liberado && authUserId) {
       const { data: credit } = await supabaseAdmin
         .from('credits')
-        .select('id, expires_at')
+        .select('id, perguntas, expires_at')
         .eq('auth_user_id', authUserId)
         .eq('usado', false)
         .eq('mp_status', 'approved')
+        .gte('perguntas', totalPerguntas)
         .or('expires_at.is.null,expires_at.gt.now()')
+        .order('created_at', { ascending: true })
         .limit(1)
         .single();
       if (credit) liberado = true;

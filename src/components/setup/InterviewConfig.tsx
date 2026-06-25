@@ -6,6 +6,7 @@ import type { AvatarProfile, InterviewConfig as IConfig, Job } from '@/lib/types
 import { resolveAvatarProfile } from '@/lib/types';
 import { AVATAR_PROFILES, DEFAULT_CONFIG } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { useCredits } from '@/hooks/useCredits';
 
 const OPCOES_PERGUNTAS = [7, 14] as const;
 
@@ -50,7 +51,15 @@ const AVATAR_COLORS: Record<string, string> = {
 export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
   const router = useRouter();
   const { user } = useAuth();
+  const { maxPerguntas, loading: loadingCredits } = useCredits();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
+
+  function opcaoBloqueada(qtd: number): boolean {
+    if (qtd === 7) return false;
+    if (!user) return true;
+    if (loadingCredits) return true;
+    return maxPerguntas < qtd;
+  }
 
   const resolvedProfiles = useMemo(() => {
     const source = profiles ?? AVATAR_PROFILES;
@@ -119,7 +128,8 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
         </h3>
         <div className="grid grid-cols-2 gap-3">
           {OPCOES_PERGUNTAS.map(n => {
-            const bloqueado = n !== 7 && !user;
+            const bloqueado = opcaoBloqueada(n);
+            const carregando = n !== 7 && !!user && loadingCredits;
             return (
               <button
                 key={n}
@@ -140,9 +150,10 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
                             ${bloqueado
                               ? 'opacity-60 cursor-pointer'
                               : 'hover:border-zinc-400 dark:hover:border-zinc-500'
-                            }`}
+                            }
+                            ${carregando ? 'animate-pulse' : ''}`}
               >
-                {bloqueado && (
+                {bloqueado && !carregando && (
                   <div className="absolute top-1.5 right-1.5">
                     <svg width="12" height="12" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" strokeWidth="2"
@@ -160,7 +171,11 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
                   {n}
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {bloqueado ? 'Pago' : 'perguntas'}
+                  {carregando
+                    ? '...'
+                    : bloqueado
+                    ? (user ? 'Sem crédito' : 'Pago')
+                    : 'perguntas'}
                 </span>
               </button>
             );
