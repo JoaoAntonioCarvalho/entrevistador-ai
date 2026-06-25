@@ -33,13 +33,13 @@ const PLANOS = {
         'Análise por pergunta com resposta ideal',
       ],
     },
-    credito10: {
-      label:     '1 entrevista de 10 perguntas',
-      preco:     17.90,
+    credito14: {
+      label:     '1 entrevista de 14 perguntas',
+      preco:     22.90,
       descricao: 'Crédito para uma nova entrevista aprofundada',
       features: [
-        '1 entrevista completa de 10 perguntas',
-        'Aprofundamento técnico e comportamental',
+        '1 entrevista completa de 14 perguntas',
+        'Aprofundamento máximo — o dobro de perguntas',
         'Relatório completo com nota e feedback',
         'Análise por pergunta com resposta ideal',
       ],
@@ -62,11 +62,11 @@ const PLANOS = {
     pro: {
       label:     'Pro',
       preco:     59.90,
-      descricao: '6 entrevistas de 10 perguntas por mês',
+      descricao: '6 entrevistas de 14 perguntas por mês',
       destaque:  true,
       features: [
-        '6 entrevistas de 10 perguntas por mês',
-        'Entrevistas mais aprofundadas',
+        '6 entrevistas de 14 perguntas por mês',
+        'Aprofundamento máximo — o dobro de perguntas',
         'Histórico completo de evolução',
         'Resultado compartilhável por link',
         'Acesso a todos os entrevistadores',
@@ -216,19 +216,19 @@ export default function PlanosPage() {
               </button>
             </div>
 
-            {/* Crédito 10 perguntas */}
+            {/* Crédito 14 perguntas */}
             <div className="border border-border rounded-xl p-6 bg-card">
               <p className="text-xs text-muted-fg mb-1">
-                {PLANOS.avulso.credito10.descricao}
+                {PLANOS.avulso.credito14.descricao}
               </p>
               <p className="text-3xl font-mono tabular-nums font-bold text-foreground mb-1">
-                R$17,90
+                R$22,90
               </p>
               <p className="text-sm font-medium text-foreground mb-4">
-                {PLANOS.avulso.credito10.label}
+                {PLANOS.avulso.credito14.label}
               </p>
               <ul className="space-y-2 mb-6">
-                {PLANOS.avulso.credito10.features.map(f => (
+                {PLANOS.avulso.credito14.features.map(f => (
                   <li key={f} className="flex items-start gap-2 text-sm text-muted-fg">
                     <Check className="w-4 h-4 text-muted-fg shrink-0 mt-0.5" />
                     {f}
@@ -236,7 +236,7 @@ export default function PlanosPage() {
                 ))}
               </ul>
               <button
-                onClick={() => handleComprar('credito-10')}
+                onClick={() => handleComprar('credito-14')}
                 className="w-full border border-border text-foreground py-3 rounded-lg
                            font-semibold text-sm hover:bg-muted
                            transition-colors"

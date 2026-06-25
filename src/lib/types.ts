@@ -29,7 +29,7 @@ export interface Job {
 export interface InterviewConfig {
   idioma: 'pt' | 'en';
   tipo: 'comportamental' | 'tecnica' | 'mista';
-  perguntas: 7 | 10 | 15 | 20;
+  perguntas: 7 | 14;
   nivel: 'junior' | 'pleno' | 'senior';
   avatar_id: 'sarah' | 'carlos' | 'alex';
 }

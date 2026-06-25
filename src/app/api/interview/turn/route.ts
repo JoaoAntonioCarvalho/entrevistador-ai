@@ -305,7 +305,7 @@ export async function POST(req: NextRequest) {
   let isLastTurn  = false;
   let sessionId = 'unknown';
   let perguntasRespondidas = 0;
-  let totalPerguntas = 10;
+  let totalPerguntas = 7;
   let authUserId: string | null = null;
 
   try {
@@ -319,7 +319,7 @@ export async function POST(req: NextRequest) {
     isLastTurn            = body.isLastTurn ?? false;
     sessionId             = body.sessionId ?? 'unknown';
     perguntasRespondidas  = body.perguntasRespondidas ?? 0;
-    totalPerguntas        = body.totalPerguntas ?? 10;
+    totalPerguntas        = body.totalPerguntas ?? 7;
     authUserId            = body.authUserId ?? null;
   } catch {
     return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });

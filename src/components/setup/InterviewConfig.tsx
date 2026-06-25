@@ -7,7 +7,7 @@ import { resolveAvatarProfile } from '@/lib/types';
 import { AVATAR_PROFILES, DEFAULT_CONFIG } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 
-const OPCOES_PERGUNTAS = [7, 10, 15, 20] as const;
+const OPCOES_PERGUNTAS = [7, 14] as const;
 
 interface Props {
   onComplete:      (config: IConfig) => void;
@@ -117,7 +117,7 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
           Quantidade de perguntas
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {OPCOES_PERGUNTAS.map(n => {
             const bloqueado = n !== 7 && !user;
             return (

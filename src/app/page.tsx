@@ -81,8 +81,8 @@ const FAQ_ITEMS = [
     a: 'Sim. O modo inglês foi desenvolvido para candidatos que estão crescendo no idioma, não apenas para fluentes. Praticar a estrutura das respostas em inglês — mesmo com sotaque e imperfeições — é exatamente o treino que prepara para entrevistas reais. O sistema entende português brasileiro com sotaque sem problemas.',
   },
   {
-    q: 'Qual a diferença entre 7 e 10 perguntas?',
-    a: '7 perguntas cobre o essencial: apresentação, competências, situações e fit cultural. 10 perguntas adiciona maior profundidade técnica e comportamental — recomendado para vagas sênior ou executivas.',
+    q: 'Qual a diferença entre 7 e 14 perguntas?',
+    a: '7 perguntas cobre o essencial: apresentação, competências, situações e fit cultural. 14 perguntas vai muito mais fundo — explora competências técnicas avançadas, situações complexas e visão estratégica. Recomendado para vagas sênior ou executivas.',
   },
 ];
 
@@ -765,7 +765,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
             {/* Grátis */}
             <div className="bg-card rounded-xl p-7 border border-border flex flex-col
@@ -814,7 +814,7 @@ export default function LandingPage() {
                                text-white dark:text-zinc-950 leading-none mb-1">
                   R$9,90
                 </p>
-                <p className="text-sm text-zinc-400 dark:text-zinc-500">/ entrevista</p>
+                <p className="text-sm text-zinc-400 dark:text-zinc-500">/ entrevista de 7 perguntas</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {['Entrevista completa de 7 perguntas', 'Relatório com nota e feedback', 'Sem assinatura']
@@ -834,11 +834,11 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Mensal */}
+            {/* Mensal Starter */}
             <div className="bg-card rounded-xl p-7 border border-border flex flex-col
                             hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
               <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
-                Mensal
+                Mensal Starter
               </p>
               <div className="mb-7">
                 <p className="text-[44px] font-bold font-mono tabular-nums text-foreground
@@ -848,7 +848,38 @@ export default function LandingPage() {
                 <p className="text-sm text-muted-fg">/ mês</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
-                {['6 entrevistas por mês', 'Histórico de evolução', 'Cancele quando quiser']
+                {['6 entrevistas de 7 perguntas/mês', 'Histórico de evolução', 'Cancele quando quiser']
+                  .map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
+                    <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
+                           strokeWidth={2.5} aria-hidden="true" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/planos"
+                className="block w-full text-center border border-border text-muted-fg
+                           py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
+                           hover:text-foreground transition-all duration-150">
+                Assinar
+              </Link>
+            </div>
+
+            {/* Mensal Pro */}
+            <div className="bg-card rounded-xl p-7 border border-border flex flex-col
+                            hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
+                Mensal Pro
+              </p>
+              <div className="mb-7">
+                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground
+                               leading-none mb-1">
+                  R$59,90
+                </p>
+                <p className="text-sm text-muted-fg">/ mês</p>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {['6 entrevistas de 14 perguntas/mês', 'Aprofundamento máximo', 'Cancele quando quiser']
                   .map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
                     <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
