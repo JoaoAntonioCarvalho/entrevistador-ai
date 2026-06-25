@@ -13,7 +13,7 @@ export default function TermosPage() {
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
           Termos de Uso
         </h1>
-        <p className="text-sm text-zinc-400 mb-8">
+        <p className="text-sm text-muted-fg mb-8">
           Última atualização: {new Date().toLocaleDateString('pt-BR')}
         </p>
 

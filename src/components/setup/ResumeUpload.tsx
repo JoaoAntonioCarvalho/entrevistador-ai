@@ -142,9 +142,9 @@ export default function ResumeUpload({
               </p>
             )}
           </div>
-          <div className="w-10 h-10 bg-[#f0fdf4] rounded-lg
+          <div className="w-10 h-10 bg-green-50 dark:bg-green-950/40 rounded-lg
                           flex items-center justify-center shrink-0">
-            <CheckCircle className="w-5 h-5 text-[#16a34a]" aria-hidden="true" />
+            <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" aria-hidden="true" />
           </div>
         </div>
 
@@ -449,9 +449,10 @@ export default function ResumeUpload({
 
   if (status === 'success' && candidate) {
     return (
-      <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] p-6
+      <div className="rounded-xl border border-green-200 dark:border-green-900/60
+                      bg-green-50 dark:bg-green-950/30 p-6
                       flex flex-col gap-4">
-        <div className="flex items-center gap-3 text-[#16a34a]">
+        <div className="flex items-center gap-3 text-green-700 dark:text-green-400">
           <CheckCircle className="w-5 h-5 shrink-0" />
           <span className="font-semibold">Currículo analisado com sucesso</span>
         </div>
@@ -483,9 +484,10 @@ export default function ResumeUpload({
 
   if (status === 'error') {
     return (
-      <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] p-6
+      <div className="rounded-xl border border-red-200 dark:border-red-900/60
+                      bg-red-50 dark:bg-red-950/30 p-6
                       flex flex-col gap-4">
-        <div className="flex items-center gap-3 text-[#dc2626]">
+        <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <span className="font-semibold">{errorMsg}</span>
         </div>
@@ -561,16 +563,16 @@ export default function ResumeUpload({
 
       {isScanning && (
         <div className="flex items-center gap-3 p-4
-                        bg-[#fffbeb] rounded-xl
-                        border border-[#fde68a]">
-          <div className="w-5 h-5 border-2 border-[#d97706]
+                        bg-amber-50 dark:bg-amber-950/30 rounded-xl
+                        border border-amber-200 dark:border-amber-800/60">
+          <div className="w-5 h-5 border-2 border-amber-500 dark:border-amber-400
                           border-t-transparent rounded-full animate-spin
                           shrink-0" />
           <div>
-            <p className="text-sm font-medium text-[#92400e]">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
               PDF com imagem detectado
             </p>
-            <p className="text-xs text-[#b45309] mt-0.5">
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
               Fazendo análise visual do documento... isso pode levar alguns segundos.
             </p>
           </div>

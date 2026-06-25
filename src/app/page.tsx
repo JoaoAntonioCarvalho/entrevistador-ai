@@ -45,7 +45,7 @@ function useInView(threshold = 0.3) {
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
-  }, []);
+  }, [threshold]);
   return { ref, inView };
 }
 
@@ -1088,13 +1088,13 @@ export default function LandingPage() {
                  className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors duration-150 block mb-2">
                 suporte@entrevistador-ia.com.br
               </a>
-              <p className="text-sm text-zinc-600">Respondemos em até 2 dias úteis</p>
+              <p className="text-sm text-zinc-500">Respondemos em até 2 dias úteis</p>
             </div>
 
           </div>
 
           <div className="border-t border-zinc-800 pt-8">
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-zinc-500">
               © 2025 Entrevistador.IA · Todos os direitos reservados · São Paulo, Brasil
             </p>
           </div>

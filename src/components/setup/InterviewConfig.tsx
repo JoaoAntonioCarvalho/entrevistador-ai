@@ -190,15 +190,16 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {(['sarah', 'carlos', 'alex'] as const).map((id) => (
               <div key={id}
-                   className="rounded-lg border-2 border-zinc-100 bg-zinc-50
+                   className="rounded-lg border-2 border-zinc-100 dark:border-zinc-700/50
+                               bg-zinc-50 dark:bg-zinc-800/50
                                p-4 flex sm:flex-col items-center sm:items-start
                                gap-3 animate-pulse">
                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0
                                   ${AVATAR_COLORS[id]} opacity-30`} />
                 <div className="flex-1 sm:flex-none flex flex-col gap-2 w-full">
-                  <div className="h-3 bg-zinc-200 rounded w-3/4" />
-                  <div className="h-2 bg-zinc-100 rounded w-full" />
-                  <div className="h-2 bg-zinc-100 rounded w-2/3" />
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
+                  <div className="h-2 bg-zinc-100 dark:bg-zinc-700/50 rounded w-full" />
+                  <div className="h-2 bg-zinc-100 dark:bg-zinc-700/50 rounded w-2/3" />
                 </div>
               </div>
             ))}

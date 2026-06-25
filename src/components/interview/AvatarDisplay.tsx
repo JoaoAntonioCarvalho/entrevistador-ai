@@ -152,7 +152,7 @@ export default function AvatarDisplay({
           </div>
         )}
         {isThinking && !isSpeaking && !isListening && (
-          <span className="text-xs text-zinc-600">
+          <span className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
             {idioma === 'en' ? 'Thinking...' : 'Pensando...'}
           </span>
         )}
