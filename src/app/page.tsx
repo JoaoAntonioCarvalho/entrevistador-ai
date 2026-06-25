@@ -1,186 +1,331 @@
-'use client'
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import {
-  ArrowRight, Sun, Moon, Lock,
-  BrainCircuit, MessageSquare, TrendingUp, Globe,
+  ArrowRight, Sun, Moon, ChevronDown,
+  Mic, FileText, Globe, Users, TrendingUp,
+  MessageSquare, Zap, Lock, Shield, CreditCard,
+  Play, BarChart3, Check,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 
 export const dynamic = 'force-dynamic';
 
+const FAQ_ITEMS = [
+  {
+    q: 'Precisa de experiência técnica para usar?',
+    a: 'Não. Se você consegue falar ao microfone e tem uma vaga em mente, você consegue usar. O setup leva menos de 2 minutos.',
+  },
+  {
+    q: 'Meus dados do currículo ficam salvos?',
+    a: 'Sim, mas só para você. Seus dados são armazenados de forma segura e não são compartilhados nem usados para treinar modelos de IA. Veja nossa Política de Privacidade para detalhes completos.',
+  },
+  {
+    q: 'Os meus dados são usados para treinar a IA?',
+    a: 'Não. As respostas que você dá na entrevista são processadas para gerar o feedback e depois não são retidas pelos provedores de IA. Nunca compartilhamos seus dados para fins de treinamento.',
+  },
+  {
+    q: 'Funciona no celular?',
+    a: 'Sim. O produto funciona em navegadores modernos no desktop e no celular. Para a melhor experiência de voz, recomendamos Chrome ou Safari atualizados.',
+  },
+  {
+    q: 'Posso cancelar a assinatura quando quiser?',
+    a: 'Sim, sem burocracia. Você cancela com um clique e não há cobranças futuras. O acesso continua até o fim do período pago.',
+  },
+  {
+    q: 'E se eu não gostar e quiser reembolso?',
+    a: 'Você tem 7 dias de garantia a partir da compra, conforme o art. 49 do Código de Defesa do Consumidor. É só mandar um email para suporte@entrevistador-ia.com.br.',
+  },
+  {
+    q: 'O inglês funciona bem? Tenho sotaque.',
+    a: 'O sistema foi desenvolvido para funcionar com sotaque brasileiro. O reconhecimento de voz usa a API nativa do navegador, que é treinada para variações de sotaque.',
+  },
+  {
+    q: 'Qual a diferença entre 7 e 10 perguntas?',
+    a: '7 perguntas cobre o essencial: apresentação, competências, situações e fit cultural. 10 perguntas adiciona maior profundidade técnica e comportamental — recomendado para vagas sênior ou executivas.',
+  },
+];
+
 export default function LandingPage() {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user } = useAuth();
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted]   = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [openFaq, setOpenFaq]   = useState<number | null>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    setMounted(true);
+    document.documentElement.style.scrollBehavior = 'smooth';
+    return () => { document.documentElement.style.scrollBehavior = ''; };
+  }, []);
+
+  useEffect(() => {
+    function onScroll() { setScrolled(window.scrollY > 50); }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const isDark = (resolvedTheme ?? theme) === 'dark';
 
   return (
-    <div className="min-h-dvh bg-background transition-colors duration-200">
+    <div className="min-h-dvh bg-background">
 
-      {/* ── HEADER ── */}
-      <header className="fixed top-0 left-0 right-0 z-50
-                         bg-[#F7F7F5]/95 dark:bg-[#0C0C0A]/95 backdrop-blur-md
-                         border-b border-border transition-colors duration-200">
-        <div className="max-w-[1120px] mx-auto px-6 h-16
-                        flex items-center justify-between">
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 0 — HEADER FIXO
+      ───────────────────────────────────────────── */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+        scrolled
+          ? 'bg-[#F7F7F5]/95 dark:bg-[#0C0C0A]/95 backdrop-blur-sm border-b border-border'
+          : 'bg-transparent'
+      }`}>
+        <div className="max-w-[1120px] mx-auto px-6 h-16 flex items-center justify-between">
 
-          <span className="text-[15px] font-semibold tracking-tight
-                           text-foreground select-none">
-            Entrevistador.IA
-          </span>
+          <Link href="/"
+            className="text-[15px] font-semibold tracking-tight text-foreground select-none">
+            Entrevistador<span className="text-zinc-400">.</span>IA
+          </Link>
 
-          <div className="flex items-center gap-6">
-            <a href="#como-funciona"
-               className="hidden md:block text-sm text-muted-fg
-                          hover:text-foreground transition-colors duration-150">
-              Como funciona
-            </a>
+          <nav className="hidden md:flex items-center gap-7" aria-label="Navegação principal">
+            {[
+              { label: 'Como funciona', href: '#como-funciona' },
+              { label: 'Recursos',      href: '#recursos'      },
+              { label: 'Preços',        href: '#precos'        },
+              { label: 'FAQ',           href: '#faq'           },
+            ].map((l) => (
+              <a key={l.href} href={l.href}
+                 className="text-sm text-muted-fg hover:text-foreground transition-colors duration-150">
+                {l.label}
+              </a>
+            ))}
+          </nav>
 
-            {!user ? (
-              <button
-                onClick={() => router.push('/entrar')}
-                className="hidden md:block text-sm text-muted-fg
-                           hover:text-foreground transition-colors duration-150">
-                Entrar
-              </button>
-            ) : (
-              <button
-                onClick={() => router.push('/historico')}
+          <div className="flex items-center gap-3">
+            {user ? (
+              <button onClick={() => router.push('/historico')}
                 className="hidden md:block text-sm text-muted-fg
                            hover:text-foreground transition-colors duration-150">
                 Meu histórico
               </button>
+            ) : (
+              <button onClick={() => router.push('/entrar')}
+                className="hidden md:block text-sm text-muted-fg
+                           hover:text-foreground transition-colors duration-150">
+                Entrar
+              </button>
             )}
 
-            <button
-              onClick={() => router.push('/setup')}
-              className="text-sm bg-foreground text-background
-                         px-4 py-2 rounded-lg font-medium
-                         hover:opacity-90 transition-opacity duration-150">
-              Começar agora
+            <button onClick={() => router.push('/setup')}
+              className="text-sm bg-foreground text-background px-4 py-2 rounded-lg
+                         font-medium hover:opacity-90 transition-opacity duration-150">
+              Começar grátis
             </button>
 
             {mounted ? (
               <button
                 onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                className="w-8 h-8 flex items-center justify-center
-                           rounded-full border border-border text-muted-fg
-                           hover:text-foreground hover:bg-muted
-                           transition-all duration-150"
                 aria-label="Alternar tema"
-              >
-                {isDark
-                  ? <Sun  className="w-3.5 h-3.5" />
-                  : <Moon className="w-3.5 h-3.5" />}
+                className="w-8 h-8 flex items-center justify-center rounded-full
+                           border border-border text-muted-fg hover:text-foreground
+                           hover:bg-muted transition-all duration-150">
+                {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
               </button>
             ) : <div className="w-8 h-8" />}
           </div>
         </div>
       </header>
 
-      {/* ── HERO ── */}
-      <section className="pt-36 pb-28 px-6 bg-background">
-        <div className="max-w-[1120px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 1 — HERO
+      ───────────────────────────────────────────── */}
+      <section className="pt-32 pb-20 lg:pt-44 lg:pb-28 px-6 bg-background">
+        <div className="max-w-[680px] mx-auto text-center">
 
-            {/* Esquerda */}
-            <div className="animate-fade-in">
-              <h1 className="text-[52px] lg:text-[72px] font-bold text-foreground
-                             leading-[1.02] tracking-display mb-7">
-                Sua próxima<br />
-                entrevista<br />
-                começa aqui.
-              </h1>
+          <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-6">
+            Simulador de entrevistas com IA
+          </p>
 
-              <p className="text-lg text-muted-fg leading-[1.7] mb-9 max-w-[440px]">
-                Pratique com um entrevistador virtual que conhece o seu
-                currículo e a vaga real. Receba feedback detalhado.
-                Apareça preparado.
-              </p>
+          <h1 className="text-[44px] sm:text-[60px] lg:text-[72px] font-bold
+                         tracking-display leading-[1.02] text-foreground mb-6">
+            A entrevista que você<br />
+            precisa praticar.
+          </h1>
 
-              <div className="flex flex-wrap items-center gap-4">
-                <button
-                  onClick={() => router.push('/setup')}
-                  className="inline-flex items-center gap-2
-                             bg-foreground text-background
-                             px-6 py-3 rounded-lg font-semibold text-sm
-                             hover:opacity-90 transition-opacity duration-150">
-                  Começar grátis
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+          <p className="text-lg sm:text-xl text-muted-fg leading-[1.75] mb-10
+                        max-w-[540px] mx-auto">
+            Treine com um entrevistador virtual que fala de verdade, ouve suas
+            respostas e entrega feedback detalhado — para você chegar na próxima
+            entrevista pronto.
+          </p>
 
-                <a href="#como-funciona"
-                   className="inline-flex items-center gap-1.5 text-sm
-                              text-muted-fg hover:text-foreground
-                              transition-colors duration-150">
-                  Como funciona
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
-
-            {/* Direita — screenshot */}
-            <div className="animate-fade-in [animation-delay:200ms]
-                            opacity-0 relative">
-              <div className="rounded-2xl overflow-hidden
-                              border border-border shadow-modal">
-                <div className="flex items-center gap-1.5 px-4 py-2.5
-                                bg-muted border-b border-border">
-                  <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
-                  <span className="ml-3 text-xs text-muted-fg font-mono">
-                    entrevistador.ai/entrevista
-                  </span>
-                </div>
-                <Image
-                  src="/entrevista-ai.png"
-                  alt="Tela de entrevista do Entrevistador.IA"
-                  width={1280}
-                  height={800}
-                  className="w-full h-auto block"
-                  priority
-                />
-              </div>
-
-              <div className="absolute -bottom-4 -right-4
-                              bg-card border border-border rounded-xl
-                              px-4 py-2.5 shadow-card
-                              hidden md:flex items-center gap-2.5">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-foreground">
-                  Entrevista em andamento
-                </span>
-              </div>
-            </div>
-
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3">
+            <button onClick={() => router.push('/setup')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2
+                         bg-foreground text-background px-7 py-3.5 rounded-lg
+                         font-semibold text-[15px] hover:opacity-90 transition-opacity duration-150">
+              Começar grátis
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <a href="#como-funciona"
+               className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                          border border-border text-foreground px-7 py-3.5 rounded-lg
+                          font-medium text-[15px] hover:bg-muted hover:border-border-strong
+                          transition-all duration-150">
+              Ver como funciona
+            </a>
           </div>
+
+          <p className="text-[13px] text-muted-fg mb-12">Sem cartão de crédito</p>
+
+          {/* Social proof */}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1
+                          text-[13px] text-muted-fg mb-16">
+            {/* TODO: atualizar com número real de candidatos treinados */}
+            <span>1.000+ candidatos já treinaram</span>
+            <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
+            <span>Português e inglês</span>
+            <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
+            <span>Top 8 de 8.000 no Clube da Programação</span>
+          </div>
+
+          {/* Product mockup
+              TODO: substituir por screenshot real da tela de entrevista.
+              Dimensões: 1280×720px (16:9). Usar <Image> do Next.js com
+              src="/screenshot-produto.png" width={1280} height={720} priority */}
+          <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800
+                          shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
+            <style>{`
+              @keyframes audio-wave {
+                0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+                50%       { transform: scaleY(1);   opacity: 1;   }
+              }
+            `}</style>
+
+            {/* Browser chrome */}
+            <div className="flex items-center gap-1.5 px-4 py-3
+                            bg-zinc-100 dark:bg-zinc-900
+                            border-b border-zinc-200 dark:border-zinc-800">
+              <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
+              <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
+              <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
+              <span className="ml-3 text-xs text-zinc-400 font-mono select-none">
+                entrevistador-ai.com.br/entrevista
+              </span>
+            </div>
+
+            {/* Interview UI mockup */}
+            <div className="bg-[#0C0C0A] px-8 py-10 flex flex-col items-center gap-6"
+                 aria-hidden="true">
+              {/* Avatar */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700
+                                flex items-center justify-center">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="15" r="8" fill="#52525B" />
+                    <ellipse cx="20" cy="34" rx="13" ry="8" fill="#52525B" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="text-white text-sm font-semibold">Sarah</p>
+                  <p className="text-zinc-500 text-xs">Recrutadora de TI · Falando…</p>
+                </div>
+              </div>
+
+              {/* Question */}
+              <div className="bg-zinc-900 rounded-xl p-5 max-w-sm w-full">
+                <p className="text-zinc-300 text-sm leading-relaxed text-left">
+                  &ldquo;Me conte sobre um desafio técnico que você resolveu recentemente.
+                  Como você identificou o problema e qual foi a sua abordagem?&rdquo;
+                </p>
+              </div>
+
+              {/* Voice waves */}
+              <div className="flex items-center gap-[3px]">
+                {[28, 40, 54, 44, 32, 50, 36, 52, 42, 28, 46, 38, 54, 30].map((h, i) => (
+                  <div key={i}
+                       className="w-[3px] rounded-full bg-zinc-500"
+                       style={{
+                         height: `${h}px`,
+                         animation: 'audio-wave 1.4s ease-in-out infinite',
+                         animationDelay: `${i * 70}ms`,
+                       }} />
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* ── COMO FUNCIONA ── */}
-      <section id="como-funciona" className="py-28 bg-muted px-6">
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 2 — PROBLEMA
+      ───────────────────────────────────────────── */}
+      <section id="problema" className="py-24 lg:py-32 px-6 bg-zinc-950 dark:bg-zinc-900">
+        <div className="max-w-[1120px] mx-auto">
+
+          <div className="max-w-[600px] mb-14">
+            <h2 className="text-[32px] lg:text-[44px] font-bold text-white
+                           tracking-heading leading-[1.08] mb-5">
+              Você sabe a resposta.<br />
+              Mas na hora trava.
+            </h2>
+            <p className="text-zinc-400 text-lg leading-[1.75]">
+              A maioria das entrevistas não é perdida por falta de conhecimento.
+              É perdida por falta de prática — nervoso, respostas vagas, sem saber
+              como estruturar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                icon: <Zap className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
+                title: 'Você fica nervoso',
+                desc: 'Adrenalina bloqueia o raciocínio na hora H. Você sabe a resposta, mas o nervosismo toma conta.',
+              },
+              {
+                icon: <MessageSquare className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
+                title: 'Suas respostas soam vagas',
+                desc: 'Você sabe, mas não sabe como explicar bem. Falta estrutura e clareza para convencer o recrutador.',
+              },
+              {
+                icon: <Users className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
+                title: 'Você não treina porque não tem com quem',
+                desc: 'Pedir para amigos simular é constrangedor e ineficaz. Sem feedback real, você fica no escuro.',
+              },
+            ].map((item, i) => (
+              <div key={i}
+                   className="bg-zinc-900 dark:bg-zinc-800 rounded-xl p-7
+                              border border-zinc-800 dark:border-zinc-700">
+                <div className="mb-5" aria-hidden="true">{item.icon}</div>
+                <h3 className="font-semibold text-white text-[15px] mb-3 leading-snug">
+                  {item.title}
+                </h3>
+                <p className="text-zinc-400 text-sm leading-[1.7]">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 3 — COMO FUNCIONA
+      ───────────────────────────────────────────── */}
+      <section id="como-funciona" className="py-24 lg:py-32 px-6 bg-muted">
         <div className="max-w-[1120px] mx-auto">
 
           <div className="mb-14">
-            <p className="text-[11px] font-semibold uppercase
-                          tracking-eyebrow text-muted-fg mb-4">
-              Como funciona
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Simples assim
             </p>
-            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
-                           tracking-heading leading-[1.1]">
-              Três passos para chegar preparado
+            <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Do currículo ao feedback em minutos
             </h2>
           </div>
 
@@ -188,18 +333,21 @@ export default function LandingPage() {
             {[
               {
                 num: '01',
-                title: 'Envie seu currículo e a vaga',
-                desc: 'Nossa IA analisa sua experiência e os requisitos da vaga para criar uma entrevista personalizada para você.',
+                icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Informe sua vaga',
+                desc: 'Cole a descrição da vaga ou deixe a IA gerar uma para você. Faça upload do seu currículo para personalizar as perguntas.',
               },
               {
                 num: '02',
-                title: 'Pratique com o entrevistador',
-                desc: 'Responda perguntas reais por voz. O entrevistador reage, aprofunda e desafia — como numa entrevista de verdade.',
+                icon: <Mic className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Seja entrevistado',
+                desc: 'Seu entrevistador virtual fala em voz real, faz perguntas personalizadas e aguarda suas respostas pelo microfone. Como uma entrevista de verdade.',
               },
               {
                 num: '03',
-                title: 'Receba feedback detalhado',
-                desc: 'Veja sua pontuação, análise por resposta, mapa de competências e o que você poderia ter dito melhor.',
+                icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Receba feedback',
+                desc: 'Nota geral, análise por pergunta, mapa de competências e a resposta ideal para cada pergunta. Tudo em menos de 5 minutos.',
               },
             ].map((item, i) => (
               <div key={i}
@@ -207,164 +355,336 @@ export default function LandingPage() {
                               hover:border-border-strong hover:shadow-card-hover
                               transition-all duration-200">
                 <span aria-hidden="true"
-                      className="block text-[48px] font-bold font-mono
-                                 tabular-nums text-zinc-200 dark:text-zinc-700
-                                 leading-none mb-6">
+                      className="block text-[52px] font-bold font-mono tabular-nums
+                                 text-zinc-200 dark:text-zinc-700 leading-none mb-5">
                   {item.num}
                 </span>
-                <h3 className="font-semibold text-foreground text-[15px]
-                               leading-snug mb-3">
+                <div className="mb-4" aria-hidden="true">{item.icon}</div>
+                <h3 className="font-semibold text-foreground text-[15px] leading-snug mb-3">
                   {item.title}
                 </h3>
-                <p className="text-muted-fg text-sm leading-[1.65]">
-                  {item.desc}
-                </p>
+                <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
               </div>
             ))}
           </div>
+
         </div>
       </section>
 
-      {/* ── ARGUMENTO ── */}
-      <section className="py-28 px-6 bg-zinc-950 dark:bg-black">
-        <div className="max-w-[720px] mx-auto">
-          <h2 className="text-[36px] lg:text-[52px] font-bold text-white
-                         tracking-heading leading-[1.06] mb-6">
-            Você tem uma entrevista
-            importante amanhã.
-          </h2>
-          <p className="text-zinc-400 text-[17px] leading-[1.7] mb-10 max-w-lg">
-            Em 20 minutos, o Entrevistador.IA simula a entrevista com
-            base no seu currículo e na vaga real. Você descobre onde
-            está fraco, o que melhorar — e aparece no dia seguinte
-            muito mais preparado.
-          </p>
-          <button
-            onClick={() => router.push('/setup')}
-            className="inline-flex items-center gap-2 bg-white text-zinc-950
-                       px-7 py-3 rounded-lg text-sm font-semibold
-                       hover:bg-zinc-100 transition-colors duration-150">
-            Começar agora — é grátis
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </section>
-
-      {/* ── DIFERENCIAIS ── */}
-      <section className="py-28 px-6 bg-background">
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 4 — RECURSOS
+      ───────────────────────────────────────────── */}
+      <section id="recursos" className="py-24 lg:py-32 px-6 bg-background">
         <div className="max-w-[1120px] mx-auto">
 
           <div className="mb-14">
-            <p className="text-[11px] font-semibold uppercase
-                          tracking-eyebrow text-muted-fg mb-4">
-              Por que é diferente
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Recursos
+            </p>
+            <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Mais que um chatbot.<br />
+              Uma entrevista de verdade.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border
+                          rounded-xl overflow-hidden border border-border">
+            {[
+              {
+                icon: <Mic className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Voz humana real',
+                desc: 'Seu entrevistador fala. Você responde pelo microfone. Sem digitar, sem fingir.',
+              },
+              {
+                icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Personalizado para sua vaga',
+                desc: 'As perguntas são geradas com base na vaga e no seu currículo. Nada genérico.',
+              },
+              {
+                icon: <Globe className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Português e inglês',
+                desc: 'Treine na língua da vaga. Alterne entre português BR e inglês em qualquer sessão.',
+              },
+              {
+                icon: <Users className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: '3 entrevistadores diferentes',
+                desc: 'Sarah, Carlos ou Alex — perfis e estilos distintos para você se adaptar a qualquer recrutador.',
+              },
+              {
+                icon: <MessageSquare className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Feedback por pergunta',
+                desc: 'Saiba exatamente onde errou e como deveria ter respondido. Resposta ideal inclusa.',
+              },
+              {
+                icon: <TrendingUp className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Histórico de evolução',
+                desc: 'Compare seu desempenho ao longo do tempo. Veja onde melhorou e onde ainda precisa evoluir.',
+              },
+            ].map((item, i) => (
+              <div key={i}
+                   className="bg-background p-8 flex gap-5
+                              hover:bg-muted transition-colors duration-150">
+                <div className="mt-0.5 shrink-0" aria-hidden="true">{item.icon}</div>
+                <div>
+                  <h3 className="font-semibold text-foreground text-[15px] mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 5 — DEMO VÍDEO
+      ───────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32 px-6 bg-muted">
+        <div className="max-w-[800px] mx-auto">
+
+          <div className="mb-12 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Veja em ação
             </p>
             <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
-                           tracking-heading leading-[1.1]">
-              Feito para a sua entrevista,<br className="hidden lg:block" />
-              não para qualquer candidato.
+                           tracking-heading leading-[1.08]">
+              Menos de 30 segundos para entender
+            </h2>
+          </div>
+
+          {/*
+            TODO: GRAVAR O VÍDEO DE 30 SEGUNDOS
+
+            Roteiro sugerido:
+            0:00–0:05 — Setup: cole uma vaga, upload do currículo sendo processado
+            0:05–0:10 — Config: escolha do avatar (Sarah), idioma PT-BR, 7 perguntas
+            0:10–0:20 — Entrevista: Sarah falando, microfone ativo, ondas de voz
+            0:20–0:28 — Dashboard: score geral, competências, feedback por pergunta
+            0:28–0:30 — Logo + tagline
+
+            Ferramentas: Loom, OBS, ou gravação nativa Mac/Windows.
+            Resolução mínima: 1280×720. Formato: MP4.
+
+            Quando tiver o vídeo, hospedar no YouTube (unlisted) e substituir
+            o placeholder abaixo por:
+
+            <iframe
+              src="https://www.youtube.com/embed/SEU_VIDEO_ID"
+              title="Demonstração Entrevistador.IA"
+              className="w-full h-full"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          */}
+          <div className="relative aspect-video rounded-xl overflow-hidden
+                          border border-border bg-zinc-950 flex items-center
+                          justify-center group cursor-pointer">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20
+                              flex items-center justify-center
+                              group-hover:bg-white/20 transition-colors duration-200">
+                <Play className="w-7 h-7 text-white ml-0.5" fill="white" aria-hidden="true" />
+              </div>
+              <p className="text-zinc-400 text-sm">Vídeo de demonstração em breve</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 6 — PERSONAS
+      ───────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32 px-6 bg-background">
+        <div className="max-w-[1120px] mx-auto">
+
+          <div className="mb-14">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Para quem é
+            </p>
+            <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Feito para quem leva carreira a sério
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               {
-                icon: <BrainCircuit className="w-4 h-4 text-muted-fg" />,
-                title: 'Perguntas baseadas no seu perfil',
-                desc: 'Não são perguntas genéricas. São geradas a partir da sua experiência real cruzada com os requisitos da vaga.',
+                name: 'Pedro, 24 anos',
+                situation: 'Recém-formado · Primeiro emprego',
+                pain: 'Nunca fez uma entrevista formal de verdade. Trava quando perguntam sobre experiência.',
+                result: 'Treina como apresentar seu potencial mesmo sem histórico profissional extenso.',
               },
               {
-                icon: <MessageSquare className="w-4 h-4 text-muted-fg" />,
-                title: 'Feedback de verdade',
-                desc: 'Para cada resposta: o que estava bom, o que faltou, e como você deveria ter respondido.',
+                name: 'Marina, 31 anos',
+                situation: 'Em transição de carreira · Mudando de área',
+                pain: 'Tem 7 anos de experiência, mas em outra função. Não sabe como vender sua trajetória.',
+                result: 'Aprende a conectar experiência anterior com o novo cargo e convencer o recrutador.',
               },
               {
-                icon: <TrendingUp className="w-4 h-4 text-muted-fg" />,
-                title: 'Acompanhe sua evolução',
-                desc: 'Veja seu progresso entrevista a entrevista. Identifique padrões e os pontos que melhoraram.',
+                name: 'Rafael, 29 anos',
+                situation: 'Dev buscando senioridade',
+                pain: 'É bom tecnicamente, mas trava em perguntas comportamentais e de liderança.',
+                result: 'Pratica as respostas técnicas e comportamentais separadamente, por tipo de vaga.',
               },
               {
-                icon: <Globe className="w-4 h-4 text-muted-fg" />,
-                title: 'Português e inglês',
-                desc: 'Pratique em português ou em inglês — ideal para vagas em empresas internacionais.',
+                name: 'Camila, 38 anos',
+                situation: 'Buscando posição de liderança',
+                pain: 'Quer uma posição C-level mas precisa refinar como comunica visão e resultados.',
+                result: 'Pratica estruturar raciocínio estratégico e liderança com exemplos concretos.',
               },
-            ].map((item, i) => (
+            ].map((p, i) => (
               <div key={i}
-                   className="flex gap-5 p-7 rounded-xl border border-border
-                              hover:border-border-strong hover:bg-card
+                   className="bg-card rounded-xl p-7 border border-border
+                              hover:border-border-strong hover:shadow-card-hover
                               transition-all duration-200">
-                <div className="mt-0.5 shrink-0">{item.icon}</div>
-                <div>
-                  <h3 className="font-semibold text-foreground text-[15px] mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-muted-fg text-sm leading-[1.65]">
-                    {item.desc}
+                <div className="mb-5">
+                  <p className="font-semibold text-foreground text-[15px]">{p.name}</p>
+                  <p className="text-[11px] uppercase tracking-eyebrow text-muted-fg mt-1">
+                    {p.situation}
                   </p>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                                   text-zinc-400 dark:text-zinc-500 mb-1.5">
+                      Dor
+                    </p>
+                    <p className="text-sm text-muted-fg leading-[1.7]">{p.pain}</p>
+                  </div>
+                  <div className="border-t border-border pt-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                                   text-[#16a34a] mb-1.5">
+                      Resultado
+                    </p>
+                    <p className="text-sm text-foreground leading-[1.7]">{p.result}</p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+
         </div>
       </section>
 
-      {/* ── PREÇOS ── */}
-      <section className="py-28 px-6 bg-muted">
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 7 — PROVA SOCIAL
+      ───────────────────────────────────────────── */}
+      <section id="depoimentos" className="py-24 lg:py-32 px-6 bg-muted">
+        <div className="max-w-[1120px] mx-auto">
+
+          {/* 7A — Números */}
+          {/* TODO: atualizar "1.000+" e "5.000+" com dados reais */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-20 pb-20
+                          border-b border-border">
+            {[
+              { value: '1.000+', label: 'candidatos treinaram'              },
+              { value: '5.000+', label: 'horas de prática simulada'         },
+              { value: 'Top 8',  label: 'de 8.000 no Clube da Programação'  },
+            ].map((m, i) => (
+              <div key={i}>
+                <p className="text-[52px] font-bold font-mono tabular-nums
+                               text-foreground leading-none mb-2">
+                  {m.value}
+                </p>
+                <p className="text-sm text-muted-fg">{m.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 7B — Depoimentos */}
+          <div className="mb-10">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              O que dizem
+            </p>
+            <h2 className="text-[28px] lg:text-[36px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Quem praticou, saiu na frente
+            </h2>
+          </div>
+
+          {/* TODO: substituir pelos depoimentos reais — trocar text/name/role/company */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
+              { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
+              { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
+            ].map((t, i) => (
+              <div key={i}
+                   className="bg-card rounded-xl p-7 border border-border flex flex-col">
+                <p className="text-[52px] font-bold text-zinc-200 dark:text-zinc-700
+                               leading-none mb-4 select-none" aria-hidden="true">
+                  &ldquo;
+                </p>
+                <p className="text-muted-fg text-[15px] leading-[1.75] italic mb-6 flex-1">
+                  {t.text}
+                </p>
+                <div className="flex items-center gap-3 pt-5 border-t border-border">
+                  <div className="w-9 h-9 rounded-full bg-muted border border-border shrink-0"
+                       aria-hidden="true" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-fg">{t.role} · {t.company}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 8 — PRICING
+      ───────────────────────────────────────────── */}
+      <section id="precos" className="py-24 lg:py-32 px-6 bg-background">
         <div className="max-w-[1120px] mx-auto">
 
           <div className="mb-14">
-            <p className="text-[11px] font-semibold uppercase
-                          tracking-eyebrow text-muted-fg mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
               Preços
             </p>
-            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
-                           tracking-heading leading-[1.1] mb-2">
+            <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
+                           tracking-heading leading-[1.08] mb-3">
               Simples e acessível
             </h2>
-            <p className="text-muted-fg text-lg leading-relaxed">
-              Comece grátis. Pague só quando quiser ir mais fundo.
+            <p className="text-muted-fg text-lg">
+              Comece de graça. Pague só quando quiser ir mais fundo.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
             {/* Grátis */}
             <div className="bg-card rounded-xl p-7 border border-border flex flex-col">
-              <p className="text-[11px] font-semibold uppercase
-                            tracking-eyebrow text-muted-fg mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
                 Grátis
               </p>
-              <div className="mb-6">
-                <p className="text-[44px] font-bold font-mono tabular-nums
-                               text-foreground leading-none mb-1">
+              <div className="mb-7">
+                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground
+                               leading-none">
                   R$0
                 </p>
-                <p className="text-sm text-muted-fg">sem cartão necessário</p>
               </div>
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {[
-                  '3 perguntas de entrevista',
-                  'Escolha a vaga que quiser',
-                  'Português e inglês',
-                  'Voz humana real',
-                ].map(f => (
+              <ul className="space-y-3 mb-8 flex-1">
+                {['3 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
+                  .map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
-                    <svg className="w-4 h-4 text-border-strong shrink-0 mt-0.5"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                         aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+                    <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
+                           strokeWidth={2.5} aria-hidden="true" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link href="/setup"
-                className="block w-full text-center border border-border
-                           text-muted-fg py-2.5 rounded-lg text-sm font-medium
-                           hover:border-border-strong hover:text-foreground
-                           transition-all duration-150">
-                Começar grátis
+                className="block w-full text-center border border-border text-muted-fg
+                           py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
+                           hover:text-foreground transition-all duration-150">
+                Começar agora
               </Link>
             </div>
 
@@ -372,94 +692,66 @@ export default function LandingPage() {
             <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-7
                             border border-transparent relative flex flex-col">
               <div className="absolute -top-3 left-6">
-                <span className="bg-zinc-950 dark:bg-zinc-100
-                                 text-white dark:text-zinc-950
-                                 text-[11px] font-semibold
-                                 px-3 py-1 rounded-full">
+                <span className="bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950
+                                 text-[11px] font-semibold px-3 py-1 rounded-full">
                   Mais popular
                 </span>
               </div>
-              <p className="text-[11px] font-semibold uppercase
-                            tracking-eyebrow text-zinc-500 mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-5">
                 Avulso
               </p>
-              <div className="mb-6">
+              <div className="mb-7">
                 <p className="text-[44px] font-bold font-mono tabular-nums
                                text-white dark:text-zinc-950 leading-none mb-1">
                   R$9,90
                 </p>
-                <p className="text-sm text-zinc-400 dark:text-zinc-500">
-                  por entrevista de 7 perguntas
-                </p>
+                <p className="text-sm text-zinc-400 dark:text-zinc-500">/ entrevista</p>
               </div>
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {[
-                  'Entrevista completa de 7 perguntas',
-                  'Relatório com nota e feedback',
-                  'Análise por pergunta',
-                  'Resposta ideal personalizada',
-                  'Resultado compartilhável',
-                ].map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm
-                                         text-zinc-300 dark:text-zinc-600">
-                    <svg className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                         aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+              <ul className="space-y-3 mb-8 flex-1">
+                {['Entrevista completa de 7 perguntas', 'Relatório com nota e feedback', 'Sem assinatura']
+                  .map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-zinc-300 dark:text-zinc-600">
+                    <Check className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5"
+                           strokeWidth={2.5} aria-hidden="true" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link href="/planos"
-                className="block w-full text-center
-                           bg-white dark:bg-zinc-950
-                           text-zinc-950 dark:text-white
-                           py-2.5 rounded-lg text-sm font-semibold
-                           hover:opacity-90 transition-opacity duration-150">
-                Ver planos
+                className="block w-full text-center bg-white dark:bg-zinc-950
+                           text-zinc-950 dark:text-white py-2.5 rounded-lg text-sm
+                           font-semibold hover:opacity-90 transition-opacity duration-150">
+                Comprar agora
               </Link>
             </div>
 
             {/* Mensal */}
             <div className="bg-card rounded-xl p-7 border border-border flex flex-col">
-              <p className="text-[11px] font-semibold uppercase
-                            tracking-eyebrow text-muted-fg mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
                 Mensal
               </p>
-              <div className="mb-6">
-                <p className="text-[44px] font-bold font-mono tabular-nums
-                               text-foreground leading-none mb-1">
+              <div className="mb-7">
+                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground
+                               leading-none mb-1">
                   R$39,90
                 </p>
-                <p className="text-sm text-muted-fg">por mês · 6 entrevistas</p>
+                <p className="text-sm text-muted-fg">/ mês</p>
               </div>
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {[
-                  '6 entrevistas por mês',
-                  'Histórico de evolução',
-                  'Todos os entrevistadores',
-                  'Resultado compartilhável',
-                  'Suporte por email',
-                ].map(f => (
+              <ul className="space-y-3 mb-8 flex-1">
+                {['6 entrevistas por mês', 'Histórico de evolução', 'Cancele quando quiser']
+                  .map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
-                    <svg className="w-4 h-4 text-border-strong shrink-0 mt-0.5"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                         aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+                    <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
+                           strokeWidth={2.5} aria-hidden="true" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link href="/planos"
-                className="block w-full text-center border border-border
-                           text-muted-fg py-2.5 rounded-lg text-sm font-medium
-                           hover:border-border-strong hover:text-foreground
-                           transition-all duration-150">
-                Ver planos
+                className="block w-full text-center border border-border text-muted-fg
+                           py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
+                           hover:text-foreground transition-all duration-150">
+                Assinar
               </Link>
             </div>
 
@@ -468,53 +760,238 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 text-sm text-muted-fg">
             <Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span>
-              Pagamento via Mercado Pago · Pix disponível ·
-              Garantia de 7 dias conforme CDC art. 49
+              Pagamento seguro via Mercado Pago · Pix disponível ·
+              Garantia de 7 dias (CDC art. 49)
             </span>
           </div>
 
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="bg-zinc-950 dark:bg-black py-14 px-6">
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 9 — FAQ
+      ───────────────────────────────────────────── */}
+      <section id="faq" className="py-24 lg:py-32 px-6 bg-muted">
+        <div className="max-w-[720px] mx-auto">
+
+          <div className="mb-12">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Dúvidas frequentes
+            </p>
+            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Perguntas e respostas
+            </h2>
+          </div>
+
+          <div className="divide-y divide-border rounded-xl overflow-hidden border border-border">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="bg-background">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  className="w-full flex items-center justify-between gap-4
+                             px-6 py-5 text-left hover:bg-muted transition-colors duration-150">
+                  <span className="font-medium text-foreground text-[15px]">
+                    {item.q}
+                  </span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={`w-4 h-4 text-muted-fg shrink-0 transition-transform duration-200 ${
+                      openFaq === i ? 'rotate-180' : ''
+                    }`} />
+                </button>
+                <div className={`overflow-hidden transition-all duration-200 ${
+                  openFaq === i ? 'max-h-96' : 'max-h-0'
+                }`}>
+                  <div className="px-6 pb-5">
+                    <p className="text-muted-fg text-sm leading-[1.8]">{item.a}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 10 — SEGURANÇA E PRIVACIDADE
+      ───────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32 px-6 bg-background">
         <div className="max-w-[1120px] mx-auto">
-          <div className="flex flex-col md:flex-row items-start md:items-center
-                          justify-between gap-8">
 
-            <div>
-              <span className="text-[15px] font-semibold tracking-tight text-white">
-                Entrevistador.IA
-              </span>
-              <p className="text-zinc-500 text-sm mt-1.5">
-                © 2026 Todos os direitos reservados.
+          <div className="mb-12">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Segurança e privacidade
+            </p>
+            <h2 className="text-[28px] lg:text-[36px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Seus dados, seu controle
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                icon: <Lock className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Dados protegidos',
+                desc: 'Seus dados são armazenados com segurança no Supabase e nunca compartilhados com terceiros para marketing.',
+              },
+              {
+                icon: <Shield className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Conforme a LGPD',
+                desc: 'Tratamos seus dados conforme a Lei nº 13.709. Você pode solicitar exclusão a qualquer momento.',
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5 text-muted-fg" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+                       strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                  </svg>
+                ),
+                title: 'IA não treina com seus dados',
+                desc: 'Suas respostas não são usadas para treinar modelos de linguagem. Processamos para gerar feedback e ponto final.',
+              },
+              {
+                icon: <CreditCard className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Pagamento seguro',
+                desc: 'Pagamentos via Mercado Pago com certificação PCI DSS. Não armazenamos dados de cartão.',
+              },
+            ].map((item, i) => (
+              <div key={i} className="p-6 rounded-xl border border-border bg-card">
+                <div className="mb-4" aria-hidden="true">{item.icon}</div>
+                <h3 className="font-semibold text-foreground text-sm mb-2">{item.title}</h3>
+                <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 11 — CTA FINAL
+      ───────────────────────────────────────────── */}
+      <section className="py-28 lg:py-40 px-6 bg-zinc-950 dark:bg-zinc-900">
+        <div className="max-w-[640px] mx-auto text-center">
+          <h2 className="text-[40px] sm:text-[52px] font-bold text-white
+                         tracking-display leading-[1.04] mb-6">
+            Sua próxima entrevista<br />
+            pode ser diferente.
+          </h2>
+          <p className="text-zinc-400 text-lg leading-[1.75] mb-10">
+            Comece agora. As 3 primeiras perguntas são gratuitas
+            — sem cartão, sem cadastro.
+          </p>
+          <button
+            onClick={() => router.push('/setup')}
+            className="bg-white text-zinc-950 px-9 py-4 rounded-lg font-semibold
+                       text-[15px] hover:bg-zinc-100 transition-colors duration-150">
+            Começar grátis
+          </button>
+          <p className="text-zinc-500 text-[13px] mt-4">
+            Sem cartão de crédito · Cancele quando quiser
+          </p>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 12 — FOOTER
+      ───────────────────────────────────────────── */}
+      <footer className="bg-zinc-950 dark:bg-black border-t border-zinc-800 py-16 px-6">
+        <div className="max-w-[1120px] mx-auto">
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
+
+            {/* Marca */}
+            <div className="md:col-span-1">
+              <p className="text-[15px] font-semibold text-white mb-3">
+                Entrevistador<span className="text-zinc-500">.</span>IA
               </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-5 text-sm text-zinc-500">
-              <a href="mailto:suporte@entrevistador-ai.com.br"
-                 className="hover:text-zinc-300 transition-colors duration-150">
-                suporte@entrevistador-ai.com.br
+              <p className="text-zinc-400 text-sm leading-[1.75] mb-4">
+                Simulador de entrevistas de emprego com IA. Treine, receba feedback
+                e chegue preparado para a entrevista que importa.
+              </p>
+              <a href="mailto:suporte@entrevistador-ia.com.br"
+                 className="text-zinc-500 text-sm hover:text-zinc-300 transition-colors duration-150">
+                suporte@entrevistador-ia.com.br
               </a>
-              <Link href="/termos"
-                className="hover:text-zinc-300 transition-colors duration-150">
-                Termos de Uso
-              </Link>
-              <Link href="/privacidade"
-                className="hover:text-zinc-300 transition-colors duration-150">
-                Privacidade
-              </Link>
             </div>
 
-            <button
-              onClick={() => router.push('/setup')}
-              className="text-sm border border-zinc-700 text-zinc-300
-                         px-5 py-2.5 rounded-lg hover:border-zinc-500
-                         hover:text-white transition-all duration-150 shrink-0">
-              Começar agora →
-            </button>
+            {/* Produto */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                             text-zinc-500 mb-5">
+                Produto
+              </p>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Como funciona', href: '#como-funciona' },
+                  { label: 'Recursos',      href: '#recursos'      },
+                  { label: 'Preços',        href: '#precos'        },
+                  { label: 'FAQ',           href: '#faq'           },
+                ].map((l) => (
+                  <li key={l.href}>
+                    <a href={l.href}
+                       className="text-sm text-zinc-400 hover:text-zinc-200
+                                  transition-colors duration-150">
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                             text-zinc-500 mb-5">
+                Legal
+              </p>
+              <ul className="space-y-3">
+                <li>
+                  <Link href="/termos"
+                    className="text-sm text-zinc-400 hover:text-zinc-200
+                               transition-colors duration-150">
+                    Termos de Uso
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacidade"
+                    className="text-sm text-zinc-400 hover:text-zinc-200
+                               transition-colors duration-150">
+                    Política de Privacidade
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Suporte */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                             text-zinc-500 mb-5">
+                Suporte
+              </p>
+              <a href="mailto:suporte@entrevistador-ia.com.br"
+                 className="text-sm text-zinc-400 hover:text-zinc-200
+                            transition-colors duration-150 block mb-2">
+                suporte@entrevistador-ia.com.br
+              </a>
+              <p className="text-sm text-zinc-600">Respondemos em até 2 dias úteis</p>
+            </div>
 
           </div>
+
+          <div className="border-t border-zinc-800 pt-8">
+            <p className="text-sm text-zinc-600">
+              © 2025 Entrevistador.IA · Todos os direitos reservados · São Paulo, Brasil
+            </p>
+          </div>
+
         </div>
       </footer>
 
