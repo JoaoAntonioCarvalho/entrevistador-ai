@@ -17,6 +17,44 @@ const VOICE_MAP: Record<string, Record<string, OpenAIVoice>> = {
   alex:   { 'pt-BR': 'fable',  'en-US': 'alloy'   },
 };
 
+const SPEED_MAP: Record<string, number> = {
+  sarah:  0.88,
+  carlos: 0.92,
+  alex:   0.90,
+};
+
+function processarTextoParaTTS(texto: string, avatarId: string): string {
+  let t = texto.trim();
+
+  // Adicionar vírgula após conectivos sem pontuação para pausas de respiração
+  t = t.replace(
+    /\b(então|portanto|porém|contudo|entretanto|além disso|por outro lado|no entanto|dessa forma|sendo assim)\b(?!,)/gi,
+    '$1,'
+  );
+
+  // Pausa após saudação inicial
+  t = t.replace(
+    /^(Olá|Oi|Bom dia|Boa tarde|Boa noite)([^,.])/i,
+    '$1, $2'
+  );
+
+  // Reticências antes de perguntas reflexivas soam mais humanas
+  t = t.replace(
+    /\. (Me conta|Me fale|Pode me|Como você|O que você|Qual foi|Quando você|Por que você)/g,
+    '... $1'
+  );
+
+  // Sarah: pausas pensativas após marcadores de escuta ativa
+  if (avatarId === 'sarah') {
+    t = t.replace(
+      /\b(interessante|entendo|compreendo|certo)\b([^,.])/gi,
+      '$1, $2'
+    );
+  }
+
+  return t.replace(/  +/g, ' ').trim();
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!await checkRateLimit(aiRateLimit, ip)) {
@@ -33,20 +71,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Texto vazio.' }, { status: 400 });
     }
 
-    const languageCode = (lang as string)?.startsWith('en') ? 'en-US' : 'pt-BR';
-    const avatar       = ((avatarId as string) ?? 'sarah').toLowerCase();
-    const voice        = VOICE_MAP[avatar]?.[languageCode] ?? VOICE_MAP.sarah[languageCode];
+    const languageCode     = (lang as string)?.startsWith('en') ? 'en-US' : 'pt-BR';
+    const avatar           = ((avatarId as string) ?? 'sarah').toLowerCase();
+    const voice            = VOICE_MAP[avatar]?.[languageCode] ?? VOICE_MAP.sarah[languageCode];
+    const speed            = SPEED_MAP[avatar] ?? 0.90;
+    const textoProcessado  = processarTextoParaTTS(text, avatar);
 
     const mp3Response = await openai.audio.speech.create({
       model:           'tts-1-hd',
       voice,
-      input:           text.trim(),
+      input:           textoProcessado,
       response_format: 'mp3',
-      speed:           0.95,
+      speed,
     });
 
-    const buffer   = Buffer.from(await mp3Response.arrayBuffer());
-    const charCount = typeof text === 'string' ? text.length : 0;
+    const buffer    = Buffer.from(await mp3Response.arrayBuffer());
+    const charCount = textoProcessado.length;
 
     return new NextResponse(buffer, {
       status: 200,

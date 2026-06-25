@@ -228,10 +228,13 @@ REGRAS DE COMPORTAMENTO:
 SOBRE O CAMPO "fala":
 - Máximo 2-3 sentenças por turno.
 - Sem asteriscos, sem markdown, sem parênteses explicativos.
-- Escreva exatamente como a pessoa falaria em voz alta.
-- Não use vírgulas em excesso — prefira pontos. Frases curtas soam mais naturais na fala.
+- Escreva exatamente como a pessoa falaria em voz alta — discurso oral natural, não texto escrito.
+- Use vírgulas onde haveria uma pausa de respiração. Frases muito longas sem pontuação
+  soam robotizadas no áudio.
 - Evite palavras difíceis de pronunciar ou termos técnicos em sequência —
   o texto será convertido em áudio.
+- Prefira construções conversacionais a formais. Conectivos como "então", "portanto",
+  "no entanto" devem ser precedidos de vírgula quando iniciam cláusula nova.
 
 FASE ATUAL DA ENTREVISTA:
 ${getInterviewPhase(perguntasRespondidas, totalPerguntas)}
