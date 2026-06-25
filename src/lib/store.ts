@@ -60,6 +60,7 @@ interface SessionStore {
   isLoading: boolean;
   error: string | null;
   custoSessao: CustoSessao;
+  setupStep: number;
 
   initSession: () => void;
   setCandidate: (candidate: Candidate) => void;
@@ -80,6 +81,7 @@ interface SessionStore {
   addCustoIA: (inputTokens: number, outputTokens: number, model: string) => void;
   addCustoTTS: (chars: number) => void;
   resetCusto: () => void;
+  setSetupStep: (step: number) => void;
 }
 
 export const useSessionStore = create<SessionStore>()(
@@ -89,6 +91,7 @@ export const useSessionStore = create<SessionStore>()(
       isLoading: false,
       error: null,
       custoSessao: { ...CUSTO_INICIAL },
+      setupStep: 1,
 
       initSession: () =>
         set({ session: createEmptySession(), custoSessao: { ...CUSTO_INICIAL } }),
@@ -143,7 +146,7 @@ export const useSessionStore = create<SessionStore>()(
       setError: (error) => set({ error }),
 
       resetSession: () =>
-        set({ session: createEmptySession(), isLoading: false, error: null, custoSessao: { ...CUSTO_INICIAL } }),
+        set({ session: createEmptySession(), isLoading: false, error: null, custoSessao: { ...CUSTO_INICIAL }, setupStep: 1 }),
 
       repeatSession: () =>
         set((state) => ({
@@ -196,10 +199,12 @@ export const useSessionStore = create<SessionStore>()(
       },
 
       resetCusto: () => set({ custoSessao: { ...CUSTO_INICIAL } }),
+
+      setSetupStep: (step) => set({ setupStep: step }),
     }),
     {
       name: 'mockai-session',
-      partialize: (state) => ({ session: state.session }),
+      partialize: (state) => ({ session: state.session, setupStep: state.setupStep }),
     }
   )
 );

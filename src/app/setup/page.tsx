@@ -75,22 +75,38 @@ interface ManualFormData {
 export default function SetupPage() {
   const router = useRouter();
   const { session, initSession, setCandidate, setJob, setConfig, setStatus, setAvatarProfiles } = useSessionStore();
-  const [step,            setStep]            = useState<1 | 2 | 3>(1);
+  const setupStep    = useSessionStore(s => s.setupStep);
+  const setSetupStep = useSessionStore(s => s.setSetupStep);
+  const [step,            setStep]            = useState<1 | 2 | 3>(
+    (setupStep >= 1 && setupStep <= 3 ? setupStep : 1) as 1 | 2 | 3
+  );
   const [warning,         setWarning]         = useState<string | null>(null);
   const [showWarning,     setShowWarning]     = useState(false);
   const [avatarProfiles,  setLocalProfiles]   = useState<AvatarProfile[] | null>(null);
   const [loadingAvatars,  setLoadingAvatars]  = useState(false);
   const [savedManualData, setSavedManualData] = useState<ManualFormData | null>(null);
 
+  function irParaPasso(novoStep: 1 | 2 | 3) {
+    setStep(novoStep);
+    setSetupStep(novoStep);
+  }
+
   useEffect(() => {
+    // Se voltando de /planos com step 3 e dados de sessão, não reinicializar
+    if (setupStep === 3 && session.candidate && session.job) {
+      setStep(3);
+      return;
+    }
     initSession();
+    setSetupStep(1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (step === 3 && !session.job) {
-      setStep(2);
+      irParaPasso(2);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, session.job]);
 
   function handleResume(candidate: Candidate, mode: 'upload' | 'manual' | 'pulou') {
@@ -102,7 +118,7 @@ export default function SetupPage() {
       candidate.experiencias?.length || undefined,
       candidate.habilidades?.length ? candidate.habilidades : undefined,
     );
-    setStep(2);
+    irParaPasso(2);
   }
 
   async function handleJob(job: Job) {
@@ -111,7 +127,7 @@ export default function SetupPage() {
       ? 'colou' as const
       : 'gerada' as const;
     notifyVaga(job.titulo || 'Vaga não informada', job.empresa || '', modoVaga);
-    setStep(3);
+    irParaPasso(3);
     setLoadingAvatars(true);
     setLocalProfiles(null);
 
@@ -186,6 +202,7 @@ export default function SetupPage() {
       return;
     }
 
+    setSetupStep(1);
     setStatus('active');
     router.push('/camera-check');
   }
@@ -224,7 +241,7 @@ export default function SetupPage() {
         <div className="mb-8 flex items-center gap-3">
           {step > 1 && (
             <button
-              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+              onClick={() => irParaPasso((step - 1) as 1 | 2 | 3)}
               className="text-sm text-muted-fg hover:text-foreground
                          transition-colors"
             >
@@ -287,6 +304,7 @@ export default function SetupPage() {
               <button
                 onClick={() => {
                   setShowWarning(false);
+                  setSetupStep(1);
                   setStatus('active');
                   router.push('/camera-check');
                 }}

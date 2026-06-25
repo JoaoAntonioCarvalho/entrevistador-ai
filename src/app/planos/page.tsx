@@ -1,9 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/layout/Header';
-import { Check } from 'lucide-react';
+import { Check, ChevronLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSessionStore } from '@/lib/store';
 
@@ -76,8 +78,10 @@ const PLANOS = {
   },
 };
 
-export default function PlanosPage() {
+function PlanosContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('return');
   const { user } = useAuth();
   const session = useSessionStore(s => s.session);
 
@@ -126,6 +130,17 @@ export default function PlanosPage() {
 
         {/* Cabeçalho */}
         <div className="mb-14">
+          {returnTo === 'setup' && (
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 text-sm text-zinc-500
+                         hover:text-zinc-700 dark:hover:text-zinc-300
+                         transition-colors mb-6"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Voltar ao setup
+            </button>
+          )}
           <p className="text-[11px] font-semibold tracking-eyebrow uppercase text-muted-fg mb-3">
             Preços
           </p>
@@ -330,5 +345,13 @@ export default function PlanosPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function PlanosPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-background" />}>
+      <PlanosContent />
+    </Suspense>
   );
 }
