@@ -122,9 +122,23 @@ body {
 .animate-fade-in     { animation: fadeIn 0.4s ease forwards; }
 .animate-slide-right { animation: slideInRight 0.3s ease forwards; }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up          { animation: fadeInUp 0.5s ease-out forwards; }
+.animate-fade-in-up-delay-1  { animation: fadeInUp 0.5s ease-out 0.1s forwards; opacity: 0; }
+.animate-fade-in-up-delay-2  { animation: fadeInUp 0.5s ease-out 0.2s forwards; opacity: 0; }
+.animate-fade-in-up-delay-3  { animation: fadeInUp 0.5s ease-out 0.3s forwards; opacity: 0; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
-  .animate-slide-right {
+  .animate-slide-right,
+  .animate-fade-in-up,
+  .animate-fade-in-up-delay-1,
+  .animate-fade-in-up-delay-2,
+  .animate-fade-in-up-delay-3 {
     animation: none;
     opacity: 1;
     transform: none;

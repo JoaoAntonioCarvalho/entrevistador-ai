@@ -1,18 +1,55 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowRight, Sun, Moon, ChevronDown,
   Mic, FileText, Globe, Users, TrendingUp,
   MessageSquare, Zap, Lock, Shield, CreditCard,
-  Play, BarChart3, Check,
+  Play, BarChart3, Check, Settings,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 
 export const dynamic = 'force-dynamic';
+
+// ── Hooks ──────────────────────────────────────────────────────────────────
+
+function useCountUp(end: number, duration = 1500, shouldStart = false) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!shouldStart) return;
+    let startTime: number | null = null;
+    function animate(currentTime: number) {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      const eased    = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * end));
+      if (progress < 1) requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }, [shouldStart, end, duration]);
+  return count;
+}
+
+function useInView(threshold = 0.3) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) { setInView(true); observer.disconnect(); }
+      },
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, inView };
+}
+
+// ── FAQ data ────────────────────────────────────────────────────────────────
 
 const FAQ_ITEMS = [
   {
@@ -29,7 +66,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Funciona no celular?',
-    a: 'Sim. O produto funciona em navegadores modernos no desktop e no celular. Para a melhor experiência de voz, recomendamos Chrome ou Safari atualizados.',
+    a: 'Ainda não. A versão atual foi desenvolvida para desktop e requer Chrome ou Safari no computador para funcionar corretamente — especialmente o microfone e o áudio do entrevistador. Estamos desenvolvendo um aplicativo nativo para iOS e Android. Se quiser ser avisado quando lançar, envie um email para suporte@entrevistador-ia.com.br com o assunto "App mobile".',
   },
   {
     q: 'Posso cancelar a assinatura quando quiser?',
@@ -40,14 +77,16 @@ const FAQ_ITEMS = [
     a: 'Você tem 7 dias de garantia a partir da compra, conforme o art. 49 do Código de Defesa do Consumidor. É só mandar um email para suporte@entrevistador-ia.com.br.',
   },
   {
-    q: 'O inglês funciona bem? Tenho sotaque.',
-    a: 'O sistema foi desenvolvido para funcionar com sotaque brasileiro. O reconhecimento de voz usa a API nativa do navegador, que é treinada para variações de sotaque.',
+    q: 'Consigo fazer entrevistas em inglês mesmo não sendo fluente?',
+    a: 'Sim. O modo inglês foi desenvolvido para candidatos que estão crescendo no idioma, não apenas para fluentes. Praticar a estrutura das respostas em inglês — mesmo com sotaque e imperfeições — é exatamente o treino que prepara para entrevistas reais. O sistema entende português brasileiro com sotaque sem problemas.',
   },
   {
     q: 'Qual a diferença entre 7 e 10 perguntas?',
     a: '7 perguntas cobre o essencial: apresentação, competências, situações e fit cultural. 10 perguntas adiciona maior profundidade técnica e comportamental — recomendado para vagas sênior ou executivas.',
   },
 ];
+
+// ── Component ───────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const router = useRouter();
@@ -56,6 +95,11 @@ export default function LandingPage() {
   const [mounted, setMounted]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq]   = useState<number | null>(null);
+
+  // Counter animation for metrics section
+  const metricas = useInView(0.4);
+  const count1 = useCountUp(1000, 1500, metricas.inView);
+  const count2 = useCountUp(5000, 2000, metricas.inView);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -145,24 +189,27 @@ export default function LandingPage() {
       <section className="pt-32 pb-20 lg:pt-44 lg:pb-28 px-6 bg-background">
         <div className="max-w-[680px] mx-auto text-center">
 
-          <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-6">
+          <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-6
+                        animate-fade-in-up">
             Simulador de entrevistas com IA
           </p>
 
           <h1 className="text-[44px] sm:text-[60px] lg:text-[72px] font-bold
-                         tracking-display leading-[1.02] text-foreground mb-6">
+                         tracking-display leading-[1.02] text-foreground mb-6
+                         animate-fade-in-up-delay-1">
             A entrevista que você<br />
             precisa praticar.
           </h1>
 
           <p className="text-lg sm:text-xl text-muted-fg leading-[1.75] mb-10
-                        max-w-[540px] mx-auto">
+                        max-w-[540px] mx-auto animate-fade-in-up-delay-2">
             Treine com um entrevistador virtual que fala de verdade, ouve suas
             respostas e entrega feedback detalhado — para você chegar na próxima
             entrevista pronto.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3
+                          animate-fade-in-up-delay-3">
             <button onClick={() => router.push('/setup')}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2
                          bg-foreground text-background px-7 py-3.5 rounded-lg
@@ -188,8 +235,6 @@ export default function LandingPage() {
             <span>1.000+ candidatos já treinaram</span>
             <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
             <span>Português e inglês</span>
-            <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
-            <span>Top 8 de 8.000 no Clube da Programação</span>
           </div>
 
           {/* Product mockup
@@ -220,7 +265,6 @@ export default function LandingPage() {
             {/* Interview UI mockup */}
             <div className="bg-[#0C0C0A] px-8 py-10 flex flex-col items-center gap-6"
                  aria-hidden="true">
-              {/* Avatar */}
               <div className="flex flex-col items-center gap-3">
                 <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700
                                 flex items-center justify-center">
@@ -235,7 +279,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Question */}
               <div className="bg-zinc-900 rounded-xl p-5 max-w-sm w-full">
                 <p className="text-zinc-300 text-sm leading-relaxed text-left">
                   &ldquo;Me conte sobre um desafio técnico que você resolveu recentemente.
@@ -243,7 +286,6 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Voice waves */}
               <div className="flex items-center gap-[3px]">
                 {[28, 40, 54, 44, 32, 50, 36, 52, 42, 28, 46, 38, 54, 30].map((h, i) => (
                   <div key={i}
@@ -300,7 +342,9 @@ export default function LandingPage() {
             ].map((item, i) => (
               <div key={i}
                    className="bg-zinc-900 dark:bg-zinc-800 rounded-xl p-7
-                              border border-zinc-800 dark:border-zinc-700">
+                              border border-zinc-800 dark:border-zinc-700
+                              hover:-translate-y-0.5 hover:shadow-md
+                              transition-all duration-200 cursor-pointer">
                 <div className="mb-5" aria-hidden="true">{item.icon}</div>
                 <h3 className="font-semibold text-white text-[15px] mb-3 leading-snug">
                   {item.title}
@@ -314,7 +358,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 3 — COMO FUNCIONA
+          SEÇÃO 3 — COMO FUNCIONA (4 passos)
       ───────────────────────────────────────────── */}
       <section id="como-funciona" className="py-24 lg:py-32 px-6 bg-muted">
         <div className="max-w-[1120px] mx-auto">
@@ -329,43 +373,104 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Desktop: 4 cards em linha com setas */}
+          <div className="hidden md:flex items-start gap-1">
             {[
               {
                 num: '01',
                 icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Informe sua vaga',
-                desc: 'Cole a descrição da vaga ou deixe a IA gerar uma para você. Faça upload do seu currículo para personalizar as perguntas.',
+                title: 'Compartilhe seu currículo',
+                desc: 'Faça upload do seu PDF ou responda 4 perguntas rápidas sobre sua experiência. Se preferir, pode pular esta etapa — mas as perguntas serão mais genéricas.',
               },
               {
                 num: '02',
-                icon: <Mic className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Seja entrevistado',
-                desc: 'Seu entrevistador virtual fala em voz real, faz perguntas personalizadas e aguarda suas respostas pelo microfone. Como uma entrevista de verdade.',
+                icon: <MessageSquare className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Informe a vaga',
+                desc: 'Cole a descrição da vaga que você quer praticar, ou digite o cargo e deixe a IA gerar uma vaga realista para você automaticamente.',
               },
               {
                 num: '03',
-                icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Receba feedback',
-                desc: 'Nota geral, análise por pergunta, mapa de competências e a resposta ideal para cada pergunta. Tudo em menos de 5 minutos.',
+                icon: <Settings className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Configure e inicie',
+                desc: 'Escolha seu entrevistador (Sarah, Carlos ou Alex), o idioma (português ou inglês), o nível da vaga e a quantidade de perguntas. Depois é só começar.',
               },
-            ].map((item, i) => (
-              <div key={i}
-                   className="bg-card rounded-xl p-8 border border-border
-                              hover:border-border-strong hover:shadow-card-hover
-                              transition-all duration-200">
-                <span aria-hidden="true"
-                      className="block text-[52px] font-bold font-mono tabular-nums
-                                 text-zinc-200 dark:text-zinc-700 leading-none mb-5">
-                  {item.num}
-                </span>
-                <div className="mb-4" aria-hidden="true">{item.icon}</div>
-                <h3 className="font-semibold text-foreground text-[15px] leading-snug mb-3">
-                  {item.title}
-                </h3>
-                <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
-              </div>
+              {
+                num: '04',
+                icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+                title: 'Receba seu feedback',
+                desc: 'Ao final, você recebe nota geral, análise de competências, feedback por pergunta e a resposta ideal para cada uma. Tudo em menos de 5 minutos.',
+              },
+            ].map((step, i, arr) => (
+              <Fragment key={step.num}>
+                <div className="flex-1 bg-card rounded-xl p-7 border border-border
+                                hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
+                                transition-all duration-200">
+                  <span aria-hidden="true"
+                        className="block text-[44px] font-bold font-mono tabular-nums
+                                   text-zinc-200 dark:text-zinc-700 leading-none mb-5">
+                    {step.num}
+                  </span>
+                  <div className="mb-4" aria-hidden="true">{step.icon}</div>
+                  <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="flex items-center justify-center shrink-0 pt-14 px-0.5"
+                       aria-hidden="true">
+                    <ArrowRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />
+                  </div>
+                )}
+              </Fragment>
             ))}
+          </div>
+
+          {/* Mobile: lista vertical com linha conectora à esquerda */}
+          <div className="md:hidden">
+            <div className="relative pl-10">
+              <div className="absolute left-[18px] top-5 bottom-5 w-px bg-border"
+                   aria-hidden="true" />
+              <div className="space-y-5">
+                {[
+                  {
+                    num: '01',
+                    title: 'Compartilhe seu currículo',
+                    desc: 'Faça upload do seu PDF ou responda 4 perguntas rápidas sobre sua experiência.',
+                  },
+                  {
+                    num: '02',
+                    title: 'Informe a vaga',
+                    desc: 'Cole a descrição da vaga ou deixe a IA gerar uma vaga realista para você.',
+                  },
+                  {
+                    num: '03',
+                    title: 'Configure e inicie',
+                    desc: 'Escolha entrevistador, idioma e quantidade de perguntas. Depois é só começar.',
+                  },
+                  {
+                    num: '04',
+                    title: 'Receba seu feedback',
+                    desc: 'Nota geral, análise de competências e feedback por pergunta em menos de 5 minutos.',
+                  },
+                ].map((step) => (
+                  <div key={step.num} className="flex gap-4 items-start">
+                    <div className="w-9 h-9 shrink-0 rounded-full bg-card border border-border
+                                    flex items-center justify-center z-10 relative">
+                      <span className="text-[10px] font-bold font-mono text-muted-fg">
+                        {step.num}
+                      </span>
+                    </div>
+                    <div className="bg-card rounded-xl p-5 border border-border flex-1">
+                      <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-2">
+                        {step.title}
+                      </h3>
+                      <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -540,8 +645,8 @@ export default function LandingPage() {
             ].map((p, i) => (
               <div key={i}
                    className="bg-card rounded-xl p-7 border border-border
-                              hover:border-border-strong hover:shadow-card-hover
-                              transition-all duration-200">
+                              hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
+                              transition-all duration-200 cursor-pointer">
                 <div className="mb-5">
                   <p className="font-semibold text-foreground text-[15px]">{p.name}</p>
                   <p className="text-[11px] uppercase tracking-eyebrow text-muted-fg mt-1">
@@ -577,23 +682,24 @@ export default function LandingPage() {
       <section id="depoimentos" className="py-24 lg:py-32 px-6 bg-muted">
         <div className="max-w-[1120px] mx-auto">
 
-          {/* 7A — Números */}
-          {/* TODO: atualizar "1.000+" e "5.000+" com dados reais */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-20 pb-20
-                          border-b border-border">
-            {[
-              { value: '1.000+', label: 'candidatos treinaram'              },
-              { value: '5.000+', label: 'horas de prática simulada'         },
-              { value: 'Top 8',  label: 'de 8.000 no Clube da Programação'  },
-            ].map((m, i) => (
-              <div key={i}>
-                <p className="text-[52px] font-bold font-mono tabular-nums
-                               text-foreground leading-none mb-2">
-                  {m.value}
-                </p>
-                <p className="text-sm text-muted-fg">{m.label}</p>
-              </div>
-            ))}
+          {/* 7A — Números com contador animado */}
+          {/* TODO: atualizar os valores de count1 (1000) e count2 (5000) com dados reais */}
+          <div ref={metricas.ref}
+               className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-20 pb-20 border-b border-border">
+            <div>
+              <p className="text-[52px] font-bold font-mono tabular-nums
+                             text-foreground leading-none mb-2">
+                {metricas.inView ? count1.toLocaleString('pt-BR') : '0'}+
+              </p>
+              <p className="text-sm text-muted-fg">candidatos treinaram</p>
+            </div>
+            <div>
+              <p className="text-[52px] font-bold font-mono tabular-nums
+                             text-foreground leading-none mb-2">
+                {metricas.inView ? count2.toLocaleString('pt-BR') : '0'}+
+              </p>
+              <p className="text-sm text-muted-fg">horas de prática simulada</p>
+            </div>
           </div>
 
           {/* 7B — Depoimentos */}
@@ -615,7 +721,9 @@ export default function LandingPage() {
               { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
             ].map((t, i) => (
               <div key={i}
-                   className="bg-card rounded-xl p-7 border border-border flex flex-col">
+                   className="bg-card rounded-xl p-7 border border-border flex flex-col
+                              hover:-translate-y-0.5 hover:shadow-card-hover
+                              transition-all duration-200">
                 <p className="text-[52px] font-bold text-zinc-200 dark:text-zinc-700
                                leading-none mb-4 select-none" aria-hidden="true">
                   &ldquo;
@@ -660,13 +768,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
             {/* Grátis */}
-            <div className="bg-card rounded-xl p-7 border border-border flex flex-col">
+            <div className="bg-card rounded-xl p-7 border border-border flex flex-col
+                            hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
               <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
                 Grátis
               </p>
               <div className="mb-7">
-                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground
-                               leading-none">
+                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
                   R$0
                 </p>
               </div>
@@ -690,7 +798,8 @@ export default function LandingPage() {
 
             {/* Avulso — destaque */}
             <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-7
-                            border border-transparent relative flex flex-col">
+                            border border-transparent relative flex flex-col
+                            hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
               <div className="absolute -top-3 left-6">
                 <span className="bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950
                                  text-[11px] font-semibold px-3 py-1 rounded-full">
@@ -726,7 +835,8 @@ export default function LandingPage() {
             </div>
 
             {/* Mensal */}
-            <div className="bg-card rounded-xl p-7 border border-border flex flex-col">
+            <div className="bg-card rounded-xl p-7 border border-border flex flex-col
+                            hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
               <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
                 Mensal
               </p>
@@ -784,30 +894,36 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="divide-y divide-border rounded-xl overflow-hidden border border-border">
+          <div className="rounded-xl overflow-hidden border border-border">
             {FAQ_ITEMS.map((item, i) => (
               <div key={i} className="bg-background">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  className="w-full flex items-center justify-between gap-4
-                             px-6 py-5 text-left hover:bg-muted transition-colors duration-150">
-                  <span className="font-medium text-foreground text-[15px]">
+                  className="w-full text-left flex items-center justify-between
+                             py-5 px-6 gap-4
+                             hover:bg-zinc-50 dark:hover:bg-zinc-900/50
+                             transition-colors duration-150">
+                  <span className="font-medium text-zinc-900 dark:text-white text-base">
                     {item.q}
                   </span>
                   <ChevronDown
                     aria-hidden="true"
-                    className={`w-4 h-4 text-muted-fg shrink-0 transition-transform duration-200 ${
+                    className={`w-5 h-5 shrink-0 text-zinc-400 transition-transform duration-200 ${
                       openFaq === i ? 'rotate-180' : ''
                     }`} />
                 </button>
-                <div className={`overflow-hidden transition-all duration-200 ${
-                  openFaq === i ? 'max-h-96' : 'max-h-0'
+                <div className={`overflow-hidden transition-all ease-out duration-200 ${
+                  openFaq === i ? 'max-h-96 pb-5' : 'max-h-0'
                 }`}>
-                  <div className="px-6 pb-5">
-                    <p className="text-muted-fg text-sm leading-[1.8]">{item.a}</p>
-                  </div>
+                  <p className="px-6 text-zinc-600 dark:text-zinc-400 text-base leading-relaxed">
+                    {item.a}
+                  </p>
                 </div>
+                {i < FAQ_ITEMS.length - 1 && (
+                  <div className="border-b border-zinc-100 dark:border-zinc-800"
+                       aria-hidden="true" />
+                )}
               </div>
             ))}
           </div>
@@ -862,7 +978,9 @@ export default function LandingPage() {
                 desc: 'Pagamentos via Mercado Pago com certificação PCI DSS. Não armazenamos dados de cartão.',
               },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-xl border border-border bg-card">
+              <div key={i} className="p-6 rounded-xl border border-border bg-card
+                                      hover:-translate-y-0.5 hover:shadow-card-hover
+                                      transition-all duration-200">
                 <div className="mb-4" aria-hidden="true">{item.icon}</div>
                 <h3 className="font-semibold text-foreground text-sm mb-2">{item.title}</h3>
                 <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
@@ -907,7 +1025,6 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
 
-            {/* Marca */}
             <div className="md:col-span-1">
               <p className="text-[15px] font-semibold text-white mb-3">
                 Entrevistador<span className="text-zinc-500">.</span>IA
@@ -922,10 +1039,8 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Produto */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-eyebrow
-                             text-zinc-500 mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-5">
                 Produto
               </p>
               <ul className="space-y-3">
@@ -937,8 +1052,7 @@ export default function LandingPage() {
                 ].map((l) => (
                   <li key={l.href}>
                     <a href={l.href}
-                       className="text-sm text-zinc-400 hover:text-zinc-200
-                                  transition-colors duration-150">
+                       className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors duration-150">
                       {l.label}
                     </a>
                   </li>
@@ -946,39 +1060,32 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Legal */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-eyebrow
-                             text-zinc-500 mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-5">
                 Legal
               </p>
               <ul className="space-y-3">
                 <li>
                   <Link href="/termos"
-                    className="text-sm text-zinc-400 hover:text-zinc-200
-                               transition-colors duration-150">
+                    className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors duration-150">
                     Termos de Uso
                   </Link>
                 </li>
                 <li>
                   <Link href="/privacidade"
-                    className="text-sm text-zinc-400 hover:text-zinc-200
-                               transition-colors duration-150">
+                    className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors duration-150">
                     Política de Privacidade
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Suporte */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-eyebrow
-                             text-zinc-500 mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-5">
                 Suporte
               </p>
               <a href="mailto:suporte@entrevistador-ia.com.br"
-                 className="text-sm text-zinc-400 hover:text-zinc-200
-                            transition-colors duration-150 block mb-2">
+                 className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors duration-150 block mb-2">
                 suporte@entrevistador-ia.com.br
               </a>
               <p className="text-sm text-zinc-600">Respondemos em até 2 dias úteis</p>
