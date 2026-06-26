@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
         }],
         back_urls: {
           success: `${baseUrl}/pagamento/sucesso?plano=${plano}&session=${sessionId ?? ''}`,
-          failure: `${baseUrl}/pagamento/falhou`,
-          pending: `${baseUrl}/pagamento/pendente`,
+          failure: `${baseUrl}/pagamento/falhou?plano=${plano}&session=${sessionId ?? ''}`,
+          pending: `${baseUrl}/pagamento/pendente?plano=${plano}&session=${sessionId ?? ''}`,
         },
         auto_return:        'approved',
         notification_url:   `${baseUrl}/api/mp-webhook`,
