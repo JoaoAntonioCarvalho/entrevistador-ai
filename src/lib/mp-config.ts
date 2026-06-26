@@ -1,16 +1,24 @@
 import { MercadoPagoConfig } from 'mercadopago';
 
-const isProduction = process.env.MP_MODO === 'producao';
+const isProducao = process.env.MP_MODO === 'producao';
 
-console.log('[mp-config] modo:', isProduction ? 'PRODUÇÃO' : 'TESTE');
+console.log('[mp-config] modo:', isProducao ? 'PRODUÇÃO ⚠️' : 'TESTE ✓');
+console.log('[mp-config] token disponível:',
+  isProducao
+    ? !!process.env.MP_ACCESS_TOKEN_PROD
+    : !!process.env.MP_ACCESS_TOKEN_TEST
+);
 
 export const mpConfig = new MercadoPagoConfig({
-  accessToken: isProduction
+  accessToken: isProducao
     ? process.env.MP_ACCESS_TOKEN_PROD!
     : process.env.MP_ACCESS_TOKEN_TEST!,
 });
 
-export const MP_PUBLIC_KEY = isProduction
+// Alias para diagnóstico (mp-diagnostico/route.ts importa `mp`)
+export const mp = mpConfig;
+
+export const MP_PUBLIC_KEY = isProducao
   ? process.env.MP_PUBLIC_KEY_PROD!
   : process.env.MP_PUBLIC_KEY_TEST!;
 
@@ -26,7 +34,7 @@ export const DESCRICOES = {
   'finalizar-atual': 'Entrevistador.IA — Finalizar entrevista (7 perguntas)',
   'credito-7':       'Entrevistador.IA — 1 entrevista de 7 perguntas',
   'credito-14':      'Entrevistador.IA — 1 entrevista de 14 perguntas',
-  'mensal-starter':  'Entrevistador.IA — Plano Starter (6 entrevistas/mês)',
+  'mensal-starter':  'Entrevistador.IA — Plano Starter (6×7 perguntas/mês)',
   'mensal-pro':      'Entrevistador.IA — Plano Pro (6×14 perguntas/mês)',
 } as const;
 

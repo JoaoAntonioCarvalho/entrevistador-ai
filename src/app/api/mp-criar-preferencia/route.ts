@@ -3,27 +3,54 @@ import { createClient } from '@supabase/supabase-js';
 import { Preference } from 'mercadopago';
 import { mpConfig, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
 
-export async function POST(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  try {
-    const { plano, sessionId, authUserId } = await req.json();
+export const dynamic = 'force-dynamic';
 
-    console.log('[mp-preferencia] authUserId:', authUserId, '| plano:', plano, '| sessionId:', sessionId);
-    if (!plano || !authUserId) {
-      console.log('[mp-preferencia] ERRO: authUserId ou plano ausente');
-      return NextResponse.json({ error: 'Parâmetros inválidos.' }, { status: 400 });
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function POST(req: NextRequest) {
+  console.log('[mp-criar-preferencia] iniciando...');
+
+  try {
+    const body = await req.json();
+    const { plano, sessionId, authUserId } = body;
+
+    console.log('[mp-criar-preferencia] plano:', plano);
+    console.log('[mp-criar-preferencia] sessionId:', sessionId);
+    console.log('[mp-criar-preferencia] authUserId:', authUserId);
+
+    if (!plano) {
+      return NextResponse.json(
+        { error: 'Plano é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    if (!authUserId) {
+      console.error('[mp-criar-preferencia] ERRO: authUserId vazio!');
+      return NextResponse.json(
+        { error: 'Usuário não autenticado.' },
+        { status: 401 }
+      );
     }
 
     if (!(plano in PRECOS)) {
-      return NextResponse.json({ error: 'Plano inválido.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Plano inválido.' },
+        { status: 400 }
+      );
     }
 
     const baseUrl = (
       process.env.NEXT_PUBLIC_APP_URL ?? 'https://entrevistador-ai.vercel.app'
     ).replace(/\/$/, '');
+
+    const externalRef = `${authUserId}|${plano}|${sessionId ?? 'novo'}`;
+
+    console.log('[mp-criar-preferencia] external_reference:', externalRef);
+    console.log('[mp-criar-preferencia] baseUrl:', baseUrl);
 
     const preference = new Preference(mpConfig);
     const result = await preference.create({
@@ -42,29 +69,40 @@ export async function POST(req: NextRequest) {
         },
         auto_return:        'approved',
         notification_url:   `${baseUrl}/api/mp-webhook`,
-        external_reference: `${authUserId}|${plano}|${sessionId ?? 'novo'}`,
+        external_reference: externalRef,
       },
     });
 
-    console.log('[mp-preferencia] external_reference:', `${authUserId}|${plano}|${sessionId ?? 'novo'}`);
-    console.log('[mp-preferencia] preferenceId:', result.id);
+    console.log('[mp-criar-preferencia] preference.id:', result.id);
+    console.log('[mp-criar-preferencia] init_point:', result.init_point);
 
-    await supabase.from('payment_sessions').insert({
-      session_id:       sessionId ?? null,
-      auth_user_id:     authUserId,
-      plano,
-      mp_preference_id: result.id,
-      status:           'pending',
-    });
+    const { error: dbError } = await supabase
+      .from('payment_sessions')
+      .insert({
+        session_id:       sessionId ?? null,
+        auth_user_id:     authUserId,
+        plano,
+        mp_preference_id: result.id,
+        status:           'pending',
+      });
+
+    if (dbError) {
+      console.error('[mp-criar-preferencia] erro ao salvar no banco:', dbError.message);
+    } else {
+      console.log('[mp-criar-preferencia] salvo no banco com sucesso');
+    }
 
     return NextResponse.json({
       preferenceId: result.id,
       initPoint:    result.init_point,
     });
 
-  } catch {
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[mp-criar-preferencia] ERRO CRÍTICO:', msg);
+    if (error instanceof Error) console.error('[mp-criar-preferencia] stack:', error.stack);
     return NextResponse.json(
-      { error: 'Erro ao criar preferência de pagamento.' },
+      { error: 'Erro ao criar preferência: ' + msg },
       { status: 500 }
     );
   }
