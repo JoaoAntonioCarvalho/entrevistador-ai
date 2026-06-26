@@ -545,6 +545,180 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────
+          SEÇÃO 4B — RELATÓRIO DETALHADO
+      ───────────────────────────────────────────── */}
+      <section id="relatorio" className="py-24 lg:py-32 px-6 bg-muted">
+        <div className="max-w-[1120px] mx-auto">
+
+          <div className="mb-14">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Relatório completo
+            </p>
+            <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
+                           tracking-heading leading-[1.08] mb-5">
+              Tudo que você precisa para<br />
+              melhorar de verdade
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed max-w-[560px]">
+              Ao final de cada entrevista, você recebe um relatório detalhado —
+              não apenas uma nota. Cada resposta analisada, cada competência
+              mapeada, cada melhoria apontada.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+
+            {/* Coluna esquerda — itens do relatório */}
+            <div className="flex flex-col">
+              {[
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.5"
+                         strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <path d="M3 9h18M9 21V9"/>
+                    </svg>
+                  ),
+                  title: 'Nota geral de 0 a 100',
+                  desc:  'Uma pontuação objetiva do seu desempenho geral na entrevista, com indicação de faixa — em desenvolvimento, adequado, bom ou excelente.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.5"
+                         strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ),
+                  title: 'Mapa de competências',
+                  desc:  '5 competências avaliadas individualmente: comunicação, raciocínio analítico, conhecimento técnico, liderança e adaptabilidade. Você vê onde está forte e onde precisa evoluir.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.5"
+                         strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="8" y1="6" x2="21" y2="6"/>
+                      <line x1="8" y1="12" x2="21" y2="12"/>
+                      <line x1="8" y1="18" x2="21" y2="18"/>
+                      <polyline points="3 6 4 7 6 5"/>
+                      <polyline points="3 12 4 13 6 11"/>
+                      <polyline points="3 18 4 19 6 17"/>
+                    </svg>
+                  ),
+                  title: 'Análise pergunta por pergunta',
+                  desc:  'Cada resposta avaliada com nota individual, pontos fortes identificados e o que poderia ter sido melhor. Nenhuma resposta passa sem feedback.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.5"
+                         strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18h6"/>
+                      <path d="M10 22h4"/>
+                      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                    </svg>
+                  ),
+                  title: 'Resposta ideal para cada pergunta',
+                  desc:  'Como um profissional sênior responderia àquela mesma pergunta. Um modelo de referência para você comparar e aprender com a diferença.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.5"
+                         strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  ),
+                  title: 'Feedback em texto corrido',
+                  desc:  'Uma análise narrativa do seu desempenho geral — tom, estrutura das respostas, uso de exemplos concretos, clareza e postura comunicacional.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.5"
+                         strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3"/>
+                      <circle cx="6" cy="12" r="3"/>
+                      <circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                  ),
+                  title: 'Resultado compartilhável por link',
+                  desc:  'Seu relatório gera um link público único. Compartilhe com um mentor, coach ou amigo para receber uma segunda opinião sobre seu desempenho.',
+                },
+              ].map((item, i, arr) => (
+                <div key={i}>
+                  <div className="flex gap-4 py-6 hover:-translate-y-0.5 transition-transform duration-200">
+                    <div className="mt-0.5 shrink-0 text-muted-fg" aria-hidden="true">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-[15px] mb-1.5">
+                        {item.title}
+                      </h3>
+                      <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
+                    </div>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div className="border-b border-border" aria-hidden="true" />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Coluna direita — placeholder screenshot */}
+            <div className="lg:sticky lg:top-8">
+              {/*
+                TODO: substituir este placeholder por um screenshot real do
+                dashboard/relatório. Ideal: captura da tela de resultado com
+                score, competências e feedback visíveis.
+                Salvar em public/screenshot-relatorio.png e usar:
+                <Image
+                  src="/screenshot-relatorio.png"
+                  alt="Relatório completo de entrevista"
+                  width={600}
+                  height={450}
+                  className="rounded-2xl"
+                />
+              */}
+              <div className="aspect-[4/3] rounded-2xl border border-zinc-200
+                              dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800
+                              flex flex-col items-center justify-center gap-3">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" strokeWidth="1.5"
+                     strokeLinecap="round" strokeLinejoin="round"
+                     className="text-zinc-300 dark:text-zinc-600">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p className="text-zinc-400 dark:text-zinc-500 text-sm font-medium">
+                  Screenshot do relatório
+                </p>
+                <p className="text-zinc-300 dark:text-zinc-600 text-xs">em breve</p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Nota de destaque */}
+          <div className="mt-12 p-6 rounded-2xl bg-zinc-950 dark:bg-zinc-900 text-center">
+            <p className="text-white font-semibold text-lg mb-1">
+              Tudo isso em menos de 5 minutos.
+            </p>
+            <p className="text-zinc-400 text-sm">
+              O relatório é gerado automaticamente ao final da sua entrevista —
+              sem espera, sem formulário, sem custo adicional.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────
           SEÇÃO 5 — DEMO VÍDEO
       ───────────────────────────────────────────── */}
       <section className="py-24 lg:py-32 px-6 bg-muted">
