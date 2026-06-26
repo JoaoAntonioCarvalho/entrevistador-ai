@@ -76,18 +76,20 @@ export default function InterviewPage() {
   useEffect(() => setMounted(true), []);
   const isDark = (resolvedTheme ?? theme) === 'dark';
 
-  const consecutiveErrors       = useRef(0);
-  const lastCandidateResponse   = useRef('');
-  const isProcessingTurnRef     = useRef(false);
-  const resetVoiceInputRef      = useRef<() => void>(() => {});
-  const voiceErrorCallbackRef   = useRef<() => void>(() => {});
+  const consecutiveErrors         = useRef(0);
+  const lastCandidateResponse     = useRef('');
+  const isProcessingTurnRef       = useRef(false);
+  const resetVoiceInputRef        = useRef<() => void>(() => {});
+  const voiceErrorCallbackRef     = useRef<() => void>(() => {});
   const pendingInterviewerTextRef = useRef<string>('');
-  const prevVoiceStateRef = useRef<string>('idle');
-  const firstTurnCalledRef = useRef(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const creditConsumedRef = useRef(false);
-  const prevUserRef = useRef<string | null>(null);
-  const resumeVerifiedRef = useRef(false);
+  const prevVoiceStateRef         = useRef<string>('idle');
+  const firstTurnCalledRef        = useRef(false);
+  const audioContextRef           = useRef<AudioContext | null>(null);
+  const creditConsumedRef         = useRef(false);
+  const prevUserRef               = useRef<string | null>(null);
+  const resumeVerifiedRef         = useRef(false);
+  // Evita exibir payment gate após retorno confirmado de /pagamento/sucesso
+  const pagamentoConfirmadoRef    = useRef(false);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -430,6 +432,12 @@ export default function InterviewPage() {
       setInterviewState('waiting');
     }
 
+    // Retorno pós-pagamento confirmado → marcar crédito como válido localmente
+    const paidParam = params.get('paid') === 'true';
+    if (paidParam) {
+      pagamentoConfirmadoRef.current = true;
+    }
+
     // Retorno pós-pagamento → verificar crédito e continuar
     if (isResume) {
       setIsResuming(true);
@@ -438,6 +446,7 @@ export default function InterviewPage() {
       url.searchParams.delete('resume');
       url.searchParams.delete('sessionId');
       url.searchParams.delete('showPayment');
+      url.searchParams.delete('paid');
       window.history.replaceState({}, '', url.toString());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -486,7 +495,7 @@ export default function InterviewPage() {
         });
         const data = await res.json();
 
-        if (data.hasCredit) {
+        if (data.hasCredit || pagamentoConfirmadoRef.current) {
           // Restaurar contagem de perguntas pelo histórico da conversa
           const conv = useSessionStore.getState().session.conversation;
           const candidateTurns = conv.filter(t => t.role === 'candidate');
@@ -681,12 +690,6 @@ export default function InterviewPage() {
               }
             </button>
           )}
-          <button
-            onClick={() => handleEndInterview(false)}
-            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-          >
-            Encerrar
-          </button>
         </div>
       </header>
 
@@ -755,45 +758,31 @@ export default function InterviewPage() {
       {/* Body — coluna única */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 
-        {/* Avatar */}
-        <div className="flex-shrink-0 flex flex-col items-center justify-center pt-5 pb-1">
-          <div className="h-52 w-full max-w-[280px]">
-            <AvatarDisplay
-              avatarId={session.config.avatar_id}
-              isSpeaking={voiceOutput.state === 'speaking'}
-              isListening={voiceInput.state === 'listening'}
-              isThinking={isThinking}
-              customProfile={session.avatar_profiles?.find(
-                p => p.id === session.config.avatar_id
-              )}
-              idioma={session.config.idioma}
-              isDark={isDark}
-            />
-          </div>
+        {/* Avatar compacto */}
+        <div className="flex-shrink-0 flex justify-center pt-5 pb-2">
+          <AvatarDisplay
+            avatarId={session.config.avatar_id}
+            isSpeaking={voiceOutput.state === 'speaking'}
+            isListening={voiceInput.state === 'listening'}
+            isThinking={isThinking}
+            size="small"
+            customProfile={session.avatar_profiles?.find(
+              p => p.id === session.config.avatar_id
+            )}
+            idioma={session.config.idioma}
+            isDark={isDark}
+          />
         </div>
 
-        {/* Texto da pergunta atual — reveal progressivo */}
-        <div className="flex-shrink-0 max-w-2xl mx-auto w-full px-6 min-h-[4.5rem] flex items-center justify-center">
-          {isThinking && !visibleText && (
-            <div className="flex gap-1.5 items-center">
-              <span className={`w-2 h-2 rounded-full animate-bounce [animation-delay:0ms] ${isDark ? 'bg-zinc-600' : 'bg-zinc-300'}`} />
-              <span className={`w-2 h-2 rounded-full animate-bounce [animation-delay:150ms] ${isDark ? 'bg-zinc-600' : 'bg-zinc-300'}`} />
-              <span className={`w-2 h-2 rounded-full animate-bounce [animation-delay:300ms] ${isDark ? 'bg-zinc-600' : 'bg-zinc-300'}`} />
-            </div>
-          )}
-          {visibleText && (
-            <p className={`text-base md:text-lg font-normal leading-relaxed text-center ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-              {visibleText}
-              <span className={`inline-block w-0.5 h-[1.1em] ml-1 animate-pulse align-middle ${isDark ? 'bg-zinc-500' : 'bg-zinc-400'}`} />
-            </p>
-          )}
-        </div>
-
-        {/* Histórico do chat */}
+        {/* Chat — ocupa o espaço restante
+            O texto em tempo real do entrevistador é revelado
+            diretamente dentro do histórico via liveInterviewerText */}
         <div className="flex-1 min-h-0">
           <TranscriptPanel
             conversation={session.conversation}
             isListening={voiceInput.state === 'listening'}
+            isThinking={isThinking}
+            liveInterviewerText={visibleText}
             interimTranscript={interimTranscript}
             lang={session.config?.idioma === 'en' ? 'en' : 'pt'}
             isDark={isDark}
@@ -869,7 +858,6 @@ export default function InterviewPage() {
             <MicrophoneButton
               state={micState}
               onClick={handleMicClick}
-              interimTranscript={voiceInput.interimTranscript}
               lang={session.config?.idioma === 'en' ? 'en' : 'pt'}
             />
             {showEscape && (

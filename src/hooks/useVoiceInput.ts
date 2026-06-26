@@ -23,6 +23,7 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
   const hasCalledbackRef      = useRef(false);
   const startTimeRef          = useRef(0);
   const processingTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warmupRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs que sempre apontam para a versão mais recente das callbacks.
   // Isso evita que o recognition capture closures desatualizadas e
@@ -47,23 +48,18 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim  = '';
-      let newFinal = '';
+      let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          newFinal += result[0].transcript + ' ';
           finalTextRef.current += result[0].transcript + ' ';
         } else {
           interim += result[0].transcript;
         }
       }
       setInterim(interim);
-      onInterimTranscriptRef.current?.(interim);
-      // Quando um trecho final chega, limpar o interim visível no painel
-      if (newFinal) {
-        onInterimTranscriptRef.current?.('');
-      }
+      // Mostrar acumulado + interim para não sumir durante pausas de fala
+      onInterimTranscriptRef.current?.(finalTextRef.current + interim);
     };
 
     recognition.onend = () => {
@@ -73,6 +69,7 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
         const text = finalTextRef.current.trim();
         finalTextRef.current = '';
         setInterim('');
+        onInterimTranscriptRef.current?.('');
 
         if (!text) {
           if (processingTimeoutRef.current) {
@@ -135,11 +132,17 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     finalTextRef.current     = '';
     hasCalledbackRef.current = false;
     isStoppingRef.current    = false;
-    startTimeRef.current     = Date.now();
     setTranscript('');
     setInterim('');
-    setState('listening');
+    // Iniciar recognition imediatamente — mic aquece antes do usuário falar
     try { recognitionRef.current?.start(); } catch { /* já rodando */ }
+    // Pequeno warmup antes de mostrar "Ouvindo..." — evita corte da 1ª palavra
+    if (warmupRef.current) clearTimeout(warmupRef.current);
+    warmupRef.current = setTimeout(() => {
+      warmupRef.current = null;
+      startTimeRef.current = Date.now();
+      setState('listening');
+    }, 200);
   }, [state]);
 
   const stopListening = useCallback(() => {
@@ -165,6 +168,10 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
       processingTimeoutRef.current = null;
+    }
+    if (warmupRef.current) {
+      clearTimeout(warmupRef.current);
+      warmupRef.current = null;
     }
     setState('idle');
     setTranscript('');

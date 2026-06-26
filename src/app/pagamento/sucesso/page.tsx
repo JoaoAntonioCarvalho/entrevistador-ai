@@ -50,7 +50,7 @@ function SucessoContent() {
         if (data.hasCredit) {
           setStatus('confirmado');
           setTimeout(() => {
-            router.push(`/interview?resume=true&sessionId=${sessionId}`);
+            router.push(`/interview?resume=true&sessionId=${sessionId}&paid=true`);
           }, 1500);
           return;
         }
@@ -59,7 +59,7 @@ function SucessoContent() {
       if (tentativas >= MAX) {
         setStatus('timeout');
         setTimeout(() => {
-          router.push(`/interview?resume=true&sessionId=${sessionId}`);
+          router.push(`/interview?resume=true&sessionId=${sessionId}&paid=true`);
         }, 2000);
         return;
       }
