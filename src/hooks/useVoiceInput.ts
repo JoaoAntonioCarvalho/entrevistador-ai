@@ -16,11 +16,12 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
   const [interimTranscript, setInterim] = useState('');
   const [isSupported, setIsSupported]   = useState(false);
 
-  const recognitionRef   = useRef<SpeechRecognition | null>(null);
-  const finalTextRef     = useRef('');
-  const isStoppingRef    = useRef(false);
-  const hasCalledbackRef = useRef(false);
-  const startTimeRef     = useRef(0);
+  const recognitionRef        = useRef<SpeechRecognition | null>(null);
+  const finalTextRef          = useRef('');
+  const isStoppingRef         = useRef(false);
+  const hasCalledbackRef      = useRef(false);
+  const startTimeRef          = useRef(0);
+  const processingTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs que sempre apontam para a versão mais recente das callbacks.
   // Isso evita que o recognition capture closures desatualizadas e
@@ -64,6 +65,10 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
         setInterim('');
 
         if (!text) {
+          if (processingTimeoutRef.current) {
+            clearTimeout(processingTimeoutRef.current);
+            processingTimeoutRef.current = null;
+          }
           setState('idle');
           return;
         }
@@ -132,9 +137,25 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     isStoppingRef.current = true;
     setState('processing');
     try { recognitionRef.current?.stop(); } catch { /* silencioso */ }
+
+    // Timeout de segurança: se processing durar > 30s sem resposta, resetar
+    processingTimeoutRef.current = setTimeout(() => {
+      processingTimeoutRef.current = null;
+      setState('idle');
+      setTranscript('');
+      setInterim('');
+      finalTextRef.current     = '';
+      hasCalledbackRef.current = false;
+      isStoppingRef.current    = false;
+      onErrorRef.current?.('Tempo limite excedido. Tente novamente.');
+    }, 30000);
   }, [state]);
 
   const resetState = useCallback(() => {
+    if (processingTimeoutRef.current) {
+      clearTimeout(processingTimeoutRef.current);
+      processingTimeoutRef.current = null;
+    }
     setState('idle');
     setTranscript('');
     setInterim('');

@@ -8,6 +8,9 @@ import {
   ConversationTurn, InterviewTurnResponse
 } from '@/lib/types';
 
+export const dynamic     = 'force-dynamic';
+export const maxDuration = 60; // segundos — cobre última pergunta com avaliação completa
+
 interface TurnRequest {
   candidate: Candidate;
   job: Job;
@@ -481,8 +484,19 @@ Com base na resposta acima e no histórico completo, gere a próxima fala do ent
       sessionId
     );
 
-    if (!result.data.fala || !result.data.avaliacao) {
-      throw new Error('Formato de resposta inválido');
+    // Campos ausentes: construir fallback em vez de lançar erro — evita travar entrevista
+    if (!result.data.fala) {
+      const primeiroNome = candidate?.nome?.split(' ')[0] ?? 'candidato';
+      result.data.fala = isLastTurn
+        ? (config.idioma === 'en'
+            ? `Thank you for your time, ${primeiroNome}. Your feedback report will be ready shortly.`
+            : `Obrigado pela sua participação, ${primeiroNome}. Seu feedback estará disponível em instantes.`)
+        : (config.idioma === 'en'
+            ? 'Thank you for your response. Let me follow up with another question.'
+            : 'Obrigado pela resposta. Vou seguir com a próxima pergunta.');
+    }
+    if (!result.data.avaliacao) {
+      result.data.avaliacao = { nota: 5, positivo: 'N/A', melhoria: 'N/A', resposta_ideal: 'N/A' };
     }
 
     if (isLastTurn && result.data.fala.includes('?')) {
