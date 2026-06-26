@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
   try {
     const { plano, sessionId, authUserId } = await req.json();
 
+    console.log('[mp-preferencia] authUserId:', authUserId, '| plano:', plano, '| sessionId:', sessionId);
     if (!plano || !authUserId) {
+      console.log('[mp-preferencia] ERRO: authUserId ou plano ausente');
       return NextResponse.json({ error: 'Parâmetros inválidos.' }, { status: 400 });
     }
 
@@ -41,6 +43,9 @@ export async function POST(req: NextRequest) {
         external_reference: `${authUserId}|${plano}|${sessionId ?? 'novo'}`,
       },
     });
+
+    console.log('[mp-preferencia] external_reference:', `${authUserId}|${plano}|${sessionId ?? 'novo'}`);
+    console.log('[mp-preferencia] preferenceId:', result.id);
 
     await supabase.from('payment_sessions').insert({
       session_id:       sessionId ?? null,

@@ -28,21 +28,26 @@ export function getOrCreateUserId(): string {
 }
 
 // ── Salvar sessão ─────────────────────────────────────────
-export async function saveSessionToSupabase(session: InterviewSession): Promise<void> {
+export async function saveSessionToSupabase(
+  session: InterviewSession,
+  authUserId: string | null = null,
+): Promise<void> {
   if (process.env.NEXT_PUBLIC_USE_SUPABASE !== 'true') {
     return;
   }
 
   const userId = getOrCreateUserId();
 
-  let authUserId: string | null = null;
-  try {
-    const authClient = createAuthClient();
-    if (authClient) {
-      const { data: { session: authSession } } = await authClient.auth.getSession();
-      authUserId = authSession?.user?.id ?? null;
-    }
-  } catch { /* silencioso */ }
+  // Se não veio do caller, tentar pelo cliente de auth como fallback
+  if (!authUserId) {
+    try {
+      const authClient = createAuthClient();
+      if (authClient) {
+        const { data: { session: authSession } } = await authClient.auth.getSession();
+        authUserId = authSession?.user?.id ?? null;
+      }
+    } catch { /* silencioso */ }
+  }
 
   const client = getClient(userId);
 

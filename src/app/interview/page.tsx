@@ -141,7 +141,8 @@ export default function InterviewPage() {
           setIsThinking(false);
           isProcessingTurnRef.current = false;
           // Usar getState() para ter o session mais recente (sem closure stale)
-          saveSessionToSupabase(useSessionStore.getState().session).catch(() => {});
+          // Passar user.id diretamente — auth.getSession() não é confiável aqui
+          saveSessionToSupabase(useSessionStore.getState().session, user?.id ?? null).catch(() => {});
           return;
         }
         const errData = await res.json().catch(() => ({}));

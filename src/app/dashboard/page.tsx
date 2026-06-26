@@ -16,6 +16,7 @@ import { Target, BookOpen, Zap, Lightbulb } from 'lucide-react';
 import { useSessionStore } from '@/lib/store';
 import { Header } from '@/components/layout/Header';
 import { useRouteGuard } from '@/hooks/useRouteGuard';
+import { useAuth } from '@/hooks/useAuth';
 import { saveSessionToSupabase, saveToLocalHistory } from '@/lib/services/supabase';
 import type { CompetencyScores } from '@/lib/types';
 
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const { user } = useAuth();
   const { session, resetSession, setStatus } = useSessionStore();
   const custoSessao = useSessionStore(s => s.custoSessao);
   const [sessionSalva, setSessionSalva] = useState(false);
@@ -47,7 +49,7 @@ export default function DashboardPage() {
         setStatus('completed');
         saveToLocalHistory(session);
         setSessionSalva(true);
-        await saveSessionToSupabase(session);
+        await saveSessionToSupabase(session, user?.id ?? null);
 
         if (custoSessao.total > 0) {
           fetch('/api/notify-cost', {
