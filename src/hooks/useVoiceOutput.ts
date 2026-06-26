@@ -202,11 +202,12 @@ export function useVoiceOutput(
               options?.onSpeakEnd?.();
             };
 
+            source.start(0);
+            // Estado muda APÓS start — não antes — para que isThinking
+            // permaneça true durante todo o carregamento do TTS
             setState('speaking');
             options?.onSpeakStart?.();
             if (options?.onWordReveal) startReveal(text, options.onWordReveal);
-
-            source.start(0);
             return;
           } catch {
             // fallback
@@ -239,11 +240,12 @@ export function useVoiceOutput(
           options?.onSpeakEnd?.();
         };
 
+        source.start(0);
+        // Estado muda APÓS start — não antes — para que isThinking
+        // permaneça true durante todo o carregamento do TTS
         setState('speaking');
         options?.onSpeakStart?.();
         if (options?.onWordReveal) startReveal(text, options.onWordReveal);
-
-        source.start(0);
 
       } catch {
         try {

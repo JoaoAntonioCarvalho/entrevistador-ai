@@ -181,9 +181,9 @@ export default function InterviewPage() {
         });
       }
 
-      setIsThinking(false);
       if (isFirst) setStatus('active'); // marca sessão como ativa para persistência
       setInterviewState('speaking');
+      // isThinking permanece true até onSpeakStart — cobre o carregamento do TTS
       pendingInterviewerTextRef.current = data.fala;
       setCurrentQuestion(data.fala);
       await voiceOutput.speak(data.fala);
