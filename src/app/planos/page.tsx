@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { usePendingSession } from '@/hooks/usePendingSession';
 import { Header } from '@/components/layout/Header';
 import { Check, ChevronLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -84,6 +85,7 @@ function PlanosContent() {
   const returnTo = searchParams.get('return');
   const { user } = useAuth();
   const session = useSessionStore(s => s.session);
+  const { pending: pendingSession } = usePendingSession();
 
   const temEntrevistaAtiva =
     !!session?.candidate?.nome &&
@@ -125,6 +127,29 @@ function PlanosContent() {
   return (
     <div className="min-h-dvh bg-background">
       <Header />
+
+      {/* Banner de sessão em andamento não paga */}
+      {pendingSession && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border-b
+                        border-amber-200 dark:border-amber-800/50 px-6 py-3">
+          <div className="max-w-[1120px] mx-auto flex items-center
+                          justify-between gap-4 flex-wrap">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
+              Você tem uma entrevista em andamento:
+              <span className="font-semibold ml-1">{pendingSession.jobTitulo}</span>
+            </p>
+            <button
+              onClick={() => router.push(
+                `/interview?resume=true&sessionId=${pendingSession.sessionId}&showPayment=true`
+              )}
+              className="text-sm font-semibold text-amber-900 dark:text-amber-200
+                         underline whitespace-nowrap"
+            >
+              Finalizar por R$9,90 →
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-[1120px] mx-auto px-6 py-16">
 

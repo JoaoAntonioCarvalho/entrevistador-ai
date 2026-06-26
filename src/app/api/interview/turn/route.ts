@@ -385,6 +385,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });
   }
 
+  // Rejeitar sessão descartada
+  if (sessionId && sessionId !== 'unknown') {
+    const supabaseCheck = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: sessCheck } = await supabaseCheck
+      .from('sessions')
+      .select('status')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (sessCheck?.status === 'discarded') {
+      return NextResponse.json(
+        { error: 'session_discarded', message: 'Esta sessão foi descartada.' },
+        { status: 403 }
+      );
+    }
+  }
+
   // Gate de pagamento: a partir da pergunta 4, verificar crédito ou sessão paga
   if (!isFirstTurn && perguntasRespondidas >= 3) {
     const supabaseAdmin = createClient(

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 import { useSessionStore } from '@/lib/store';
+import { useAuth } from '@/hooks/useAuth';
+import { usePendingSession } from '@/hooks/usePendingSession';
 import ResumeUpload from '@/components/setup/ResumeUpload';
 import JobInput from '@/components/setup/JobInput';
 import InterviewConfig from '@/components/setup/InterviewConfig';
@@ -74,7 +76,9 @@ interface ManualFormData {
 
 export default function SetupPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { session, initSession, setCandidate, setJob, setConfig, setStatus, setAvatarProfiles } = useSessionStore();
+  const { pending, checked: pendingChecked } = usePendingSession();
   const setupStep    = useSessionStore(s => s.setupStep);
   const setSetupStep = useSessionStore(s => s.setSetupStep);
   const [step,            setStep]            = useState<1 | 2 | 3>(
@@ -217,6 +221,99 @@ export default function SetupPage() {
     <div className="min-h-dvh bg-background transition-colors duration-200">
 
       <Header backTo="/" backLabel="← Início" />
+
+      {/* Bloquear setup se há sessão ativa não paga */}
+      {pendingChecked && pending && (
+        <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950
+                        flex items-center justify-center px-6">
+          <div className="max-w-md w-full text-center">
+
+            <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800
+                            rounded-full flex items-center justify-center
+                            mx-auto mb-6">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" strokeWidth="2"
+                   strokeLinecap="round" strokeLinejoin="round"
+                   className="text-zinc-700 dark:text-zinc-300">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+              Você tem uma entrevista em andamento
+            </h2>
+
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed mb-2">
+              {pending.jobTitulo}
+              {pending.jobEmpresa ? ` — ${pending.jobEmpresa}` : ''}
+            </p>
+
+            <p className="text-zinc-400 dark:text-zinc-500 text-xs mb-8">
+              Para começar uma nova entrevista, você precisa finalizar
+              ou descartar a entrevista atual primeiro.
+            </p>
+
+            {/* Card de desconto */}
+            <div className="bg-zinc-950 dark:bg-zinc-100 rounded-2xl p-5 mb-4 text-left">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-zinc-400
+                              dark:text-zinc-500 uppercase tracking-widest">
+                  Finalizar esta entrevista
+                </p>
+                <span className="bg-white dark:bg-zinc-900 text-zinc-900
+                                 dark:text-white text-[11px] font-bold
+                                 px-2 py-0.5 rounded-full">
+                  -23% OFF
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-3xl font-bold text-white dark:text-zinc-900">
+                  R$9,90
+                </span>
+                <span className="text-base text-zinc-500 dark:text-zinc-400 line-through">
+                  R$12,90
+                </span>
+              </div>
+              <button
+                onClick={() => router.push(
+                  `/interview?resume=true&sessionId=${pending.sessionId}&showPayment=true`
+                )}
+                className="w-full bg-white dark:bg-zinc-900 text-zinc-900
+                           dark:text-white py-3 rounded-full font-semibold
+                           text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800
+                           transition-colors"
+              >
+                Continuar e finalizar →
+              </button>
+            </div>
+
+            {/* Descartar */}
+            <button
+              onClick={async () => {
+                try {
+                  await fetch('/api/session/discard', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      sessionId:  pending.sessionId,
+                      authUserId: user?.id,
+                    }),
+                  });
+                } catch { /* silencioso */ }
+                window.location.reload();
+              }}
+              className="text-sm text-zinc-400 dark:text-zinc-500
+                         hover:text-zinc-600 dark:hover:text-zinc-400
+                         transition-colors underline"
+            >
+              Descartar entrevista e começar do zero
+            </button>
+
+          </div>
+        </div>
+      )}
 
       <main className="max-w-2xl mx-auto px-6 py-10">
 
