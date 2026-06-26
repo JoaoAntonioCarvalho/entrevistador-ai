@@ -6,37 +6,22 @@ import type { ConversationTurn } from '@/lib/types';
 interface Props {
   conversation:       ConversationTurn[];
   isListening:        boolean;
-  isThinking?:        boolean;
-  visibleText?:       string;
   interimTranscript?: string;
   lang?:              'pt' | 'en';
   isDark?:            boolean;
 }
 
-function formatTime(ts: string) {
-  try {
-    return new Date(ts).toLocaleTimeString('pt-BR', {
-      hour:   '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '';
-  }
-}
-
 export default function TranscriptPanel({
   conversation,
   isListening,
-  isThinking = false,
-  visibleText = '',
   interimTranscript = '',
   lang = 'pt',
   isDark = true,
 }: Props) {
-  const containerRef    = useRef<HTMLDivElement>(null);
+  const containerRef   = useRef<HTMLDivElement>(null);
   const shouldScrollRef = useRef(false);
-  const prevLengthRef   = useRef(0);
-  const prevInterimRef  = useRef('');
+  const prevLengthRef  = useRef(0);
+  const prevInterimRef = useRef('');
 
   // Marcar para scroll somente quando uma nova mensagem confirmada chega
   useEffect(() => {
@@ -68,101 +53,60 @@ export default function TranscriptPanel({
     prevInterimRef.current = interimTranscript;
   }, [interimTranscript]);
 
+  const interviewerLabel = lang === 'en' ? 'Interviewer' : 'Entrevistador';
+  const youLabel         = lang === 'en' ? 'You'         : 'Você';
+
   return (
-    <div className="h-full flex flex-col bg-zinc-900/50 border-l
-                    border-zinc-800/50">
-
-      {/* Header */}
-      <div className={`px-4 py-3 border-b flex-shrink-0 ${isDark ? 'border-zinc-800/50' : 'border-zinc-200'}`}>
-        <p className={`text-xs font-semibold uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-600'}`}>
-          Transcrição
-        </p>
-      </div>
-
-      {/* Messages */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4">
-
-        {conversation.length === 0 && !isThinking && !visibleText && (
-          <p className="text-center text-zinc-600 text-sm py-8">
+    <div className="h-full flex flex-col">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto py-4 px-4 max-w-2xl mx-auto w-full"
+      >
+        {conversation.length === 0 && (
+          <p className="text-center text-sm py-8 text-zinc-400 dark:text-zinc-600">
             {lang === 'en'
               ? 'The interview will start shortly...'
               : 'A entrevista vai começar em instantes...'}
           </p>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-6">
           {conversation.map((turn, i) => {
             const isInterviewer = turn.role === 'interviewer';
-            return (
-              <div key={i}
-                   className={`flex ${isInterviewer ? 'justify-start' : 'justify-end'}`}>
-                <div className="flex flex-col">
-                  <div className={`max-w-[85%] text-sm leading-relaxed
-                                   px-4 py-3 ${
-                    isInterviewer
-                      ? 'bg-zinc-800 text-zinc-200 rounded-2xl rounded-tl-sm'
-                      : 'bg-zinc-700 text-zinc-100 rounded-2xl rounded-tr-sm'
-                  }`}>
+            return isInterviewer ? (
+              <div key={i} className="space-y-1.5">
+                <p className={`text-[11px] uppercase tracking-widest font-medium ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                  {interviewerLabel}
+                </p>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  {turn.text}
+                </p>
+              </div>
+            ) : (
+              <div key={i} className="flex flex-col items-end space-y-1.5">
+                <p className={`text-[11px] uppercase tracking-widest font-medium ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                  {youLabel}
+                </p>
+                <div className={`max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
+                  <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
                     {turn.text}
-                  </div>
-                  <span className={`text-xs text-zinc-600 mt-1 ${
-                    isInterviewer ? 'ml-1' : 'mr-1 text-right'
-                  }`}>
-                    {formatTime(turn.timestamp)}
-                  </span>
+                  </p>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Estado atual — só um por vez */}
-        {isThinking && !visibleText && (
-          <div className="flex justify-start mt-3">
-            <div className="bg-zinc-800 rounded-2xl rounded-tl-sm px-4 py-3">
-              <div className="flex gap-1 items-center h-4">
-                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full
-                                 animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full
-                                 animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full
-                                 animate-bounce [animation-delay:300ms]" />
-              </div>
-              <span className="text-xs text-zinc-500 mt-1 block">
-                {lang === 'en' ? 'Thinking...' : 'Pensando...'}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {visibleText && !isThinking && (() => {
-          const lastMsg = conversation[conversation.length - 1];
-          const isDuplicate = lastMsg?.role === 'interviewer' &&
-            lastMsg?.text?.trim() === visibleText?.trim();
-
-          if (isDuplicate) return null;
-
-          return (
-            <div className="flex justify-start mt-3">
-              <div className="max-w-[85%] bg-zinc-800 text-zinc-200
-                              text-sm leading-relaxed px-4 py-3
-                              rounded-2xl rounded-tl-sm">
-                {visibleText}
-                <span className="inline-block w-0.5 h-3.5 bg-zinc-400
-                                 animate-pulse ml-0.5 align-middle" />
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Bolha interim — texto sendo falado em tempo real */}
         {isListening && interimTranscript && (
-          <div className="flex justify-end mt-3">
-            <div className="max-w-[80%] bg-zinc-700 rounded-2xl rounded-br-sm px-4 py-3">
-              <p className="text-sm text-zinc-300 italic leading-relaxed">
+          <div className="flex flex-col items-end mt-6 space-y-1.5">
+            <p className={`text-[11px] uppercase tracking-widest font-medium ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+              {youLabel}
+            </p>
+            <div className={`max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 opacity-60 ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
+              <p className={`text-sm leading-relaxed italic ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>
                 {interimTranscript}
-                <span className="inline-block w-0.5 h-4 bg-zinc-400
-                                 ml-0.5 animate-pulse align-middle" />
+                <span className={`inline-block w-0.5 h-4 ml-0.5 animate-pulse align-middle ${isDark ? 'bg-zinc-400' : 'bg-zinc-500'}`} />
               </p>
             </div>
           </div>
@@ -170,9 +114,9 @@ export default function TranscriptPanel({
 
         {/* Indicador de gravação — só quando ainda não há texto interim */}
         {isListening && !interimTranscript && (
-          <div className="flex justify-end mt-3">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <div className="flex justify-end mt-4">
+            <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-zinc-400" />
               {lang === 'en' ? 'Listening...' : 'Ouvindo...'}
             </div>
           </div>

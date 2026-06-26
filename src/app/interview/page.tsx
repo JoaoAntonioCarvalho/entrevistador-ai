@@ -567,7 +567,7 @@ export default function InterviewPage() {
   const encerrando = interviewState === 'ended';
 
   return (
-    <div className={`h-screen flex flex-col overflow-hidden relative ${isDark ? 'bg-zinc-950 text-white' : 'bg-zinc-100 text-zinc-900'}`}>
+    <div className={`h-screen flex flex-col overflow-hidden relative ${isDark ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-900'}`}>
       {needsUnlock && !audioUnlocked && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/95">
           <div className="text-center px-8 max-w-sm">
@@ -653,28 +653,26 @@ export default function InterviewPage() {
       )}
 
       {/* Header */}
-      <header className={`flex items-center justify-between px-5 border-b flex-shrink-0 h-14 ${isDark ? 'border-zinc-800/50 bg-zinc-950' : 'border-zinc-200 bg-zinc-100'}`}>
-        <span className={`text-base font-semibold tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+      <header className={`flex items-center justify-between px-5 py-3 border-b flex-shrink-0 ${isDark ? 'border-zinc-800 bg-zinc-950' : 'border-zinc-100 bg-white'}`}>
+        <span className="text-sm font-medium text-zinc-500">
           Entrevistador.IA
         </span>
-        <div className="flex items-center gap-2 text-sm">
-          <span className={`text-sm ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Pergunta</span>
-          <span className={`font-mono font-semibold tabular-nums ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+          <span>{session.config?.idioma === 'en' ? 'Question' : 'Pergunta'}</span>
+          <span className={`font-mono tabular-nums font-semibold ${isDark ? 'text-zinc-200' : 'text-zinc-700'}`}>
             {Math.min(perguntasRespondidas + 1, totalPerguntas)}
           </span>
-          <span className={isDark ? 'text-zinc-600' : 'text-zinc-400'}>/</span>
-          <span className={isDark ? 'text-zinc-500' : 'text-zinc-500'}>{totalPerguntas}</span>
+          <span className={isDark ? 'text-zinc-700' : 'text-zinc-300'}>/</span>
+          <span>{totalPerguntas}</span>
           {encerrando && (
-            <span className="ml-2 text-xs text-amber-400 animate-pulse">
-              Encerrando...
-            </span>
+            <span className="ml-1 text-zinc-400 animate-pulse">·</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {mounted && (
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all mr-2 ${isDark ? 'border-zinc-700 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-300 text-zinc-500 hover:bg-zinc-200'}`}
+              className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
               aria-label="Alternar tema"
             >
               {isDark
@@ -685,9 +683,7 @@ export default function InterviewPage() {
           )}
           <button
             onClick={() => handleEndInterview(false)}
-            className="text-xs text-zinc-500 hover:text-zinc-300 border
-                       border-zinc-700 hover:border-zinc-500 px-3 py-1.5
-                       rounded-full transition-colors"
+            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
           >
             Encerrar
           </button>
@@ -756,36 +752,58 @@ export default function InterviewPage() {
         </div>
       )}
 
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden md:flex-row flex-col">
-        <div className={`md:w-3/5 w-full md:h-full h-48 shrink-0 ${isDark ? 'bg-zinc-950' : 'bg-zinc-100'}`}>
-          <AvatarDisplay
-            avatarId={session.config.avatar_id}
-            isSpeaking={voiceOutput.state === 'speaking'}
-            isListening={voiceInput.state === 'listening'}
-            isThinking={isThinking}
-            customProfile={session.avatar_profiles?.find(
-              p => p.id === session.config.avatar_id
-            )}
-            idioma={session.config.idioma}
-            isDark={isDark}
-          />
+      {/* Body — coluna única */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+
+        {/* Avatar */}
+        <div className="flex-shrink-0 flex flex-col items-center justify-center pt-5 pb-1">
+          <div className="h-52 w-full max-w-[280px]">
+            <AvatarDisplay
+              avatarId={session.config.avatar_id}
+              isSpeaking={voiceOutput.state === 'speaking'}
+              isListening={voiceInput.state === 'listening'}
+              isThinking={isThinking}
+              customProfile={session.avatar_profiles?.find(
+                p => p.id === session.config.avatar_id
+              )}
+              idioma={session.config.idioma}
+              isDark={isDark}
+            />
+          </div>
         </div>
-        <div className={`md:w-2/5 w-full flex-1 overflow-hidden md:border-l flex flex-col ${isDark ? 'md:border-zinc-800/50 bg-zinc-900' : 'md:border-zinc-200 bg-white'}`}>
+
+        {/* Texto da pergunta atual — reveal progressivo */}
+        <div className="flex-shrink-0 max-w-2xl mx-auto w-full px-6 min-h-[4.5rem] flex items-center justify-center">
+          {isThinking && !visibleText && (
+            <div className="flex gap-1.5 items-center">
+              <span className={`w-2 h-2 rounded-full animate-bounce [animation-delay:0ms] ${isDark ? 'bg-zinc-600' : 'bg-zinc-300'}`} />
+              <span className={`w-2 h-2 rounded-full animate-bounce [animation-delay:150ms] ${isDark ? 'bg-zinc-600' : 'bg-zinc-300'}`} />
+              <span className={`w-2 h-2 rounded-full animate-bounce [animation-delay:300ms] ${isDark ? 'bg-zinc-600' : 'bg-zinc-300'}`} />
+            </div>
+          )}
+          {visibleText && (
+            <p className={`text-base md:text-lg font-normal leading-relaxed text-center ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+              {visibleText}
+              <span className={`inline-block w-0.5 h-[1.1em] ml-1 animate-pulse align-middle ${isDark ? 'bg-zinc-500' : 'bg-zinc-400'}`} />
+            </p>
+          )}
+        </div>
+
+        {/* Histórico do chat */}
+        <div className="flex-1 min-h-0">
           <TranscriptPanel
             conversation={session.conversation}
             isListening={voiceInput.state === 'listening'}
-            isThinking={isThinking}
-            visibleText={visibleText}
             interimTranscript={interimTranscript}
             lang={session.config?.idioma === 'en' ? 'en' : 'pt'}
             isDark={isDark}
           />
         </div>
+
       </div>
 
       {/* Footer */}
-      <footer className={`flex min-h-24 shrink-0 flex-col items-center justify-center gap-2 border-t px-4 py-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+      <footer className={`shrink-0 flex flex-col items-center justify-center gap-2 border-t px-4 py-4 ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'}`}>
         {interviewState === 'ended' ? (
           <p className="text-sm text-zinc-500">Redirecionando para o feedback...</p>
         ) : showUnsupportedBanner ? (
