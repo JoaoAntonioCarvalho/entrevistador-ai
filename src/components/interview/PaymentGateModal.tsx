@@ -129,24 +129,22 @@ export function PaymentGateModal({
 
               {/* Card 1 — Finalizar esta entrevista (destaque) */}
               <div className="rounded-xl border-2 border-zinc-900
-                              dark:border-white p-4 relative
-                              overflow-hidden flex flex-col h-full">
-
-                <div className="absolute top-3 right-3">
-                  <span className="bg-zinc-900 dark:bg-white
-                                   text-white dark:text-zinc-900
-                                   text-[11px] font-bold px-2 py-1
-                                   rounded-full">
-                    -23% OFF
-                  </span>
-                </div>
+                              dark:border-white p-4 flex flex-col h-full">
 
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-zinc-500
-                                dark:text-zinc-400 uppercase
-                                tracking-widest mb-2">
-                    Finalizar esta entrevista
-                  </p>
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-semibold text-zinc-500
+                                  dark:text-zinc-400 uppercase
+                                  tracking-widest">
+                      Finalizar esta entrevista
+                    </p>
+                    <span className="bg-zinc-900 dark:bg-white
+                                     text-white dark:text-zinc-900
+                                     text-[11px] font-bold px-2 py-1
+                                     rounded-full shrink-0 ml-2">
+                      -23% OFF
+                    </span>
+                  </div>
 
                   <div className="flex items-baseline gap-2 mb-3">
                     <span className="text-3xl font-bold text-zinc-900

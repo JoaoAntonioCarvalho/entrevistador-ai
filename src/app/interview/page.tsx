@@ -49,6 +49,8 @@ export default function InterviewPage() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [mostrarDica, setMostrarDica] = useState(true);
+  const [isResuming, setIsResuming]         = useState(false);
+  const [resumeSessionId, setResumeSessionId] = useState('');
 
   const isIOS = typeof window !== 'undefined' &&
     /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -75,6 +77,7 @@ export default function InterviewPage() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const creditConsumedRef = useRef(false);
   const prevUserRef = useRef<string | null>(null);
+  const resumeVerifiedRef = useRef(false);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -395,25 +398,83 @@ export default function InterviewPage() {
     return () => clearTimeout(t);
   }, [mostrarDica]);
 
-  // Retomada após pagamento — limpar params da URL (roda uma vez no mount)
-  // A sessão já está no store (Zustand persist)
-  // O useEffect do primeiro turno verifica conversation.length === 0
-  // então não vai reiniciar se a conversa já tem mensagens
+  // Mount: detectar modo resume e params de URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Abrir payment gate automaticamente quando redirecionado com showPayment=true
-    if (params.get('showPayment') === 'true') {
+    const isResume      = params.get('resume') === 'true';
+    const hasShowPayment = params.get('showPayment') === 'true';
+    const sessId        = params.get('sessionId') ?? '';
+
+    // Bloquear o first-turn automático em qualquer modo de retomada
+    if (isResume || hasShowPayment) {
+      firstTurnCalledRef.current = true;
+    }
+
+    // Overlay de sessão pendente não paga → mostrar gate imediatamente
+    if (hasShowPayment) {
       setShowPaymentGate(true);
       setInterviewState('waiting');
     }
-    if (params.get('resume') !== 'true') return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete('resume');
-    url.searchParams.delete('sessionId');
-    url.searchParams.delete('showPayment');
-    window.history.replaceState({}, '', url.toString());
+
+    // Retorno pós-pagamento → verificar crédito e continuar
+    if (isResume) {
+      setIsResuming(true);
+      setResumeSessionId(sessId);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('resume');
+      url.searchParams.delete('sessionId');
+      url.searchParams.delete('showPayment');
+      window.history.replaceState({}, '', url.toString());
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Verificar crédito quando retomando pós-pagamento
+  // Deps incluem user?.id para aguardar o auth carregar antes de verificar
+  useEffect(() => {
+    if (!isResuming || resumeVerifiedRef.current) return;
+    resumeVerifiedRef.current = true;
+
+    async function verificarCreditoResume() {
+      try {
+        const res = await fetch('/api/credits/check', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            authUserId: user?.id ?? null,
+            sessionId:  resumeSessionId,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.hasCredit) {
+          // Restaurar contagem de perguntas pelo histórico da conversa
+          const conv = useSessionStore.getState().session.conversation;
+          const candidateTurns = conv.filter(t => t.role === 'candidate');
+          const count      = candidateTurns.length;
+          const lastText   = candidateTurns[count - 1]?.text ?? '';
+
+          perguntasRespondidasRef.current = count;
+          setPerguntasRespondidas(count);
+          setShowPaymentGate(false);
+
+          // Chamar próxima pergunta automaticamente após UI estabilizar
+          setTimeout(() => {
+            callTurnRef.current(false, lastText, count);
+          }, 1000);
+        } else {
+          setShowPaymentGate(true);
+          setInterviewState('waiting');
+        }
+      } catch {
+        setShowPaymentGate(true);
+        setInterviewState('waiting');
+      }
+    }
+
+    verificarCreditoResume();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isResuming, user?.id]);
 
 
   async function handleEndInterview(automatic = false) {
