@@ -21,6 +21,15 @@ function extractSkills(text: string): string[] {
   ).slice(0, 10);
 }
 
+function textoTemQualidade(texto: string): boolean {
+  if (!texto || texto.trim().length < 300) return false;
+  const palavras = texto.trim().split(/\s+/);
+  if (palavras.length < 20) return false;
+  const letras = texto.replace(/[^a-zA-ZÀ-ú]/g, '');
+  if (letras.length < 100) return false;
+  return true;
+}
+
 function parseJSONCandidate(text: string): Candidate {
   const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
@@ -47,17 +56,39 @@ async function callVisionForResume(images: string[]): Promise<Candidate> {
   const systemPrompt =
     'Você é um parser de currículos. Extraia as informações exatamente como estão. Não invente dados. Se um campo não existir, use string vazia ou array vazio.';
 
-  const extractPrompt = `Este é um currículo em formato de imagem (PDF escaneado).
-Extraia todas as informações e retorne SOMENTE um JSON válido:
+  const extractPrompt = `Este é um currículo profissional em formato de imagem (PDF escaneado ou com layout visual). Pode ter múltiplas colunas, foto, ícones e formatação gráfica.
+
+Leia TODO o conteúdo visível com atenção, incluindo texto em colunas laterais, seções menores e qualquer texto que apareça em qualquer parte da imagem.
+
+Extraia TODAS as informações e retorne SOMENTE um JSON válido, sem nenhum texto antes ou depois:
+
 {
-  "nome": "",
-  "cargo_atual": "",
-  "experiencias": [{ "cargo": "", "empresa": "", "periodo": "", "descricao": "" }],
-  "habilidades": [],
-  "formacao": [{ "curso": "", "instituicao": "", "periodo": "" }],
-  "certificacoes": []
+  "nome": "nome completo da pessoa",
+  "cargo_atual": "cargo mais recente ou objetivo",
+  "email": "email se visível",
+  "telefone": "telefone se visível",
+  "experiencias": [
+    {
+      "cargo": "título do cargo",
+      "empresa": "nome da empresa",
+      "periodo": "período (ex: Jan 2023 - Dez 2023)",
+      "descricao": "resumo das responsabilidades"
+    }
+  ],
+  "habilidades": ["lista", "de", "skills"],
+  "formacao": [
+    {
+      "curso": "nome do curso ou grau",
+      "instituicao": "nome da instituição",
+      "periodo": "período ou ano de conclusão"
+    }
+  ],
+  "idiomas": ["idioma: nível"],
+  "certificacoes": [],
+  "resumo": "perfil profissional resumido"
 }
-Retorne SOMENTE o JSON, sem texto adicional.`;
+
+Extraia o máximo de informação possível de TODAS as páginas. Se uma informação não estiver visível, use string vazia "". Retorne SOMENTE o JSON, absolutamente nada mais.`;
 
   if (process.env.OPENROUTER_API_KEY) {
     type OAIContent = { type: string; text?: string; image_url?: { url: string } };
@@ -163,8 +194,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Detectar PDF de imagem (texto extraído insuficiente)
-  if (isPdf && rawText.trim().length < 150) {
+  // Detectar PDF de imagem (texto extraído insuficiente ou de baixa qualidade)
+  if (isPdf && !textoTemQualidade(rawText)) {
     try {
       const arrayBuffer = buffer.buffer.slice(
         buffer.byteOffset,
@@ -182,9 +213,31 @@ export async function POST(req: NextRequest) {
       const candidate = await callVisionForResume(images);
       return NextResponse.json({ candidate, isImagePdf: true });
     } catch {
+      // Fallback: tentar parsear com o texto incompleto se houver algo aproveitável
+      if (rawText && rawText.trim().length > 50) {
+        try {
+          const systemFallback =
+            'Você é um parser de currículos. Extraia as informações exatamente como estão. Não invente dados. Se um campo não existir, use string vazia ou array vazio.';
+          const userFallback = `Extraia as informações deste currículo (texto pode estar incompleto) e retorne JSON com a estrutura abaixo. Preencha apenas os campos que conseguir identificar:
+{
+  "nome": "string",
+  "cargo_atual": "string",
+  "experiencias": [{ "cargo": "string", "empresa": "string", "periodo": "string", "descricao": "string" }],
+  "habilidades": ["string"],
+  "formacao": [{ "curso": "string", "instituicao": "string", "periodo": "string" }],
+  "certificacoes": ["string"]
+}
+
+Texto do currículo:
+${rawText.slice(0, 4000)}`;
+          const candidate = await callAIJSON<Candidate>('parsing', systemFallback, userFallback, 2000, sessionId);
+          return NextResponse.json({ candidate, isImagePdf: true, warning: 'Parsing parcial — algumas informações podem estar incompletas.' });
+        } catch { /* cai no erro abaixo */ }
+      }
+
       return NextResponse.json(
-        { error: 'Erro ao processar PDF como imagem.' },
-        { status: 500 }
+        { error: 'Não foi possível ler este PDF. Tente "Preencher manualmente" para continuar.' },
+        { status: 422 }
       );
     }
   }

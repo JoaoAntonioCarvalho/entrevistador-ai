@@ -17,7 +17,7 @@ export async function pdfToBase64Images(buffer: ArrayBuffer): Promise<string[]> 
 
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 1.5 });
+    const viewport = page.getViewport({ scale: 2.0 });
     const canvas = createCanvas(Math.round(viewport.width), Math.round(viewport.height));
 
     await page.render({
@@ -25,7 +25,7 @@ export async function pdfToBase64Images(buffer: ArrayBuffer): Promise<string[]> 
       viewport,
     }).promise;
 
-    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    const base64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
     images.push(base64);
   }
 

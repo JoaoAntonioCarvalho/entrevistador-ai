@@ -100,6 +100,16 @@ export default function ResumeUpload({
         setStatus('idle');
         return;
       }
+      if (res.status === 422) {
+        toast.error(
+          data.error ?? 'Não conseguimos ler este PDF automaticamente. Tente "Preencher manualmente" para continuar.',
+          { duration: 6000 }
+        );
+        setStatus('idle');
+        setFile(null);
+        setMode('manual');
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? 'Erro ao processar currículo.');
       if (data.warning) onWarning?.(data.warning);
       if (data.isImagePdf) setIsScanning(false);
