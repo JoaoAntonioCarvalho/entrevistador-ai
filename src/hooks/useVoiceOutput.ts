@@ -29,10 +29,12 @@ export function useVoiceOutput(
 ): UseVoiceOutputResult {
   const { lang = 'pt-BR' } = options;
 
-  const [state, setState]    = useState<VoiceOutputState>('idle');
-  const audioRef             = useRef<HTMLAudioElement | null>(null);
-  const revealCancelRef      = useRef<boolean>(false);
-  const revealTimerRef       = useRef<ReturnType<typeof setTimeout>>();
+  const [state, setState]        = useState<VoiceOutputState>('idle');
+  const audioRef                 = useRef<HTMLAudioElement | null>(null);
+  const desktopContextRef        = useRef<AudioContext | null>(null);
+  const desktopSourceRef         = useRef<AudioBufferSourceNode | null>(null);
+  const revealCancelRef          = useRef<boolean>(false);
+  const revealTimerRef           = useRef<ReturnType<typeof setTimeout>>();
 
   // setTimeout recursivo elimina o race condition do setInterval:
   // cada próximo tick só é agendado DENTRO do callback,
@@ -142,6 +144,14 @@ export function useVoiceOutput(
       audioRef.current.pause();
       audioRef.current = null;
     }
+    if (desktopSourceRef.current) {
+      try { desktopSourceRef.current.stop(); } catch { /* já parado */ }
+      desktopSourceRef.current = null;
+    }
+    if (desktopContextRef.current) {
+      desktopContextRef.current.close();
+      desktopContextRef.current = null;
+    }
 
     const useTTS = !!options?.avatarId;
 
@@ -179,9 +189,12 @@ export function useVoiceOutput(
           try {
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await options.audioContext.decodeAudioData(arrayBuffer);
-            const source = options.audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(options.audioContext.destination);
+            const source   = options.audioContext.createBufferSource();
+            source.buffer  = audioBuffer;
+            const gainNode = options.audioContext.createGain();
+            gainNode.gain.value = 2.2;
+            source.connect(gainNode);
+            gainNode.connect(options.audioContext.destination);
 
             source.onended = () => {
               stopReveal();
@@ -200,35 +213,37 @@ export function useVoiceOutput(
           }
         }
 
-        // Caminho desktop — não alterar
-        const audioBlob = await response.blob();
-        const audioUrl  = URL.createObjectURL(audioBlob);
-        const audio     = new Audio(audioUrl);
-        audioRef.current = audio;
+        // Caminho desktop — amplificado via GainNode
+        const audioBlob   = await response.blob();
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        const audioCtx    = new AudioContext();
+        desktopContextRef.current = audioCtx;
 
-        audio.onplay = () => {
-          setState('speaking');
-          options?.onSpeakStart?.();
-          if (options?.onWordReveal) {
-            startReveal(text, options.onWordReveal);
-          }
-        };
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const source      = audioCtx.createBufferSource();
+        source.buffer     = audioBuffer;
 
-        audio.onended = () => {
+        const gainNode        = audioCtx.createGain();
+        gainNode.gain.value   = 2.2;
+        source.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        desktopSourceRef.current = source;
+
+        source.onended = () => {
           stopReveal();
           setState('idle');
-          URL.revokeObjectURL(audioUrl);
+          audioCtx.close();
+          desktopContextRef.current = null;
+          desktopSourceRef.current  = null;
           options?.onSpeakEnd?.();
         };
 
-        audio.onerror = () => {
-          stopReveal();
-          setState('idle');
-          URL.revokeObjectURL(audioUrl);
-          options?.onError?.();
-        };
+        setState('speaking');
+        options?.onSpeakStart?.();
+        if (options?.onWordReveal) startReveal(text, options.onWordReveal);
 
-        await audio.play();
+        source.start(0);
 
       } catch {
         try {
@@ -262,6 +277,14 @@ export function useVoiceOutput(
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
+    }
+    if (desktopSourceRef.current) {
+      try { desktopSourceRef.current.stop(); } catch { /* já parado */ }
+      desktopSourceRef.current = null;
+    }
+    if (desktopContextRef.current) {
+      desktopContextRef.current.close();
+      desktopContextRef.current = null;
     }
     setState('idle');
     options?.onSpeakEnd?.();
