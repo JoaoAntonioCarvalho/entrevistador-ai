@@ -47,6 +47,7 @@ export default function InterviewPage() {
   const [showVoiceTip, setShowVoiceTip] = useState(true);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [mostrarDica, setMostrarDica] = useState(true);
 
   const isIOS = typeof window !== 'undefined' &&
     /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -384,6 +385,13 @@ export default function InterviewPage() {
     };
   }, []);
 
+  // Auto-ocultar dica de primeira pergunta após 6 segundos
+  useEffect(() => {
+    if (!mostrarDica) return;
+    const t = setTimeout(() => setMostrarDica(false), 6000);
+    return () => clearTimeout(t);
+  }, [mostrarDica]);
+
   // Retomada após pagamento — limpar params da URL (roda uma vez no mount)
   // A sessão já está no store (Zustand persist)
   // O useEffect do primeiro turno verifica conversation.length === 0
@@ -437,6 +445,7 @@ export default function InterviewPage() {
   })();
 
   function handleMicClick() {
+    setMostrarDica(false);
     if (voiceInput.state === 'listening') {
       voiceInput.stopListening();
     } else if (voiceInput.state === 'idle' && interviewState === 'waiting') {
@@ -614,6 +623,20 @@ export default function InterviewPage() {
           >
             Entendi
           </button>
+        </div>
+      )}
+
+      {/* Dica da primeira pergunta — desaparece após 6s ou ao tocar o microfone */}
+      {mostrarDica && perguntasRespondidas === 0 && interviewState === 'waiting' && (
+        <div className="absolute bottom-[120px] left-1/2 -translate-x-1/2
+                        bg-zinc-900/90 dark:bg-zinc-100/90
+                        text-white dark:text-zinc-900
+                        text-sm px-4 py-2.5 rounded-full
+                        shadow-lg whitespace-nowrap
+                        animate-fade-in-up z-10">
+          {session.config?.idioma === 'en'
+            ? '👆 Tap the microphone to start answering'
+            : '👆 Toque no microfone para começar a responder'}
         </div>
       )}
 
