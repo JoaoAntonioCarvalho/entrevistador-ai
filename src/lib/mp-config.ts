@@ -1,6 +1,8 @@
 import { MercadoPagoConfig } from 'mercadopago';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.MP_MODO === 'producao';
+
+console.log('[mp-config] modo:', isProduction ? 'PRODUÇÃO' : 'TESTE');
 
 export const mpConfig = new MercadoPagoConfig({
   accessToken: isProduction
