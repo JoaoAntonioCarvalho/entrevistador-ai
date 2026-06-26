@@ -4,12 +4,13 @@ import { useEffect, useRef } from 'react';
 import type { ConversationTurn } from '@/lib/types';
 
 interface Props {
-  conversation:  ConversationTurn[];
-  isListening:   boolean;
-  isThinking?:   boolean;
-  visibleText?:  string;
-  lang?:         'pt' | 'en';
-  isDark?:       boolean;
+  conversation:       ConversationTurn[];
+  isListening:        boolean;
+  isThinking?:        boolean;
+  visibleText?:       string;
+  interimTranscript?: string;
+  lang?:              'pt' | 'en';
+  isDark?:            boolean;
 }
 
 function formatTime(ts: string) {
@@ -28,12 +29,14 @@ export default function TranscriptPanel({
   isListening,
   isThinking = false,
   visibleText = '',
+  interimTranscript = '',
   lang = 'pt',
   isDark = true,
 }: Props) {
-  const containerRef  = useRef<HTMLDivElement>(null);
+  const containerRef    = useRef<HTMLDivElement>(null);
   const shouldScrollRef = useRef(false);
-  const prevLengthRef = useRef(0);
+  const prevLengthRef   = useRef(0);
+  const prevInterimRef  = useRef('');
 
   // Marcar para scroll somente quando uma nova mensagem confirmada chega
   useEffect(() => {
@@ -53,6 +56,17 @@ export default function TranscriptPanel({
       shouldScrollRef.current = false;
     }
   }, [conversation.length]);
+
+  // Scroll suave quando o candidato começa a falar (primeiro char interim)
+  useEffect(() => {
+    if (interimTranscript && !prevInterimRef.current && containerRef.current) {
+      containerRef.current.scrollTo({
+        top:      containerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+    prevInterimRef.current = interimTranscript;
+  }, [interimTranscript]);
 
   return (
     <div className="h-full flex flex-col bg-zinc-900/50 border-l
@@ -141,8 +155,21 @@ export default function TranscriptPanel({
           );
         })()}
 
-        {/* Indicador de gravação */}
-        {isListening && (
+        {/* Bolha interim — texto sendo falado em tempo real */}
+        {isListening && interimTranscript && (
+          <div className="flex justify-end mt-3">
+            <div className="max-w-[80%] bg-zinc-700 rounded-2xl rounded-br-sm px-4 py-3">
+              <p className="text-sm text-zinc-300 italic leading-relaxed">
+                {interimTranscript}
+                <span className="inline-block w-0.5 h-4 bg-zinc-400
+                                 ml-0.5 animate-pulse align-middle" />
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Indicador de gravação — só quando ainda não há texto interim */}
+        {isListening && !interimTranscript && (
           <div className="flex justify-end mt-3">
             <div className="flex items-center gap-2 text-xs text-zinc-500">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />

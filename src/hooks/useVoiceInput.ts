@@ -8,6 +8,7 @@ interface UseVoiceInputOptions {
   lang?: string;
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
+  onInterimTranscript?: (texto: string) => void;
 }
 
 export function useVoiceInput(options: UseVoiceInputOptions) {
@@ -26,11 +27,13 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
   // Refs que sempre apontam para a versão mais recente das callbacks.
   // Isso evita que o recognition capture closures desatualizadas e
   // elimina a necessidade de recriar o recognition quando os callbacks mudam.
-  const onTranscriptRef = useRef(options.onTranscript);
-  const onErrorRef      = useRef(options.onError);
+  const onTranscriptRef        = useRef(options.onTranscript);
+  const onErrorRef             = useRef(options.onError);
+  const onInterimTranscriptRef = useRef(options.onInterimTranscript);
 
-  useEffect(() => { onTranscriptRef.current = options.onTranscript; }, [options.onTranscript]);
-  useEffect(() => { onErrorRef.current = options.onError; },          [options.onError]);
+  useEffect(() => { onTranscriptRef.current        = options.onTranscript;        }, [options.onTranscript]);
+  useEffect(() => { onErrorRef.current             = options.onError;             }, [options.onError]);
+  useEffect(() => { onInterimTranscriptRef.current = options.onInterimTranscript; }, [options.onInterimTranscript]);
 
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -44,16 +47,23 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim = '';
+      let interim  = '';
+      let newFinal = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
+          newFinal += result[0].transcript + ' ';
           finalTextRef.current += result[0].transcript + ' ';
         } else {
           interim += result[0].transcript;
         }
       }
       setInterim(interim);
+      onInterimTranscriptRef.current?.(interim);
+      // Quando um trecho final chega, limpar o interim visível no painel
+      if (newFinal) {
+        onInterimTranscriptRef.current?.('');
+      }
     };
 
     recognition.onend = () => {

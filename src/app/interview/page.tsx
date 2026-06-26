@@ -60,6 +60,7 @@ export default function InterviewPage() {
   const [isResuming, setIsResuming]         = useState(false);
   const [resumeSessionId, setResumeSessionId] = useState('');
   const [wasReloaded, setWasReloaded] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
 
   const isIOS = typeof window !== 'undefined' &&
     /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -242,6 +243,7 @@ export default function InterviewPage() {
     lang: session.config?.idioma === 'en' ? 'en-US' : 'pt-BR',
     onTranscript: handleTranscript,
     onError: (err) => toast.error(`Microfone: ${err}`),
+    onInterimTranscript: (texto) => setInterimTranscript(texto),
   });
 
   // Manter refs de reset e erro de voz atualizadas a cada render
@@ -775,6 +777,7 @@ export default function InterviewPage() {
             isListening={voiceInput.state === 'listening'}
             isThinking={isThinking}
             visibleText={visibleText}
+            interimTranscript={interimTranscript}
             lang={session.config?.idioma === 'en' ? 'en' : 'pt'}
             isDark={isDark}
           />
