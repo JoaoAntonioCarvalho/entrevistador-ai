@@ -37,18 +37,6 @@ export async function saveSessionToSupabase(
   }
 
   const userId = getOrCreateUserId();
-
-  // Se não veio do caller, tentar pelo cliente de auth como fallback
-  if (!authUserId) {
-    try {
-      const authClient = createAuthClient();
-      if (authClient) {
-        const { data: { session: authSession } } = await authClient.auth.getSession();
-        authUserId = authSession?.user?.id ?? null;
-      }
-    } catch { /* silencioso */ }
-  }
-
   const client = getClient(userId);
 
   const row = {

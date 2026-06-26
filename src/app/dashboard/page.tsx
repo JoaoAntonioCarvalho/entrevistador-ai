@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   RadarChart,
@@ -36,14 +36,19 @@ export default function DashboardPage() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { session, resetSession, setStatus } = useSessionStore();
   const custoSessao = useSessionStore(s => s.custoSessao);
   const [sessionSalva, setSessionSalva] = useState(false);
+  const savedRef = useRef(false);
 
   useRouteGuard({ needsCandidate: true, needsScores: true });
 
   useEffect(() => {
+    // Aguarda auth resolver antes de salvar — evita auth_user_id null por timing
+    if (authLoading || savedRef.current) return;
+    savedRef.current = true;
+
     async function salvar() {
       try {
         setStatus('completed');
@@ -84,7 +89,7 @@ export default function DashboardPage() {
       setSessionSalva(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authLoading]);
 
   if (!session.scores) return null;
 
