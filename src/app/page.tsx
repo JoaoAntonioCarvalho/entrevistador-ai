@@ -983,15 +983,19 @@ export default function LandingPage() {
               <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-5">
                 Avulso
               </p>
-              <div className="mb-7">
+              <div className="mb-2">
                 <p className="text-[44px] font-bold font-mono tabular-nums
                                text-white dark:text-zinc-950 leading-none mb-1">
-                  R$9,90
+                  R$12,90
                 </p>
                 <p className="text-sm text-zinc-400 dark:text-zinc-500">/ entrevista de 7 perguntas</p>
               </div>
+              <p className="text-sm text-zinc-400 dark:text-zinc-500 border-t
+                            border-zinc-800 dark:border-zinc-200 pt-3 mt-3 mb-6">
+                ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$22,90</span> para 14 perguntas
+              </p>
               <ul className="space-y-3 mb-8 flex-1">
-                {['Entrevista completa de 7 perguntas', 'Relatório com nota e feedback', 'Sem assinatura']
+                {['Entrevista completa personalizada', 'Relatório com nota e feedback', 'Sem assinatura']
                   .map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-zinc-300 dark:text-zinc-600">
                     <Check className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5"
@@ -1004,7 +1008,7 @@ export default function LandingPage() {
                 className="block w-full text-center bg-white dark:bg-zinc-950
                            text-zinc-950 dark:text-white py-2.5 rounded-lg text-sm
                            font-semibold hover:opacity-90 transition-opacity duration-150">
-                Comprar agora
+                Ver opções
               </Link>
             </div>
 
