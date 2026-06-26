@@ -57,7 +57,7 @@ export default function PrivacidadePage() {
         <p>
           Seus dados de currículo e respostas são processados por
           provedores de IA (Anthropic, e/ou modelos via OpenRouter) e
-          de voz (ElevenLabs) estritamente para gerar a experiência da
+          de voz (OpenAI) estritamente para gerar a experiência da
           entrevista — esses provedores não retêm seus dados para
           treinamento, conforme políticas próprias deles. Dados de
           pagamento são processados pelo Mercado Pago. Não vendemos
