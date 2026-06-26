@@ -17,6 +17,7 @@ import CameraWidget from '@/components/interview/CameraWidget';
 import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
 import type { InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
+import { saveSessionToSupabase } from '@/lib/services/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,6 +137,8 @@ export default function InterviewPage() {
           setInterviewState('waiting');
           setIsThinking(false);
           isProcessingTurnRef.current = false;
+          // Usar getState() para ter o session mais recente (sem closure stale)
+          saveSessionToSupabase(useSessionStore.getState().session).catch(() => {});
           return;
         }
         const errData = await res.json().catch(() => ({}));
@@ -398,10 +401,16 @@ export default function InterviewPage() {
   // então não vai reiniciar se a conversa já tem mensagens
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Abrir payment gate automaticamente quando redirecionado com showPayment=true
+    if (params.get('showPayment') === 'true') {
+      setShowPaymentGate(true);
+      setInterviewState('waiting');
+    }
     if (params.get('resume') !== 'true') return;
     const url = new URL(window.location.href);
     url.searchParams.delete('resume');
     url.searchParams.delete('sessionId');
+    url.searchParams.delete('showPayment');
     window.history.replaceState({}, '', url.toString());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
