@@ -16,8 +16,7 @@ export function PaymentGateModal({ sessionId }: PaymentGateModalProps) {
   async function handlePagar(plano: string) {
     if (!user) {
       localStorage.setItem('pending-interview-session', sessionId);
-      window.location.href =
-        `/entrar?return=/interview?resume=true%26sessionId=${sessionId}`;
+      window.location.href = `/entrar?return=/interview&requirePayment=true`;
       return;
     }
 

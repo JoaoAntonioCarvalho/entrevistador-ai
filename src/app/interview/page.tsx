@@ -72,6 +72,7 @@ export default function InterviewPage() {
   const firstTurnCalledRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const creditConsumedRef = useRef(false);
+  const prevUserRef = useRef<string | null>(null);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -334,6 +335,47 @@ export default function InterviewPage() {
     }).catch(() => { /* silencioso */ });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewState]);
+
+  // Verificar crédito ao detectar login durante a entrevista (retorno pós-gate)
+  async function verificarPagamentoAntesDeContinar() {
+    try {
+      const res = await fetch('/api/credits/check', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authUserId: user?.id ?? null,
+          sessionId:  session?.id ?? null,
+        }),
+      });
+      const data = await res.json();
+
+      if (!data.hasCredit) {
+        setShowPaymentGate(true);
+        setInterviewState('waiting');
+        isProcessingTurnRef.current = false;
+      } else {
+        // Tem crédito — retomar do ponto correto
+        const candidateTurns = session.conversation.filter(t => t.role === 'candidate').length;
+        perguntasRespondidasRef.current = candidateTurns;
+        setPerguntasRespondidas(candidateTurns);
+        setInterviewState('waiting');
+      }
+    } catch {
+      setShowPaymentGate(true);
+      setInterviewState('waiting');
+    }
+  }
+
+  useEffect(() => {
+    if (user?.id && prevUserRef.current === null) {
+      const candidateTurns = session.conversation.filter(t => t.role === 'candidate').length;
+      if (candidateTurns >= 3) {
+        verificarPagamentoAntesDeContinar();
+      }
+    }
+    prevUserRef.current = user?.id ?? null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Cleanup AudioContext ao sair da página (iOS)
   useEffect(() => {
