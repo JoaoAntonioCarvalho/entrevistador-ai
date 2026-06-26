@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Plano inválido.' }, { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://entrevistador-ai.vercel.app';
+    const baseUrl = (
+      process.env.NEXT_PUBLIC_APP_URL ?? 'https://entrevistador-ai.vercel.app'
+    ).replace(/\/$/, '');
 
     const preference = new Preference(mpConfig);
     const result = await preference.create({
