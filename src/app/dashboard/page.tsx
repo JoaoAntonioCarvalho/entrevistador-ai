@@ -52,9 +52,12 @@ export default function DashboardPage() {
     async function salvar() {
       try {
         setStatus('completed');
-        saveToLocalHistory(session);
+        // Usar getState() para obter a sessão com status já atualizado para 'completed'
+        // A closure captura 'session' antes do setStatus acima ter efeito no React state
+        const sessaoAtual = useSessionStore.getState().session;
+        saveToLocalHistory(sessaoAtual);
         setSessionSalva(true);
-        await saveSessionToSupabase(session, user?.id ?? null);
+        await saveSessionToSupabase(sessaoAtual, user?.id ?? null);
 
         if (custoSessao.total > 0) {
           fetch('/api/notify-cost', {

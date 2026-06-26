@@ -84,6 +84,22 @@ export interface SessionSummary {
   idioma?: string;
 }
 
+const STATUS_HISTORICO = ['completed', 'feedback'] as const;
+
+function mapSummary(s: SessionSummary): SessionSummary {
+  return {
+    id:              s.id,
+    created_at:      s.created_at,
+    job_titulo:      s.job_titulo  ?? '',
+    job_empresa:     s.job_empresa ?? '',
+    score_geral:     s.score_geral     ?? 0,
+    total_perguntas: s.total_perguntas ?? 0,
+    nivel:           s.nivel  ?? '',
+    tipo:            s.tipo   ?? '',
+    idioma:          s.idioma,
+  };
+}
+
 export async function getUserHistory(): Promise<SessionSummary[]> {
   const localData = getLocalHistory();
 
@@ -102,26 +118,35 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
     `;
 
     if (authSession?.user) {
-      // Logado — buscar por auth_user_id
+      // Sessões salvas com auth_user_id preenchido (login antes do fim da entrevista)
       const { data, error } = await authClient
         .from('sessions')
         .select(selectFields)
         .eq('auth_user_id', authSession.user.id)
+        .in('status', STATUS_HISTORICO)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error || !data) return localData;
-      return data.map((s: SessionSummary) => ({
-        id:              s.id,
-        created_at:      s.created_at,
-        job_titulo:      s.job_titulo ?? '',
-        job_empresa:     s.job_empresa ?? '',
-        score_geral:     s.score_geral ?? 0,
-        total_perguntas: s.total_perguntas ?? 0,
-        nivel:           s.nivel ?? '',
-        tipo:            s.tipo ?? '',
-        idioma:          s.idioma,
-      }));
+      if (!error && data && data.length > 0) {
+        return (data as SessionSummary[]).map(mapSummary);
+      }
+
+      // Fallback: sessões salvas antes do login têm auth_user_id = null
+      // Tentar pelo user_id local (gerado no browser)
+      const localUserId = getOrCreateUserId();
+      const { data: dataByUserId } = await authClient
+        .from('sessions')
+        .select(selectFields)
+        .eq('user_id', localUserId)
+        .in('status', STATUS_HISTORICO)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (dataByUserId && dataByUserId.length > 0) {
+        return (dataByUserId as SessionSummary[]).map(mapSummary);
+      }
+
+      return localData;
     }
 
     // Anônimo — buscar por user_id local
@@ -131,11 +156,12 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
       .from('sessions')
       .select(selectFields)
       .eq('user_id', userId)
+      .in('status', STATUS_HISTORICO)
       .order('created_at', { ascending: false })
       .limit(50);
 
     if (error || !data) return localData;
-    return (data as SessionSummary[]) ?? localData;
+    return (data as SessionSummary[]).map(mapSummary);
 
   } catch {
     return localData;
