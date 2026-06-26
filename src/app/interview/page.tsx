@@ -30,7 +30,15 @@ export default function InterviewPage() {
   const addCustoTTS = useSessionStore(s => s.addCustoTTS);
   const { user } = useAuth();
 
-  useRouteGuard({ needsCandidate: true, needsJob: true });
+  // Sessão válida persistida no store (reload no meio da entrevista)
+  const temSessaoSalva =
+    !!session?.id &&
+    !!session?.candidate?.nome &&
+    (session?.conversation?.length ?? 0) > 0 &&
+    session?.status === 'active';
+
+  // Se há sessão salva, a entrevista pode ser restaurada sem precisar dos dados de /setup
+  useRouteGuard({ needsCandidate: !temSessaoSalva, needsJob: !temSessaoSalva });
 
   const totalPerguntas = session.config?.perguntas ?? 10;
 
@@ -51,6 +59,7 @@ export default function InterviewPage() {
   const [mostrarDica, setMostrarDica] = useState(true);
   const [isResuming, setIsResuming]         = useState(false);
   const [resumeSessionId, setResumeSessionId] = useState('');
+  const [wasReloaded, setWasReloaded] = useState(false);
 
   const isIOS = typeof window !== 'undefined' &&
     /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -106,6 +115,7 @@ export default function InterviewPage() {
     perguntasAtualizadas?: number
   ) => {
     try {
+      setWasReloaded(false); // limpa banner de restauração ao retomar
       setInterviewState('processing');
       setIsThinking(true);
       setVisibleText('');
@@ -172,6 +182,7 @@ export default function InterviewPage() {
       }
 
       setIsThinking(false);
+      if (isFirst) setStatus('active'); // marca sessão como ativa para persistência
       setInterviewState('speaking');
       pendingInterviewerTextRef.current = data.fala;
       setCurrentQuestion(data.fala);
@@ -430,6 +441,31 @@ export default function InterviewPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Restaurar estado ao recarregar página com sessão em andamento
+  useEffect(() => {
+    if (!temSessaoSalva) return;
+
+    const perguntasJaRespondidas =
+      session.conversation?.filter(c => c.role === 'candidate').length ?? 0;
+
+    perguntasRespondidasRef.current = perguntasJaRespondidas;
+    setPerguntasRespondidas(perguntasJaRespondidas);
+    firstTurnCalledRef.current = true; // impede auto-first-turn na restauração
+
+    if (perguntasJaRespondidas < totalPerguntas) {
+      setInterviewState('waiting');
+      setIsThinking(false);
+    }
+
+    setWasReloaded(true);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('resume');
+    url.searchParams.delete('sessionId');
+    window.history.replaceState({}, '', url.toString());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // SOMENTE no mount
+
   // Verificar crédito quando retomando pós-pagamento
   // Deps incluem user?.id para aguardar o auth carregar antes de verificar
   useEffect(() => {
@@ -681,6 +717,13 @@ export default function InterviewPage() {
           >
             Copiar link
           </button>
+        </div>
+      )}
+
+      {/* Banner de entrevista restaurada após reload */}
+      {temSessaoSalva && wasReloaded && (
+        <div className="shrink-0 text-xs text-zinc-500 text-center py-2 animate-fade-in-up">
+          Entrevista restaurada — continue sua resposta
         </div>
       )}
 
