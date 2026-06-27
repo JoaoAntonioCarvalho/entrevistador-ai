@@ -27,64 +27,34 @@ export function getOrCreateUserId(): string {
   return id;
 }
 
-// ── Salvar sessão ─────────────────────────────────────────
+// ── Salvar sessão (via API route — evita RLS no browser) ──
 export async function saveSessionToSupabase(
   session: InterviewSession,
   authUserId: string | null = null,
 ): Promise<void> {
-  if (process.env.NEXT_PUBLIC_USE_SUPABASE !== 'true') {
-    return;
-  }
-
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? supabaseUrl,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? supabaseKey,
-  );
+  if (process.env.NEXT_PUBLIC_USE_SUPABASE !== 'true') return;
+  if (typeof window === 'undefined') return;
 
   const userId = getOrCreateUserId();
 
-  const row = {
-    id:                         session.id,
-    user_id:                    userId,
-    auth_user_id:               authUserId,
-    created_at:                 session.created_at,
-    status:                     session.status,
-    payment_status:             session.paymentStatus ?? 'pending',
-    job_titulo:                 session.job?.titulo ?? '',
-    job_empresa:                session.job?.empresa ?? '',
-    score_geral:                session.scores?.geral ?? 0,
-    score_clareza:              session.scores?.clareza ?? 0,
-    score_relevancia:           session.scores?.relevancia ?? 0,
-    score_profundidade:         session.scores?.profundidade ?? 0,
-    competencia_comunicacao:    session.competencias?.comunicacao ?? 0,
-    competencia_resolucao:      session.competencias?.resolucao_problemas ?? 0,
-    competencia_tecnico:        session.competencias?.conhecimento_tecnico ?? 0,
-    competencia_lideranca:      session.competencias?.lideranca ?? 0,
-    competencia_adaptabilidade: session.competencias?.adaptabilidade ?? 0,
-    total_perguntas:            session.evaluations?.length ?? 0,
-    idioma:                     session.config.idioma,
-    tipo:                       session.config.tipo,
-    nivel:                      session.config.nivel,
-    feedback_script:            session.feedback_script ?? '',
-    transcript:                 session.conversation ?? [],
-    evaluations:                session.evaluations ?? [],
-    config:                     session.config,
-  };
+  try {
+    const res = await fetch('/api/session/save', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ session, authUserId, userId }),
+    });
 
-  console.log('[supabase] salvando sessão:', {
-    id: session.id,
-    auth_user_id: authUserId,
-    status: session.status,
-  });
-
-  const { error } = await supabaseAdmin
-    .from('sessions')
-    .upsert(row, { onConflict: 'id' });
-
-  if (error) {
-    console.error('[supabase] erro ao salvar:', error.message);
-  } else {
-    console.log('[supabase] sessão salva com sucesso');
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      console.error('[supabase] erro ao salvar sessão:', data.error ?? res.status);
+    } else {
+      console.log('[supabase] sessão salva com sucesso', {
+        id: session.id, auth_user_id: authUserId, status: session.status,
+      });
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+    console.error('[supabase] erro ao salvar sessão:', msg);
   }
 }
 
