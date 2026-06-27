@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -60,13 +61,22 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
             <>
               {!loading && (
                 user ? (
-                  <button
-                    onClick={signOut}
-                    className="text-sm text-muted-fg hover:text-foreground
-                               transition-colors duration-150 hidden md:block"
-                  >
-                    Sair
-                  </button>
+                  <>
+                    <Link
+                      href="/conta"
+                      className="text-sm text-muted-fg hover:text-foreground
+                                 transition-colors duration-150 hidden md:block"
+                    >
+                      Minha conta
+                    </Link>
+                    <button
+                      onClick={signOut}
+                      className="text-sm text-muted-fg hover:text-foreground
+                                 transition-colors duration-150 hidden md:block"
+                    >
+                      Sair
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => router.push('/entrar')}
@@ -77,6 +87,7 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
                   </button>
                 )
               )}
+
 
               <button
                 onClick={toggleTheme}
