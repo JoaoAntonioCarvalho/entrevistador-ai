@@ -194,41 +194,50 @@ export async function callAIJSONWithUsage<T>(
     maxTokens
   );
 
-  const text  = result.text;
-  const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  const meta  = { inputTokens: result.inputTokens, outputTokens: result.outputTokens, model: result.model };
+  const rawText = result.text;
+  const meta    = { inputTokens: result.inputTokens, outputTokens: result.outputTokens, model: result.model };
 
-  // Estratégia 1: parsear direto
+  let conteudo = rawText.trim();
+  conteudo = conteudo
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim();
+
+  // Estratégia 1: parse direto após limpeza
   try {
-    return { data: JSON.parse(clean) as T, ...meta };
+    return { data: JSON.parse(conteudo) as T, ...meta };
   } catch { /* fall through */ }
 
-  // Estratégia 2: extrair o primeiro bloco JSON válido do texto
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      return { data: JSON.parse(jsonMatch[0]) as T, ...meta };
-    } catch { /* fall through */ }
-  }
+  // Estratégia 2: extrair o primeiro bloco JSON com regex
+  try {
+    const match = conteudo.match(/\{[\s\S]*\}/);
+    if (match) return { data: JSON.parse(match[0]) as T, ...meta };
+  } catch { /* fall through */ }
 
-  // Estratégia 3: encontrar o maior bloco { } balanceado
-  let depth = 0, start = -1, end = -1;
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === '{') {
-      if (depth === 0) start = i;
-      depth++;
-    } else if (text[i] === '}') {
-      depth--;
-      if (depth === 0 && start !== -1) { end = i; break; }
+  // Estratégia 3: balancear chaves manualmente
+  try {
+    let depth = 0, start = -1;
+    for (let i = 0; i < conteudo.length; i++) {
+      if (conteudo[i] === '{') {
+        if (start === -1) start = i;
+        depth++;
+      } else if (conteudo[i] === '}') {
+        depth--;
+        if (depth === 0 && start !== -1) {
+          return { data: JSON.parse(conteudo.slice(start, i + 1)) as T, ...meta };
+        }
+      }
     }
-  }
-  if (start !== -1 && end !== -1) {
-    try {
-      return { data: JSON.parse(text.slice(start, end + 1)) as T, ...meta };
-    } catch { /* fall through */ }
-  }
+  } catch { /* fall through */ }
 
-  throw new Error(`Não foi possível extrair JSON válido da resposta. Preview: ${text.slice(0, 200)}`);
+  // Estratégia 4: fallback seguro — não travar a entrevista por erro de parse
+  console.error('[turn] parse falhou. Preview:', conteudo.slice(0, 200));
+  const falaMatch = conteudo.match(/"fala"\s*:\s*"([^"]+)"/);
+  const fala = falaMatch?.[1] ?? 'Obrigado pela sua resposta.';
+  return {
+    data: { fala, avaliacao: { nota: 7, positivo: '', melhoria: '', resposta_ideal: '' }, encerrar: false } as unknown as T,
+    ...meta,
+  };
 }
 
 export async function callAIJSON<T>(

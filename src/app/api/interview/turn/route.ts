@@ -295,6 +295,8 @@ SOBRE O CAMPO "fala":
 FASE ATUAL DA ENTREVISTA:
 ${getInterviewPhase(perguntasRespondidas, totalPerguntas)}
 
+CRÍTICO: Retorne SOMENTE o objeto JSON puro, sem nenhum texto antes ou depois, sem markdown, sem backticks (\`\`\`), sem comentários. Apenas o JSON começando com { e terminando com }.
+
 FORMATO DE RETORNO — sempre JSON exato, sem markdown:
 {
   "fala": "texto exato que o entrevistador vai dizer — apenas a fala, sem didascálias ou asteriscos",
