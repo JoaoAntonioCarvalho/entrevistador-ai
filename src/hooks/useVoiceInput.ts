@@ -25,6 +25,10 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
   const processingTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warmupRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Refs de estado para guards dentro de closures do timer
+  const isListeningRef  = useRef(false);
+  const isProcessingRef = useRef(false);
+
   // Refs que sempre apontam para a versão mais recente das callbacks.
   // Isso evita que o recognition capture closures desatualizadas e
   // elimina a necessidade de recriar o recognition quando os callbacks mudam.
@@ -35,6 +39,9 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
   useEffect(() => { onTranscriptRef.current        = options.onTranscript;        }, [options.onTranscript]);
   useEffect(() => { onErrorRef.current             = options.onError;             }, [options.onError]);
   useEffect(() => { onInterimTranscriptRef.current = options.onInterimTranscript; }, [options.onInterimTranscript]);
+
+  useEffect(() => { isListeningRef.current  = state === 'listening';  }, [state]);
+  useEffect(() => { isProcessingRef.current = state === 'processing'; }, [state]);
 
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -145,6 +152,13 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     }, 200);
   }, [state]);
 
+  function cancelarTimeout() {
+    if (processingTimeoutRef.current) {
+      clearTimeout(processingTimeoutRef.current);
+      processingTimeoutRef.current = null;
+    }
+  }
+
   const stopListening = useCallback(() => {
     if (state !== 'listening') return;
     isStoppingRef.current = true;
@@ -152,8 +166,10 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     try { recognitionRef.current?.stop(); } catch { /* silencioso */ }
 
     // Timeout de segurança: se processing durar > 30s sem resposta, resetar
+    // Guard: só dispara se ainda em listening ou processing (não durante fala do avatar)
     processingTimeoutRef.current = setTimeout(() => {
       processingTimeoutRef.current = null;
+      if (!isListeningRef.current && !isProcessingRef.current) return;
       setState('idle');
       setTranscript('');
       setInterim('');
@@ -165,10 +181,7 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
   }, [state]);
 
   const resetState = useCallback(() => {
-    if (processingTimeoutRef.current) {
-      clearTimeout(processingTimeoutRef.current);
-      processingTimeoutRef.current = null;
-    }
+    cancelarTimeout();
     if (warmupRef.current) {
       clearTimeout(warmupRef.current);
       warmupRef.current = null;
@@ -179,7 +192,8 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     finalTextRef.current     = '';
     hasCalledbackRef.current = false;
     isStoppingRef.current    = false;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { state, transcript, interimTranscript, isSupported, startListening, stopListening, resetState };
+  return { state, transcript, interimTranscript, isSupported, startListening, stopListening, resetState, cancelarTimeout };
 }

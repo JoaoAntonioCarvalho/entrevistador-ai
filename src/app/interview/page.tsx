@@ -256,6 +256,14 @@ export default function InterviewPage() {
     voiceInput.resetState();
   };
 
+  // Cancelar timeout do microfone quando entrevistador começa a falar
+  useEffect(() => {
+    if (interviewState === 'speaking') {
+      voiceInput.cancelarTimeout();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewState]);
+
   // Mark speech support check complete after mount
   useEffect(() => {
     setSpeechChecked(true);
