@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -182,11 +183,18 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         </button>
       </form>
 
-      {/* Nota explicativa */}
-      <p className="text-xs text-center text-zinc-400 dark:text-zinc-500 leading-relaxed">
-        Se você já tem conta, fazemos login automaticamente.
-        Se não tem, criamos sua conta agora.
-      </p>
+      <div className="flex gap-4 justify-center mt-2">
+        <Link href="/entrar"
+          className="text-xs text-zinc-500 hover:text-zinc-700
+                     dark:hover:text-zinc-300 underline">
+          Já tenho conta
+        </Link>
+        <Link href="/cadastro"
+          className="text-xs text-zinc-500 hover:text-zinc-700
+                     dark:hover:text-zinc-300 underline">
+          Criar conta
+        </Link>
+      </div>
 
     </div>
   );
