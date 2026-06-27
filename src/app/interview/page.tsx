@@ -150,17 +150,28 @@ export default function InterviewPage() {
         }),
       });
 
-      if (!res.ok) {
-        if (res.status === 402) {
-          setShowPaymentGate(true);
-          setInterviewState('waiting');
-          setIsThinking(false);
-          isProcessingTurnRef.current = false;
-          // Usar getState() para ter o session mais recente (sem closure stale)
-          // Passar user.id diretamente — auth.getSession() não é confiável aqui
-          saveSessionToSupabase(useSessionStore.getState().session, authUserIdRef.current ?? user?.id ?? null).catch(() => {});
-          return;
+      if (res.status === 402) {
+        // Ler corpo antes de descartar — o backend inclui a avaliação da última resposta
+        const data402 = await res.json().catch(() => ({}));
+        if (!isFirst && response && data402.avaliacao) {
+          addEvaluation({
+            pergunta:       currentQuestion,
+            resposta:       response,
+            nota:           data402.avaliacao.nota          ?? 5,
+            positivo:       data402.avaliacao.positivo      ?? '',
+            melhoria:       data402.avaliacao.melhoria      ?? '',
+            resposta_ideal: data402.avaliacao.resposta_ideal ?? '',
+          });
         }
+        setShowPaymentGate(true);
+        setInterviewState('waiting');
+        setIsThinking(false);
+        isProcessingTurnRef.current = false;
+        saveSessionToSupabase(useSessionStore.getState().session, authUserIdRef.current ?? user?.id ?? null).catch(() => {});
+        return;
+      }
+
+      if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData?.error ?? `HTTP ${res.status}`);
       }

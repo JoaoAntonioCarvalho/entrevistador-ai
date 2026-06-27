@@ -407,7 +407,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Gate de pagamento: a partir da pergunta 4, verificar crédito ou sessão paga
+  // Gate de pagamento: verificar antes da IA mas só retornar depois
+  // (para incluir a avaliação da última resposta no corpo do 402)
+  let requiresPayment = false;
   if (!isFirstTurn && perguntasRespondidas >= 3) {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -440,12 +442,7 @@ export async function POST(req: NextRequest) {
       if (credit) liberado = true;
     }
 
-    if (!liberado) {
-      return NextResponse.json(
-        { error: 'payment_required', message: 'Pagamento necessário para continuar.' },
-        { status: 402 }
-      );
-    }
+    if (!liberado) requiresPayment = true;
   }
 
   try {
@@ -513,6 +510,18 @@ Com base na resposta acima e no histórico completo, gere a próxima fala do ent
           ? `Thank you for your time today, ${primeiroNome}. It was a pleasure speaking with you. Your feedback report will be ready shortly.`
           : `Obrigado pela sua participação hoje, ${primeiroNome}. Foi um prazer conversar com você. Seu feedback estará disponível em instantes.`;
       }
+    }
+
+    // Gate de pagamento — retornar 402 COM avaliação para não perder a nota da última pergunta
+    if (requiresPayment) {
+      return NextResponse.json(
+        {
+          error:     'payment_required',
+          message:   'Pagamento necessário para continuar.',
+          avaliacao: result.data.avaliacao,
+        },
+        { status: 402 },
+      );
     }
 
     return NextResponse.json({
