@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthModal } from '@/hooks/useAuthModal';
 import { Loader2, X, Check, Zap, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,14 +16,14 @@ export function PaymentGateModal({
   onClose,
 }: PaymentGateModalProps) {
   const { user } = useAuth();
+  const { open } = useAuthModal();
   const [loading, setLoading] = useState<string | null>(null);
   const [tab, setTab] = useState<'avulso' | 'mensal'>('avulso');
 
   async function handlePagar(plano: string) {
     if (!user) {
       localStorage.setItem('pending-interview-session', sessionId);
-      window.location.href =
-        `/entrar?return=/interview?resume=true%26sessionId=${sessionId}`;
+      open({ motivo: 'Para continuar sua entrevista' });
       return;
     }
     setLoading(plano);

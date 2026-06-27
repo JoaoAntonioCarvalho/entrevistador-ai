@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthModal } from '@/hooks/useAuthModal';
 import { usePendingSession } from '@/hooks/usePendingSession';
 import { Header } from '@/components/layout/Header';
 import { Check, ChevronLeft } from 'lucide-react';
@@ -84,6 +85,7 @@ function PlanosContent() {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('return');
   const { user } = useAuth();
+  const { open } = useAuthModal();
   const session = useSessionStore(s => s.session);
   const { pending: pendingSession } = usePendingSession();
 
@@ -99,7 +101,7 @@ function PlanosContent() {
     }
 
     if (!user) {
-      router.push(`/entrar?return=/planos&plano=${plano}`);
+      open({ motivo: 'Para continuar sua compra' });
       return;
     }
 

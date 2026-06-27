@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthModal } from '@/hooks/useAuthModal';
 import { Header } from '@/components/layout/Header';
 import {
   CreditCard, Clock, CheckCircle,
@@ -62,6 +63,7 @@ function formatDate(iso: string) {
 
 export default function ContaPage() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { open } = useAuthModal();
   const router  = useRouter();
   const [resumo,  setResumo]  = useState<Resumo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export default function ContaPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user?.id) {
-      router.replace('/entrar?return=/conta');
+      open({ motivo: 'Para ver sua conta' });
       return;
     }
 
@@ -82,7 +84,7 @@ export default function ContaPage() {
       .then(setResumo)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.id, authLoading, router]);
+  }, [user?.id, authLoading, router, open]);
 
   if (authLoading || loading) {
     return (

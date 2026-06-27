@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { CookieConsent } from "@/components/CookieConsent";
+import { AuthModalWrapper } from "@/components/auth/AuthModalWrapper";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -91,6 +92,7 @@ export default function RootLayout({
           <Toaster />
           {children}
           <CookieConsent />
+          <AuthModalWrapper />
         </ThemeProvider>
       </body>
     </html>

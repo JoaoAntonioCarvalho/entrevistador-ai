@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthModal } from '@/hooks/useAuthModal';
 
 interface HeaderProps {
   backTo?:       string;
@@ -18,6 +19,7 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { user, loading, signOut } = useAuth();
+  const { open } = useAuthModal();
 
   useEffect(() => {
     setMounted(true);
@@ -79,7 +81,7 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
                   </>
                 ) : (
                   <button
-                    onClick={() => router.push('/entrar')}
+                    onClick={() => open()}
                     className="text-sm text-muted-fg hover:text-foreground
                                transition-colors duration-150 hidden md:block"
                   >
