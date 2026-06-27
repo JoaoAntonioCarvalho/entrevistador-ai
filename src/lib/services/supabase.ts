@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { createBrowserClient } from '@supabase/ssr';
 import { InterviewSession } from '../types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '';
@@ -71,84 +70,33 @@ export interface SessionSummary {
   idioma?: string;
 }
 
-const STATUS_HISTORICO = ['completed', 'feedback', 'active'] as const;
-
-function mapSummary(s: SessionSummary): SessionSummary {
-  return {
-    id:              s.id,
-    created_at:      s.created_at,
-    job_titulo:      s.job_titulo  ?? '',
-    job_empresa:     s.job_empresa ?? '',
-    score_geral:     s.score_geral     ?? 0,
-    total_perguntas: s.total_perguntas ?? 0,
-    nivel:           s.nivel  ?? '',
-    tipo:            s.tipo   ?? '',
-    idioma:          s.idioma,
-  };
-}
 
 export async function getUserHistory(): Promise<SessionSummary[]> {
-  const localData = getLocalHistory();
-
-  if (process.env.NEXT_PUBLIC_USE_SUPABASE !== 'true') {
-    return localData;
-  }
+  if (typeof window === 'undefined') return [];
 
   try {
-    const supabaseBrowser = createBrowserClient(
+    const { createBrowserClient: makeBrowserClient } = await import('@supabase/ssr');
+    const browser = makeBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+    const { data: { session: authSession } } = await browser.auth.getSession();
 
-    const { data: { session: authSession } } = await supabaseBrowser.auth.getSession();
+    const res = await fetch('/api/session/history', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authUserId:  authSession?.user?.id ?? null,
+        localUserId: getOrCreateUserId(),
+      }),
+    });
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-
-    const selectFields = `
-      id, created_at, job_titulo, job_empresa,
-      score_geral, total_perguntas, nivel, tipo, idioma
-    `;
-
-    if (authSession?.user) {
-      // Buscar por auth_user_id (sessões salvas com usuário logado)
-      const { data: byAuth } = await supabaseAdmin
-        .from('sessions')
-        .select(selectFields)
-        .eq('auth_user_id', authSession.user.id)
-        .in('status', STATUS_HISTORICO)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (byAuth && byAuth.length > 0) {
-        return (byAuth as SessionSummary[]).map(mapSummary);
-      }
-
-      // Fallback: sessões salvas antes do login têm auth_user_id = null
-      // Tentar pelo user_id local (gerado no browser)
-      const localUserId = getOrCreateUserId();
-      const { data: byLocal } = await supabaseAdmin
-        .from('sessions')
-        .select(selectFields)
-        .eq('user_id', localUserId)
-        .in('status', STATUS_HISTORICO)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (byLocal && byLocal.length > 0) {
-        return (byLocal as SessionSummary[]).map(mapSummary);
-      }
-
-      return localData;
-    }
-
-    // Usuário não autenticado — fallback para localStorage
-    return localData;
+    if (!res.ok) return getLocalHistory();
+    const data = await res.json();
+    return data.sessions ?? [];
 
   } catch {
-    return localData;
+    return getLocalHistory();
   }
 }
 
