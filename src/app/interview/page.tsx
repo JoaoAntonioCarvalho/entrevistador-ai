@@ -324,7 +324,11 @@ export default function InterviewPage() {
 
     if (perguntasAtuais >= totalPerguntas) {
       setInterviewState('ended');
-      setStatus('feedback');
+      setStatus('completed');
+      saveSessionToSupabase(
+        { ...useSessionStore.getState().session, status: 'completed' },
+        user?.id ?? null,
+      ).catch(() => {});
       setTimeout(() => router.push('/feedback'), 1500);
       return;
     }
@@ -537,7 +541,11 @@ export default function InterviewPage() {
         ? `Thank you for your time, ${nome}. You will receive your detailed feedback shortly.`
         : `Obrigado pela sua participação, ${nome}. Em instantes você receberá um feedback completo.`;
     speakRef.current(farewell);
-    setStatus('feedback');
+    setStatus('completed');
+    saveSessionToSupabase(
+      { ...useSessionStore.getState().session, status: 'completed' },
+      user?.id ?? null,
+    ).catch(() => {});
     setTimeout(() => router.push('/feedback'), 4000);
   }
 

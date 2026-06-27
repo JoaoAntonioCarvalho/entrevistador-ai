@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { createClient as createAuthClient } from '@/lib/services/supabase-client';
+import { createBrowserClient } from '@supabase/ssr';
 import { InterviewSession } from '../types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '';
@@ -36,8 +36,12 @@ export async function saveSessionToSupabase(
     return;
   }
 
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? supabaseUrl,
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? supabaseKey,
+  );
+
   const userId = getOrCreateUserId();
-  const client = getClient(userId);
 
   const row = {
     id:                         session.id,
@@ -66,9 +70,21 @@ export async function saveSessionToSupabase(
     config:                     session.config,
   };
 
-  await client
+  console.log('[supabase] salvando sessão:', {
+    id: session.id,
+    auth_user_id: authUserId,
+    status: session.status,
+  });
+
+  const { error } = await supabaseAdmin
     .from('sessions')
-    .upsert(row);
+    .upsert(row, { onConflict: 'id' });
+
+  if (error) {
+    console.error('[supabase] erro ao salvar:', error.message);
+  } else {
+    console.log('[supabase] sessão salva com sucesso');
+  }
 }
 
 // ── Buscar histórico do usuário ───────────────────────────
@@ -108,9 +124,17 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
   }
 
   try {
-    const authClient = createAuthClient();
-    if (!authClient) return localData;
-    const { data: { session: authSession } } = await authClient.auth.getSession();
+    const supabaseBrowser = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { data: { session: authSession } } = await supabaseBrowser.auth.getSession();
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
 
     const selectFields = `
       id, created_at, job_titulo, job_empresa,
@@ -118,8 +142,8 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
     `;
 
     if (authSession?.user) {
-      // Sessões salvas com auth_user_id preenchido (login antes do fim da entrevista)
-      const { data, error } = await authClient
+      // Buscar por auth_user_id (sessões salvas com usuário logado)
+      const { data: byAuth } = await supabaseAdmin
         .from('sessions')
         .select(selectFields)
         .eq('auth_user_id', authSession.user.id)
@@ -127,14 +151,14 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (!error && data && data.length > 0) {
-        return (data as SessionSummary[]).map(mapSummary);
+      if (byAuth && byAuth.length > 0) {
+        return (byAuth as SessionSummary[]).map(mapSummary);
       }
 
       // Fallback: sessões salvas antes do login têm auth_user_id = null
       // Tentar pelo user_id local (gerado no browser)
       const localUserId = getOrCreateUserId();
-      const { data: dataByUserId } = await authClient
+      const { data: byLocal } = await supabaseAdmin
         .from('sessions')
         .select(selectFields)
         .eq('user_id', localUserId)
@@ -142,26 +166,15 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (dataByUserId && dataByUserId.length > 0) {
-        return (dataByUserId as SessionSummary[]).map(mapSummary);
+      if (byLocal && byLocal.length > 0) {
+        return (byLocal as SessionSummary[]).map(mapSummary);
       }
 
       return localData;
     }
 
-    // Anônimo — buscar por user_id local
-    const userId = getOrCreateUserId();
-    const client = getClient(userId);
-    const { data, error } = await client
-      .from('sessions')
-      .select(selectFields)
-      .eq('user_id', userId)
-      .in('status', STATUS_HISTORICO)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error || !data) return localData;
-    return (data as SessionSummary[]).map(mapSummary);
+    // Usuário não autenticado — fallback para localStorage
+    return localData;
 
   } catch {
     return localData;
