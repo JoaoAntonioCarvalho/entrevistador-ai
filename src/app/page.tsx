@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
+import { useHasHistory } from '@/hooks/useHasHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,7 @@ export default function LandingPage() {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user } = useAuth();
+  const { hasHistory } = useHasHistory();
   const [mounted, setMounted]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq]   = useState<number | null>(null);
@@ -163,10 +165,11 @@ export default function LandingPage() {
               </button>
             )}
 
-            <button onClick={() => router.push('/setup')}
+            <button
+              onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
               className="text-sm bg-foreground text-background px-4 py-2 rounded-lg
                          font-medium hover:opacity-90 transition-opacity duration-150">
-              Começar grátis
+              {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
             </button>
 
             {mounted ? (
@@ -210,11 +213,12 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3
                           animate-fade-in-up-delay-3">
-            <button onClick={() => router.push('/setup')}
+            <button
+              onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2
                          bg-foreground text-background px-7 py-3.5 rounded-lg
                          font-semibold text-[15px] hover:opacity-90 transition-opacity duration-150">
-              Começar grátis
+              {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
             <a href="#como-funciona"
@@ -226,7 +230,11 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <p className="text-[13px] text-muted-fg mb-12">Sem cartão de crédito</p>
+          <p className="text-[13px] text-muted-fg mb-12">
+            {hasHistory && user
+              ? 'Adicione créditos para continuar praticando'
+              : 'Sem cartão de crédito'}
+          </p>
 
           {/* Social proof */}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1
@@ -941,34 +949,64 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-            {/* Grátis */}
-            <div className="bg-card rounded-xl p-7 border border-border flex flex-col
-                            hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
-                Grátis
-              </p>
-              <div className="mb-7">
-                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
-                  R$0
+            {/* Grátis / Sua conta */}
+            {hasHistory && user ? (
+              <div className="bg-card rounded-xl p-7 border border-border flex flex-col
+                              hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
+                <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
+                  Sua conta
                 </p>
+                <div className="mb-7">
+                  <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
+                    ✓
+                  </p>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {['Histórico salvo', 'Resultados anteriores', 'Continue evoluindo']
+                    .map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
+                      <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
+                             strokeWidth={2.5} aria-hidden="true" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/historico"
+                  className="block w-full text-center border border-border text-muted-fg
+                             py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
+                             hover:text-foreground transition-all duration-150">
+                  Ver histórico
+                </Link>
               </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {['3 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
-                  .map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
-                    <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
-                           strokeWidth={2.5} aria-hidden="true" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/setup"
-                className="block w-full text-center border border-border text-muted-fg
-                           py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
-                           hover:text-foreground transition-all duration-150">
-                Começar agora
-              </Link>
-            </div>
+            ) : (
+              <div className="bg-card rounded-xl p-7 border border-border flex flex-col
+                              hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
+                <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
+                  Grátis
+                </p>
+                <div className="mb-7">
+                  <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
+                    R$0
+                  </p>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {['3 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
+                    .map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
+                      <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
+                             strokeWidth={2.5} aria-hidden="true" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/setup"
+                  className="block w-full text-center border border-border text-muted-fg
+                             py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
+                             hover:text-foreground transition-all duration-150">
+                  Começar agora
+                </Link>
+              </div>
+            )}
 
             {/* Avulso — destaque */}
             <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-7
@@ -1215,13 +1253,15 @@ export default function LandingPage() {
             — sem cartão, sem cadastro.
           </p>
           <button
-            onClick={() => router.push('/setup')}
+            onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
             className="bg-white text-zinc-950 px-9 py-4 rounded-lg font-semibold
                        text-[15px] hover:bg-zinc-100 transition-colors duration-150">
-            Começar grátis
+            {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
           </button>
           <p className="text-zinc-500 text-[13px] mt-4">
-            Sem cartão de crédito · Cancele quando quiser
+            {hasHistory && user
+              ? 'Adicione créditos para continuar praticando'
+              : 'Sem cartão de crédito · Cancele quando quiser'}
           </p>
         </div>
       </section>

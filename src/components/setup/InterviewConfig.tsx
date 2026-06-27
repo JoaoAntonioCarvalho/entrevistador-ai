@@ -7,6 +7,7 @@ import { resolveAvatarProfile } from '@/lib/types';
 import { AVATAR_PROFILES, DEFAULT_CONFIG } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useCredits } from '@/hooks/useCredits';
+import { useHasHistory } from '@/hooks/useHasHistory';
 
 const OPCOES_PERGUNTAS = [7, 14] as const;
 
@@ -52,6 +53,7 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
   const router = useRouter();
   const { user } = useAuth();
   const { maxPerguntas, loading: loadingCredits } = useCredits();
+  const { hasHistory } = useHasHistory();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
 
   function opcaoBloqueada(qtd: number): boolean {
@@ -275,6 +277,11 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
       >
         Iniciar entrevista
       </button>
+      {hasHistory && user && (
+        <p className="text-xs text-zinc-400 text-center mt-2">
+          Será debitado 1 crédito da sua conta
+        </p>
+      )}
     </div>
   );
 }

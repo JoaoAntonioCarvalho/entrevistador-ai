@@ -12,6 +12,7 @@ import InterviewConfig from '@/components/setup/InterviewConfig';
 import { AvatarProfile, Candidate, InterviewConfig as IConfig, Job } from '@/lib/types';
 import { Header } from '@/components/layout/Header';
 import { notifyCurriculo, notifyVaga } from '@/lib/services/telegram';
+import { useHasHistory } from '@/hooks/useHasHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,7 @@ export default function SetupPage() {
   const { user } = useAuth();
   const { session, initSession, setCandidate, setJob, setConfig, setStatus, setAvatarProfiles } = useSessionStore();
   const { pending, checked: pendingChecked } = usePendingSession();
+  const { hasHistory } = useHasHistory();
   const setupStep    = useSessionStore(s => s.setupStep);
   const setSetupStep = useSessionStore(s => s.setSetupStep);
   const [step,            setStep]            = useState<1 | 2 | 3>(
@@ -190,6 +192,26 @@ export default function SetupPage() {
     setWarning(msg);
   }
 
+  async function iniciarEntrevista() {
+    if (hasHistory && user?.id) {
+      try {
+        const res = await fetch('/api/credits/check', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ authUserId: user.id, sessionId: null }),
+        });
+        const data = await res.json();
+        if (!data.hasCredit) {
+          router.push('/planos');
+          return;
+        }
+      } catch { /* em caso de erro, permitir prosseguir */ }
+    }
+    setSetupStep(1);
+    setStatus('active');
+    router.push('/camera-check');
+  }
+
   function handleConfig(cfg: IConfig) {
     setConfig(cfg);
 
@@ -206,9 +228,7 @@ export default function SetupPage() {
       return;
     }
 
-    setSetupStep(1);
-    setStatus('active');
-    router.push('/camera-check');
+    iniciarEntrevista();
   }
 
   const stepTitles: Record<number, string> = {
@@ -401,9 +421,7 @@ export default function SetupPage() {
               <button
                 onClick={() => {
                   setShowWarning(false);
-                  setSetupStep(1);
-                  setStatus('active');
-                  router.push('/camera-check');
+                  iniciarEntrevista();
                 }}
                 className="flex-1 bg-foreground text-background py-2.5 rounded-lg
                            text-sm font-medium hover:opacity-90
