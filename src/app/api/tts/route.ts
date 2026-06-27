@@ -12,15 +12,15 @@ const openai = new OpenAI({
 type OpenAIVoice = 'alloy' | 'ash' | 'coral' | 'echo' | 'fable' | 'onyx' | 'nova' | 'sage' | 'shimmer';
 
 const VOICE_MAP: Record<string, Record<string, OpenAIVoice>> = {
-  sarah:  { 'pt-BR': 'nova',   'en-US': 'shimmer' },
-  carlos: { 'pt-BR': 'onyx',   'en-US': 'echo'    },
-  alex:   { 'pt-BR': 'fable',  'en-US': 'alloy'   },
+  sarah:  { 'pt-BR': 'nova',  'en-US': 'shimmer' },
+  carlos: { 'pt-BR': 'onyx',  'en-US': 'echo'    },
+  alex:   { 'pt-BR': 'onyx',  'en-US': 'echo'    },
 };
 
 const SPEED_MAP: Record<string, number> = {
   sarah:  0.88,
   carlos: 0.92,
-  alex:   0.90,
+  alex:   0.92,
 };
 
 function processarTextoParaTTS(texto: string, avatarId: string): string {
