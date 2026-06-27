@@ -29,9 +29,10 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
 
     setLoading(true);
 
-    // Tentar login primeiro
+    // PASSO 1: tentar login
     const loginResult = await signIn(email.trim(), password);
 
+    // Login funcionou
     if (!loginResult.error) {
       toast.success('Bem-vindo de volta!');
       onSuccess?.();
@@ -39,42 +40,61 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
       return;
     }
 
-    const errorMsg = loginResult.error.message ?? '';
+    const errMsg = loginResult.error.message ?? '';
 
-    // Senha incorreta — usuário existe mas senha errada
+    // PASSO 2: se erro for de credencial inválida,
+    // pode ser senha errada OU email não existe.
+    // Tentar criar conta para descobrir qual é.
     if (
-      errorMsg.includes('Invalid login credentials') ||
-      errorMsg.includes('invalid_credentials') ||
-      errorMsg.includes('Email not confirmed')
+      errMsg.includes('Invalid login credentials') ||
+      errMsg.includes('invalid_credentials')
     ) {
-      toast.error('Senha incorreta. Tente novamente.', { duration: 4000 });
+      const signupResult = await signUp(email.trim(), password);
+
+      // Signup funcionou — conta criada
+      if (!signupResult.error) {
+        // Tentar login imediatamente após signup
+        const loginAposSignup = await signIn(email.trim(), password);
+
+        if (!loginAposSignup.error) {
+          toast.success('Conta criada com sucesso!');
+          onSuccess?.();
+        } else {
+          toast.success(
+            'Conta criada! Faça login para continuar.',
+            { duration: 5000 }
+          );
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Signup falhou com "already registered"
+      // → conta existe mas senha está errada
+      if (
+        signupResult.error.message?.includes('already registered') ||
+        signupResult.error.message?.includes('already been registered') ||
+        signupResult.error.message?.includes('User already registered')
+      ) {
+        toast.error('Senha incorreta. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
+      // Outro erro no signup
+      toast.error(signupResult.error.message ?? 'Erro ao criar conta.');
       setLoading(false);
       return;
     }
 
-    // Usuário não existe — criar conta automaticamente
-    const signUpResult = await signUp(email.trim(), password);
-
-    if (signUpResult.error) {
-      toast.error(
-        signUpResult.error.message?.includes('already registered')
-          ? 'Senha incorreta. Tente novamente.'
-          : 'Erro ao criar conta. Tente novamente.'
-      );
+    // Outros erros de login
+    if (errMsg.includes('Email not confirmed')) {
+      toast.error('Confirme seu email antes de fazer login.');
       setLoading(false);
       return;
     }
 
-    // Cadastro bem-sucedido — tentar login imediatamente
-    const loginAfterSignup = await signIn(email.trim(), password);
-
-    if (!loginAfterSignup.error) {
-      toast.success('Conta criada com sucesso!');
-      onSuccess?.();
-    } else {
-      toast.success('Conta criada! Faça login para continuar.', { duration: 5000 });
-    }
-
+    toast.error('Erro ao fazer login. Tente novamente.');
     setLoading(false);
   }
 
