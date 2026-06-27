@@ -11,7 +11,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 function EntrarContent() {
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const router       = useRouter();
   const searchParams = useSearchParams();
   const returnUrl    = searchParams.get('return') ?? '/historico';
@@ -40,20 +40,10 @@ function EntrarContent() {
       const msg = error.message ?? '';
       if (msg.includes('Invalid login credentials') ||
           msg.includes('invalid_credentials')) {
-        const { error: signupCheck } =
-          await signUp(email.trim(), 'check-only-123456');
-
-        if (
-          signupCheck?.message?.includes('already registered') ||
-          signupCheck?.message?.includes('User already registered')
-        ) {
-          toast.error(
-            'Esta conta foi criada com Google. Use o botão "Continuar com Google" acima.',
-            { duration: 6000 }
-          );
-        } else {
-          toast.error('Email ou senha incorretos.');
-        }
+        toast.error(
+          'Email ou senha incorretos. Não tem conta? Clique em "Criar conta grátis".',
+          { duration: 5000 }
+        );
       } else if (msg.includes('Email not confirmed')) {
         toast.error('Confirme seu email antes de entrar.');
       } else {
