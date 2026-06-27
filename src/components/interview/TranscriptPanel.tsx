@@ -22,52 +22,33 @@ export default function TranscriptPanel({
   lang = 'pt',
   isDark = true,
 }: Props) {
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const shouldScrollRef = useRef(false);
-  const prevLengthRef   = useRef(0);
-  const prevInterimRef  = useRef('');
-  const prevLiveRef     = useRef('');
-  const prevThinkRef    = useRef(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Marcar para scroll quando nova mensagem confirmada chega
+  function scrollToBottom(smooth = true) {
+    chatEndRef.current?.scrollIntoView({
+      behavior: smooth ? 'smooth' : 'instant',
+      block: 'end',
+    });
+  }
+
+  // Nova mensagem confirmada no histórico → smooth
   useEffect(() => {
-    if (conversation.length > prevLengthRef.current) {
-      prevLengthRef.current = conversation.length;
-      shouldScrollRef.current = true;
-    }
+    if (conversation.length > 0) scrollToBottom(true);
   }, [conversation.length]);
 
+  // Texto do entrevistador sendo revelado palavra a palavra → instant
   useEffect(() => {
-    if (shouldScrollRef.current && containerRef.current) {
-      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
-      shouldScrollRef.current = false;
-    }
-  }, [conversation.length]);
-
-  // Scroll quando texto ao vivo do entrevistador aparece pela 1ª vez
-  useEffect(() => {
-    const firstAppear = liveInterviewerText && !prevLiveRef.current;
-    if (firstAppear && containerRef.current) {
-      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
-    }
-    prevLiveRef.current = liveInterviewerText;
+    if (liveInterviewerText) scrollToBottom(false);
   }, [liveInterviewerText]);
 
-  // Scroll quando dots de thinking aparecem pela 1ª vez
+  // Dots de thinking aparecem → smooth
   useEffect(() => {
-    const firstThink = isThinking && !prevThinkRef.current;
-    if (firstThink && containerRef.current) {
-      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
-    }
-    prevThinkRef.current = isThinking;
+    if (isThinking) scrollToBottom(true);
   }, [isThinking]);
 
-  // Scroll quando candidato começa a falar (primeiro char interim)
+  // Texto interim do candidato crescendo → instant
   useEffect(() => {
-    if (interimTranscript && !prevInterimRef.current && containerRef.current) {
-      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
-    }
-    prevInterimRef.current = interimTranscript;
+    if (interimTranscript) scrollToBottom(false);
   }, [interimTranscript]);
 
   const interviewerLabel = lang === 'en' ? 'Interviewer' : 'Entrevistador';
@@ -75,10 +56,7 @@ export default function TranscriptPanel({
 
   return (
     <div className="h-full flex flex-col">
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto py-4 px-4 max-w-2xl mx-auto w-full"
-      >
+      <div className="flex-1 overflow-y-auto py-4 px-4 max-w-2xl mx-auto w-full">
         {conversation.length === 0 && !isThinking && !liveInterviewerText && (
           <p className="text-center text-sm py-8 text-zinc-400 dark:text-zinc-600">
             {lang === 'en'
@@ -165,6 +143,9 @@ export default function TranscriptPanel({
             </div>
           </div>
         )}
+
+        {/* Âncora de scroll — sempre no final do chat */}
+        <div ref={chatEndRef} className="h-1" />
 
       </div>
     </div>
