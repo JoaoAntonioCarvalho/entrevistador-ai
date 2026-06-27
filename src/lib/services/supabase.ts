@@ -49,6 +49,7 @@ export async function saveSessionToSupabase(
     auth_user_id:               authUserId,
     created_at:                 session.created_at,
     status:                     session.status,
+    payment_status:             session.paymentStatus ?? 'pending',
     job_titulo:                 session.job?.titulo ?? '',
     job_empresa:                session.job?.empresa ?? '',
     score_geral:                session.scores?.geral ?? 0,
@@ -100,7 +101,7 @@ export interface SessionSummary {
   idioma?: string;
 }
 
-const STATUS_HISTORICO = ['completed', 'feedback'] as const;
+const STATUS_HISTORICO = ['completed', 'feedback', 'active'] as const;
 
 function mapSummary(s: SessionSummary): SessionSummary {
   return {

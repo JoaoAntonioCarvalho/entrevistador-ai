@@ -40,7 +40,12 @@ export default function DashboardPage() {
   const { session, resetSession, setStatus } = useSessionStore();
   const custoSessao = useSessionStore(s => s.custoSessao);
   const [sessionSalva, setSessionSalva] = useState(false);
-  const savedRef = useRef(false);
+  const savedRef      = useRef(false);
+  const authUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id) authUserIdRef.current = user.id;
+  }, [user?.id]);
 
   useRouteGuard({ needsCandidate: true, needsScores: true });
 
@@ -57,7 +62,7 @@ export default function DashboardPage() {
         const sessaoAtual = useSessionStore.getState().session;
         saveToLocalHistory(sessaoAtual);
         setSessionSalva(true);
-        await saveSessionToSupabase(sessaoAtual, user?.id ?? null);
+        await saveSessionToSupabase(sessaoAtual, authUserIdRef.current ?? user?.id ?? null);
 
         if (custoSessao.total > 0) {
           fetch('/api/notify-cost', {

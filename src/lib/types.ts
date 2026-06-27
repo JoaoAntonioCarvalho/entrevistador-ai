@@ -80,6 +80,7 @@ export interface InterviewSession {
   custo_ia_usd?: number;
   custo_tts_usd?: number;
   avatar_profiles?: AvatarProfile[];
+  paymentStatus?: 'pending' | 'paid';
 }
 
 export interface AvatarProfile {

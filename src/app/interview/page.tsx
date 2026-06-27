@@ -90,6 +90,9 @@ export default function InterviewPage() {
   const resumeVerifiedRef         = useRef(false);
   // Evita exibir payment gate após retorno confirmado de /pagamento/sucesso
   const pagamentoConfirmadoRef    = useRef(false);
+  // Persiste o último user.id conhecido — garante que saveSessionToSupabase
+  // recebe o ID mesmo se user ainda for null por timing de auth
+  const authUserIdRef             = useRef<string | null>(null);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -155,7 +158,7 @@ export default function InterviewPage() {
           isProcessingTurnRef.current = false;
           // Usar getState() para ter o session mais recente (sem closure stale)
           // Passar user.id diretamente — auth.getSession() não é confiável aqui
-          saveSessionToSupabase(useSessionStore.getState().session, user?.id ?? null).catch(() => {});
+          saveSessionToSupabase(useSessionStore.getState().session, authUserIdRef.current ?? user?.id ?? null).catch(() => {});
           return;
         }
         const errData = await res.json().catch(() => ({}));
@@ -335,7 +338,7 @@ export default function InterviewPage() {
       setStatus('completed');
       saveSessionToSupabase(
         { ...useSessionStore.getState().session, status: 'completed' },
-        user?.id ?? null,
+        authUserIdRef.current ?? user?.id ?? null,
       ).catch(() => {});
       setTimeout(() => router.push('/feedback'), 1500);
       return;
@@ -409,6 +412,16 @@ export default function InterviewPage() {
       }
     }
     prevUserRef.current = user?.id ?? null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Persiste user.id na ref e atualiza o banco com auth_user_id quando user carrega
+  useEffect(() => {
+    if (!user?.id) return;
+    authUserIdRef.current = user.id;
+    if (session?.id && session.status === 'active') {
+      saveSessionToSupabase(session, user.id).catch(() => {});
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -552,7 +565,7 @@ export default function InterviewPage() {
     setStatus('completed');
     saveSessionToSupabase(
       { ...useSessionStore.getState().session, status: 'completed' },
-      user?.id ?? null,
+      authUserIdRef.current ?? user?.id ?? null,
     ).catch(() => {});
     setTimeout(() => router.push('/feedback'), 4000);
   }
