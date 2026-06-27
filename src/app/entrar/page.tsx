@@ -19,6 +19,7 @@ function EntrarContent() {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
+  const [erro,     setErro]     = useState('');
 
   useEffect(() => {
     if (user) router.push(returnUrl);
@@ -28,10 +29,11 @@ function EntrarContent() {
     e.preventDefault();
 
     if (!email.trim() || password.length < 6) {
-      toast.error('Preencha email e senha (mín. 6 caracteres).');
+      setErro('generic');
       return;
     }
 
+    setErro('');
     setLoading(true);
     const { error } = await signIn(email.trim(), password);
     setLoading(false);
@@ -40,14 +42,11 @@ function EntrarContent() {
       const msg = error.message ?? '';
       if (msg.includes('Invalid login credentials') ||
           msg.includes('invalid_credentials')) {
-        toast.error(
-          'Email ou senha incorretos. Não tem conta? Clique em "Criar conta grátis".',
-          { duration: 5000 }
-        );
+        setErro('email-not-found');
       } else if (msg.includes('Email not confirmed')) {
-        toast.error('Confirme seu email antes de entrar.');
+        setErro('not-confirmed');
       } else {
-        toast.error('Erro ao fazer login. Tente novamente.');
+        setErro('generic');
       }
       return;
     }
@@ -107,7 +106,7 @@ function EntrarContent() {
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => { setEmail(e.target.value); setErro(''); }}
               placeholder="Seu email"
               autoComplete="email"
               className="w-full border border-zinc-200 dark:border-zinc-700
@@ -119,7 +118,7 @@ function EntrarContent() {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={e => { setPassword(e.target.value); setErro(''); }}
               placeholder="Sua senha"
               autoComplete="current-password"
               className="w-full border border-zinc-200 dark:border-zinc-700
@@ -140,6 +139,66 @@ function EntrarContent() {
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Entrar
             </button>
+
+            {erro === 'email-not-found' && (
+              <div className="rounded-xl border border-zinc-200
+                              dark:border-zinc-700 p-4">
+                <p className="text-sm text-zinc-700 dark:text-zinc-300
+                              font-medium mb-1">
+                  Não encontramos essa conta
+                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
+                  Verifique o email e a senha, ou crie uma conta nova.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setErro(''); setPassword(''); }}
+                    className="flex-1 border border-zinc-200
+                               dark:border-zinc-700 text-zinc-600
+                               dark:text-zinc-400 py-2 rounded-full
+                               text-xs font-medium hover:bg-zinc-50
+                               dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Tentar novamente
+                  </button>
+                  <Link
+                    href={`/cadastro?return=${encodeURIComponent(returnUrl)}`}
+                    className="flex-1 bg-zinc-900 dark:bg-white text-white
+                               dark:text-zinc-900 py-2 rounded-full text-xs
+                               font-semibold text-center hover:bg-zinc-700
+                               dark:hover:bg-zinc-100 transition-colors"
+                  >
+                    Criar conta grátis
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {erro === 'not-confirmed' && (
+              <div className="rounded-xl border border-amber-200
+                              dark:border-amber-800 bg-amber-50
+                              dark:bg-amber-900/20 p-4">
+                <p className="text-sm text-amber-700 dark:text-amber-400
+                              font-medium mb-1">
+                  Confirme seu email
+                </p>
+                <p className="text-sm text-amber-600 dark:text-amber-500">
+                  Enviamos um link de confirmação para {email}.
+                  Verifique sua caixa de entrada.
+                </p>
+              </div>
+            )}
+
+            {erro === 'generic' && (
+              <div className="rounded-xl border border-red-200
+                              dark:border-red-800 bg-red-50
+                              dark:bg-red-900/20 p-4">
+                <p className="text-sm text-red-700 dark:text-red-400">
+                  Erro ao fazer login. Tente novamente.
+                </p>
+              </div>
+            )}
           </form>
 
         </div>
