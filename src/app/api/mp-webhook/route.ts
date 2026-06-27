@@ -109,15 +109,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (plano === 'finalizar-atual' && sessionId) {
-      const { error: sessError } = await supabase
+      console.log('[mp-webhook] atualizando payment_status sessionId:', sessionId);
+
+      const { data: sessData, error: sessError } = await supabase
         .from('sessions')
         .update({ payment_status: 'paid' })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .select('id, payment_status');
+
+      console.log('[mp-webhook] sessão atualizada:', sessData, 'erro:', sessError?.message);
 
       if (sessError) {
         console.error('[mp-webhook] ERRO ao atualizar sessão:', sessError.message);
       } else {
-        console.log('[mp-webhook] ✓ sessão marcada como paga');
+        console.log('[mp-webhook] ✓ payment_status = paid para sessão:', sessionId);
       }
     }
 

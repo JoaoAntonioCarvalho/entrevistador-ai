@@ -19,13 +19,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sessionData = {
+    const sessionData: Record<string, unknown> = {
       id:                          session.id,
       user_id:                     userId ?? 'anonymous',
       auth_user_id:                authUserId ?? null,
       created_at:                  session.created_at,
       status:                      session.status ?? 'active',
-      payment_status:              session.paymentStatus ?? 'pending',
+      // Só inclui payment_status se for 'paid' — evita sobrescrever o valor
+      // atualizado pelo webhook do Mercado Pago com 'pending' em saves subsequentes
+      ...(session.paymentStatus === 'paid' ? { payment_status: 'paid' } : {}),
       job_titulo:                  session.job?.titulo      ?? null,
       job_empresa:                 session.job?.empresa     ?? null,
       score_geral:                 session.scores?.geral    ?? null,
