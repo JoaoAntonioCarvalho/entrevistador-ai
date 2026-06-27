@@ -155,12 +155,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const contentLength = Number(req.headers.get('content-length') ?? 0);
+  if (contentLength > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Arquivo muito grande. Máximo 10 MB.' }, { status: 413 });
+  }
+
   const formData = await req.formData();
   const sessionId = (formData.get('sessionId') as string | null) ?? 'unknown';
   const file = formData.get('file') as File | null;
 
   if (!file) {
     return NextResponse.json({ error: 'Arquivo não encontrado.' }, { status: 400 });
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Arquivo muito grande. Máximo 10 MB.' }, { status: 413 });
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());

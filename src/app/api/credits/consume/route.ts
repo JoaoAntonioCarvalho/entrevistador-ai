@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,8 +16,8 @@ export async function POST(req: NextRequest) {
       creditId?:   string;
     };
 
-    if (!authUserId) {
-      return NextResponse.json({ ok: true }); // anônimo, sem crédito
+    if (!authUserId || !UUID_RE.test(authUserId)) {
+      return NextResponse.json({ ok: true }); // anônimo ou ID inválido
     }
 
     // Se veio creditId específico, marcar só ele

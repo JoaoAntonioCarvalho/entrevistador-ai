@@ -390,6 +390,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });
   }
 
+  if (typeof candidateResponse !== 'string' || candidateResponse.length > 5000) {
+    return NextResponse.json({ error: 'Resposta do candidato inválida.' }, { status: 400 });
+  }
+
+  if (
+    !Number.isFinite(perguntasRespondidas) || perguntasRespondidas < 0 ||
+    !Number.isFinite(totalPerguntas) || totalPerguntas < 1 || totalPerguntas > 20
+  ) {
+    return NextResponse.json({ error: 'Contagem de perguntas inválida.' }, { status: 400 });
+  }
+
   // Rejeitar sessão descartada
   if (sessionId && sessionId !== 'unknown') {
     const supabaseCheck = createClient(

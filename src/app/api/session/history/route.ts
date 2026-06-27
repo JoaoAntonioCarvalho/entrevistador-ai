@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,11 @@ const CAMPOS = `
 const STATUS_VALIDOS = ['completed', 'feedback', 'active'];
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json({ sessions: [] }, { status: 429 });
+  }
+
   try {
     const { authUserId, localUserId } = await req.json();
 
@@ -72,9 +78,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ sessions: resultado });
 
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-    console.error('[session/history] erro:', msg);
+  } catch {
     return NextResponse.json({ sessions: [] });
   }
 }

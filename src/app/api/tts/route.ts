@@ -56,6 +56,10 @@ function processarTextoParaTTS(texto: string, avatarId: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: 'Serviço de voz indisponível.' }, { status: 503 });
+  }
+
   const ip = getClientIp(req);
   if (!await checkRateLimit(aiRateLimit, ip)) {
     return NextResponse.json(

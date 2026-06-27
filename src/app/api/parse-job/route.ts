@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const contentLength = Number(req.headers.get('content-length') ?? 0);
+    if (contentLength > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Corpo muito grande. Máximo 10 MB.' }, { status: 413 });
+    }
+
     const { jobDescription, sessionId = 'unknown' } = (await req.json()) as { jobDescription: string; sessionId?: string };
 
     if (!jobDescription || jobDescription.trim().length < 30) {

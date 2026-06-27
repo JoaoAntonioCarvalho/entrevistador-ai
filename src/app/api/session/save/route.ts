@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,11 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
+  }
+
   try {
     const { session, authUserId, userId } = await req.json();
 
@@ -54,15 +60,12 @@ export async function POST(req: NextRequest) {
       .upsert(sessionData, { onConflict: 'id' });
 
     if (error) {
-      console.error('[session/save] erro:', error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erro ao salvar sessão.' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
 
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-    console.error('[session/save] erro:', msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Erro ao salvar sessão.' }, { status: 500 });
   }
 }

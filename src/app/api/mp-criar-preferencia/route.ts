@@ -5,35 +5,24 @@ import { mpConfig, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
 
 export const dynamic = 'force-dynamic';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: NextRequest) {
-  console.log('[mp-criar-preferencia] iniciando...');
-
   try {
     const body = await req.json();
     const { plano, sessionId, authUserId } = body;
 
-    console.log('[mp-criar-preferencia] plano:', plano);
-    console.log('[mp-criar-preferencia] sessionId:', sessionId);
-    console.log('[mp-criar-preferencia] authUserId:', authUserId);
-
     if (!plano) {
-      return NextResponse.json(
-        { error: 'Plano é obrigatório.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Plano é obrigatório.' }, { status: 400 });
     }
 
-    if (!authUserId) {
-      console.error('[mp-criar-preferencia] ERRO: authUserId vazio!');
-      return NextResponse.json(
-        { error: 'Usuário não autenticado.' },
-        { status: 401 }
-      );
+    if (!authUserId || !UUID_RE.test(authUserId)) {
+      return NextResponse.json({ error: 'Usuário inválido.' }, { status: 401 });
     }
 
     if (!(plano in PRECOS)) {
@@ -48,9 +37,6 @@ export async function POST(req: NextRequest) {
     ).replace(/\/$/, '');
 
     const externalRef = `${authUserId}|${plano}|${sessionId ?? 'novo'}`;
-
-    console.log('[mp-criar-preferencia] external_reference:', externalRef);
-    console.log('[mp-criar-preferencia] baseUrl:', baseUrl);
 
     const preference = new Preference(mpConfig);
     const result = await preference.create({
@@ -73,10 +59,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log('[mp-criar-preferencia] preference.id:', result.id);
-    console.log('[mp-criar-preferencia] init_point:', result.init_point);
-
-    const { error: dbError } = await supabase
+    await supabase
       .from('payment_sessions')
       .insert({
         session_id:       sessionId ?? null,
@@ -86,23 +69,14 @@ export async function POST(req: NextRequest) {
         status:           'pending',
       });
 
-    if (dbError) {
-      console.error('[mp-criar-preferencia] erro ao salvar no banco:', dbError.message);
-    } else {
-      console.log('[mp-criar-preferencia] salvo no banco com sucesso');
-    }
-
     return NextResponse.json({
       preferenceId: result.id,
       initPoint:    result.init_point,
     });
 
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('[mp-criar-preferencia] ERRO CRÍTICO:', msg);
-    if (error instanceof Error) console.error('[mp-criar-preferencia] stack:', error.stack);
+  } catch {
     return NextResponse.json(
-      { error: 'Erro ao criar preferência: ' + msg },
+      { error: 'Erro ao criar preferência.' },
       { status: 500 }
     );
   }
