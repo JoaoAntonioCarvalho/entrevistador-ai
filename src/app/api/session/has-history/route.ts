@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,11 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json({ hasHistory: false, count: 0 });
+  }
+
   try {
     const { authUserId } = await req.json();
     if (!authUserId) {

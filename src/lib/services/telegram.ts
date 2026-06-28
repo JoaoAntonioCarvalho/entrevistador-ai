@@ -1,16 +1,10 @@
-function sendTelegram(text: string): void {
-  const token  = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
-  if (!token || !chatId) return;
-
-  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+// Fire-and-forget via API route — token nunca chega ao bundle do cliente
+function sendTelegram(texto: string): void {
+  if (typeof window === 'undefined') return;
+  fetch('/api/notify/telegram', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id:    chatId,
-      text,
-      parse_mode: 'Markdown',
-    }),
+    body: JSON.stringify({ mensagem: texto }),
   }).catch(() => {});
 }
 

@@ -2,12 +2,6 @@ import { MercadoPagoConfig } from 'mercadopago';
 
 const isProducao = process.env.MP_MODO === 'producao';
 
-console.log('[mp-config] modo:', isProducao ? 'PRODUÇÃO ⚠️' : 'TESTE ✓');
-console.log('[mp-config] token disponível:',
-  isProducao
-    ? !!process.env.MP_ACCESS_TOKEN_PROD
-    : !!process.env.MP_ACCESS_TOKEN_TEST
-);
 
 export const mpConfig = new MercadoPagoConfig({
   accessToken: isProducao

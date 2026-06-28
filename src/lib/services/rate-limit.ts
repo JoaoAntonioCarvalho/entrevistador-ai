@@ -29,12 +29,6 @@ export const parseRateLimit = makeLimit(10, '10 m', 'ratelimit:parse');
 // Sessões completas por dia (anti-abuso): 5 entrevistas / 24h por IP
 export const sessionRateLimit = makeLimit(5, '24 h', 'ratelimit:session');
 
-// Brute force em login: 5 tentativas / 15 min por IP
-export const authRateLimit = makeLimit(5, '15 m', 'ratelimit:auth');
-
-// Criação de conta: 3 tentativas / hora por IP
-export const signupRateLimit = makeLimit(3, '60 m', 'ratelimit:signup');
-
 // Webhook MP: 100 / min (proteção contra flood)
 export const webhookRateLimit = makeLimit(100, '1 m', 'ratelimit:webhook');
 

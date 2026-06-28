@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +10,13 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json({ hasCredit: false, creditId: null });
+  }
+
   try {
     const { authUserId, sessionId } = await req.json();
-
-    console.log('[credits/check] authUserId:', authUserId);
-    console.log('[credits/check] sessionId:', sessionId);
 
     if (!authUserId) {
       return NextResponse.json({ hasCredit: false, creditId: null });
@@ -26,14 +29,12 @@ export async function POST(req: NextRequest) {
         .eq('id', sessionId)
         .single();
 
-      console.log('[credits/check] session.payment_status:', sessionData?.payment_status);
-
       if (sessionData?.payment_status === 'paid') {
         return NextResponse.json({ hasCredit: true, creditId: 'session-paid', perguntas: 7 });
       }
     }
 
-    const { data: credit, error } = await supabase
+    const { data: credit } = await supabase
       .from('credits')
       .select('id, perguntas, expires_at')
       .eq('auth_user_id', authUserId)
@@ -43,9 +44,6 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: true })
       .limit(1)
       .single();
-
-    console.log('[credits/check] credit encontrado:', credit);
-    console.log('[credits/check] error:', error?.message);
 
     if (credit) {
       return NextResponse.json({
@@ -57,9 +55,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ hasCredit: false, creditId: null });
 
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[credits/check] ERRO:', msg);
+  } catch {
     return NextResponse.json({ hasCredit: false, creditId: null });
   }
 }

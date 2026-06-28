@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(parseRateLimit, ip)) {
+    return NextResponse.json({ ok: true });
+  }
+
   try {
     const data = await req.json();
 

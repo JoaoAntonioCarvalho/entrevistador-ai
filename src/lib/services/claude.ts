@@ -240,7 +240,7 @@ export async function callAIJSONWithUsage<T>(
   } catch { /* fall through */ }
 
   // Estratégia 4: fallback seguro — não travar a entrevista por erro de parse
-  console.error('[turn] parse falhou. Preview:', conteudo.slice(0, 200));
+  console.error('[turn] parse falhou — resposta inválida da IA');
   const falaMatch = conteudo.match(/"fala"\s*:\s*"([^"]+)"/);
   const fala = falaMatch?.[1] ?? 'Obrigado pela sua resposta.';
   return {

@@ -44,16 +44,10 @@ export async function saveSessionToSupabase(
     });
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      console.error('[supabase] erro ao salvar sessão:', data.error ?? res.status);
-    } else {
-      console.log('[supabase] sessão salva com sucesso', {
-        id: session.id, auth_user_id: authUserId, status: session.status,
-      });
+      console.error('[supabase] falha ao salvar sessão');
     }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-    console.error('[supabase] erro ao salvar sessão:', msg);
+  } catch {
+    console.error('[supabase] falha ao salvar sessão');
   }
 }
 
