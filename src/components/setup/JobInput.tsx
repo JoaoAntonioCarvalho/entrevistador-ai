@@ -198,17 +198,17 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
                 {job.empresa || 'Empresa não identificada'}
               </p>
             </div>
-            {job.requisitos_obrigatorios.length > 0 && (
+            {(job.requisitos_obrigatorios ?? []).length > 0 && (
               <ul className="text-xs text-muted-fg space-y-1">
-                {job.requisitos_obrigatorios.slice(0, 3).map((r, i) => (
+                {(job.requisitos_obrigatorios ?? []).slice(0, 3).map((r, i) => (
                   <li key={i} className="flex items-start gap-1.5">
                     <span className="text-border-strong mt-0.5">•</span>
                     <span>{r}</span>
                   </li>
                 ))}
-                {job.requisitos_obrigatorios.length > 3 && (
+                {(job.requisitos_obrigatorios ?? []).length > 3 && (
                   <li className="text-muted-fg">
-                    +{job.requisitos_obrigatorios.length - 3} requisitos detectados
+                    +{(job.requisitos_obrigatorios ?? []).length - 3} requisitos detectados
                   </li>
                 )}
               </ul>
@@ -243,7 +243,14 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
         return;
       }
       if (!res.ok) throw new Error(data.error ?? 'Erro ao gerar vaga. Tente novamente.');
-      setGeneratedJob(data.job);
+      const rawJob = data.job ?? {};
+      setGeneratedJob({
+        ...rawJob,
+        requisitos_obrigatorios: rawJob.requisitos_obrigatorios ?? [],
+        requisitos_desejaveis:   rawJob.requisitos_desejaveis   ?? [],
+        responsabilidades:       rawJob.responsabilidades       ?? [],
+        stack_tecnica:           rawJob.stack_tecnica           ?? [],
+      });
     } catch {
       setGenError('Não foi possível gerar a vaga. Tente novamente.');
     } finally {
@@ -273,7 +280,7 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
             </button>
           </div>
 
-          {generatedJob.requisitos_obrigatorios.length > 0 && (
+          {(generatedJob.requisitos_obrigatorios ?? []).length > 0 && (
             <div className="mb-3">
               <p className="text-[11px] font-semibold text-muted-fg uppercase
                             tracking-eyebrow mb-2">
@@ -290,7 +297,7 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
             </div>
           )}
 
-          {generatedJob.stack_tecnica.length > 0 && (
+          {(generatedJob.stack_tecnica ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {generatedJob.stack_tecnica.slice(0, 6).map((s, i) => (
                 <span key={i}

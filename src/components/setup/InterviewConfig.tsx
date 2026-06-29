@@ -70,7 +70,7 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
 
   useEffect(() => {
     const recommended: IConfig['tipo'] =
-      job.stack_tecnica.length === 0 ? 'comportamental' : 'mista';
+      (job.stack_tecnica ?? []).length === 0 ? 'comportamental' : 'mista';
     setConfig((prev) => ({ ...prev, tipo: recommended }));
   }, [job]);
 
