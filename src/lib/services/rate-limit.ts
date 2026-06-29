@@ -20,8 +20,9 @@ function makeLimit(requests: number, window: Duration, prefix: string): Ratelimi
   return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(requests, window), prefix });
 }
 
-// Rotas caras (turno de entrevista, TTS): 20 chamadas / 10 min por IP
-export const aiRateLimit = makeLimit(20, '10 m', 'ratelimit:ai');
+// Rotas caras (turno de entrevista, TTS): 50 chamadas / 10 min por IP
+// (~30 por sessão completa de 7 perguntas + TTS + retentativas)
+export const aiRateLimit = makeLimit(50, '10 m', 'ratelimit:ai');
 
 // Parsing (currículo/vaga/geração): 10 chamadas / 10 min por IP
 export const parseRateLimit = makeLimit(10, '10 m', 'ratelimit:parse');

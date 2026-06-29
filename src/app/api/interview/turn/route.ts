@@ -349,42 +349,66 @@ Tom: caloroso, profissional, conclusivo. Máximo 4 frases. Zero perguntas. Zero 
 }
 
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req);
-  if (!await checkRateLimit(aiRateLimit, ip)) {
-    return NextResponse.json(
-      { error: 'Muitas requisições. Aguarde alguns minutos e tente novamente.' },
-      { status: 429 }
-    );
-  }
-
-  let candidate: TurnRequest['candidate'] | null = null;
-  let job: TurnRequest['job'] | null = null;
-  let config: TurnRequest['config'] | null = null;
-  let conversation: TurnRequest['conversation'] = [];
-  let candidateResponse = '';
-  let isFirstTurn = false;
-  let isLastTurn  = false;
-  let sessionId = 'unknown';
-  let perguntasRespondidas = 0;
-  let totalPerguntas = 7;
-  let authUserId: string | null = null;
-
+  // Parse antecipado — necessário para bypass do rate limit para usuários pagantes
+  let body: TurnRequest;
   try {
-    const body: TurnRequest = await req.json();
-    candidate             = body.candidate;
-    job                   = body.job;
-    config                = body.config;
-    conversation          = body.conversation ?? [];
-    candidateResponse     = body.candidateResponse ?? '';
-    isFirstTurn           = body.isFirstTurn ?? false;
-    isLastTurn            = body.isLastTurn ?? false;
-    sessionId             = body.sessionId ?? 'unknown';
-    perguntasRespondidas  = body.perguntasRespondidas ?? 0;
-    totalPerguntas        = body.totalPerguntas ?? 7;
-    authUserId            = body.authUserId ?? null;
+    body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });
   }
+
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    // Usuários pagantes não são bloqueados pelo rate limit
+    const sessionIdRL  = body.sessionId;
+    const authUserIdRL = body.authUserId;
+    let isPaid = false;
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    if (sessionIdRL && sessionIdRL !== 'unknown') {
+      const { data: sess } = await supabaseAdmin
+        .from('sessions')
+        .select('payment_status')
+        .eq('id', sessionIdRL)
+        .single();
+      if (sess?.payment_status === 'paid') isPaid = true;
+    }
+
+    if (!isPaid && authUserIdRL) {
+      const { data: credit } = await supabaseAdmin
+        .from('credits')
+        .select('id')
+        .eq('auth_user_id', authUserIdRL)
+        .eq('usado', false)
+        .eq('mp_status', 'approved')
+        .limit(1)
+        .single();
+      if (credit) isPaid = true;
+    }
+
+    if (!isPaid) {
+      return NextResponse.json(
+        { error: 'Muitas requisições. Aguarde alguns minutos e tente novamente.' },
+        { status: 429 }
+      );
+    }
+  }
+
+  const candidate: TurnRequest['candidate'] | null = body.candidate ?? null;
+  const job: TurnRequest['job'] | null             = body.job ?? null;
+  const config: TurnRequest['config'] | null       = body.config ?? null;
+  const conversation: TurnRequest['conversation']  = body.conversation ?? [];
+  const candidateResponse = body.candidateResponse ?? '';
+  const isFirstTurn       = body.isFirstTurn ?? false;
+  const isLastTurn        = body.isLastTurn  ?? false;
+  const sessionId         = body.sessionId   ?? 'unknown';
+  const perguntasRespondidas = body.perguntasRespondidas ?? 0;
+  const totalPerguntas    = body.totalPerguntas ?? 7;
+  const authUserId: string | null = body.authUserId ?? null;
 
   if (!candidate || !job || !config) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });

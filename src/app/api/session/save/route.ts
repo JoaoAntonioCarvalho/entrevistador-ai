@@ -4,16 +4,23 @@ import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-li
 
 export const dynamic = 'force-dynamic';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!await checkRateLimit(aiRateLimit, ip)) {
     return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
   }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    console.error('[session/save] variáveis de ambiente ausentes',
+      { url: !!supabaseUrl, key: !!serviceKey });
+    return NextResponse.json(
+      { error: 'Configuração do servidor incompleta.' },
+      { status: 500 }
+    );
+  }
+  const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
     const { session, authUserId, userId } = await req.json();
