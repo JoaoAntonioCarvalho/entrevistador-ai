@@ -411,8 +411,9 @@ export async function POST(req: NextRequest) {
   const authUserId: string | null = body.authUserId ?? null;
 
   // Rate limit por IP para anônimos: 3 perguntas / 24h
-  // Impede bypass via limpeza de localStorage ou aba anônima
-  if (!authUserId && freeQuestionsLimit) {
+  // Aplica SOMENTE nos primeiros 3 turnos — a partir do 4° o payment gate assume o
+  // controle independentemente do authUserId (cobre race condition de auth loading).
+  if (!authUserId && freeQuestionsLimit && perguntasRespondidas < 3) {
     const { success: temGratis } = await freeQuestionsLimit.limit(ip);
     if (!temGratis) {
       return NextResponse.json(
@@ -481,18 +482,34 @@ export async function POST(req: NextRequest) {
     }
 
     if (!liberado && authUserId) {
+      // Verifica qualquer crédito válido — sem filtro de perguntas, pois o plano
+      // "finalizar-atual" cria crédito com perguntas=7 mesmo para sessões de 14.
       const { data: credit } = await supabaseAdmin
         .from('credits')
-        .select('id, perguntas, expires_at')
+        .select('id')
         .eq('auth_user_id', authUserId)
         .eq('usado', false)
         .eq('mp_status', 'approved')
-        .gte('perguntas', totalPerguntas)
         .or('expires_at.is.null,expires_at.gt.now()')
         .order('created_at', { ascending: true })
         .limit(1)
         .single();
       if (credit) liberado = true;
+    }
+
+    // Fallback: crédito de "finalizar-atual" vinculado diretamente à sessão.
+    // Cobre o caso em que authUserId ainda não carregou no frontend (race condition
+    // de auth) e o payment_status da sessão não foi gravado (save falhou antes).
+    if (!liberado && sessionId && sessionId !== 'unknown') {
+      const { data: sessionCredit } = await supabaseAdmin
+        .from('credits')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('usado', false)
+        .eq('mp_status', 'approved')
+        .limit(1)
+        .single();
+      if (sessionCredit) liberado = true;
     }
 
     if (!liberado) requiresPayment = true;
