@@ -16,7 +16,8 @@ const supabase = createClient(
 );
 
 function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
-  const secret = process.env.MP_WEBHOOK_SECRET;
+  const secret = process.env.MP_WEBHOOK_SECRET?.trim();
+  console.error('[mp-webhook][debug] secret length:', secret?.length ?? 0);
   if (!secret) {
     console.error('[mp-webhook][debug] SEM secret configurado — pulando verificação');
     return true;
