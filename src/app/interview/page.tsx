@@ -570,6 +570,16 @@ export default function InterviewPage() {
           setPerguntasRespondidas(count);
           setShowPaymentGate(false);
 
+          // Guarda defensivo: se candidate ainda for null após todos os restores
+          // (ex: localStorage limpo em modo privado), não chamar callTurn — evita
+          // 400 "Dados da sessão incompletos" e redireciona para setup com aviso.
+          const sessaoRestaurada = useSessionStore.getState().session;
+          if (!sessaoRestaurada.candidate || !sessaoRestaurada.job) {
+            toast.error('Sessão expirada. Inicie uma nova entrevista.');
+            router.push('/setup');
+            return;
+          }
+
           // Chamar próxima pergunta automaticamente após UI estabilizar
           setTimeout(() => {
             callTurnRef.current(false, lastText, count);

@@ -126,13 +126,9 @@ export default function SetupPage() {
   }
 
   useEffect(() => {
-    // Se voltando de /planos com step 3 e dados de sessão, não reinicializar
-    if (setupStep === 3 && session.candidate && session.job) {
-      setStep(3);
-      return;
-    }
-    // Salvar sessão ativa antes de resetar o store — permite retomada completa
-    // pós-pagamento, caso o usuário tenha chegado aqui a partir de /interview
+    // Salvar backup ANTES de qualquer desvio — cobre o early return abaixo
+    // e o caminho normal (initSession). Garante que o candidate nunca se perca
+    // quando o usuário volta de /interview via pagamento.
     if (session?.status === 'active' && session?.candidate && session?.id) {
       try {
         localStorage.setItem(
@@ -153,6 +149,11 @@ export default function SetupPage() {
           })
         );
       } catch { /* silencioso */ }
+    }
+    // Se voltando de /planos com step 3 e dados de sessão, não reinicializar
+    if (setupStep === 3 && session.candidate && session.job) {
+      setStep(3);
+      return;
     }
     initSession();
     setSetupStep(1);
