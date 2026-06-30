@@ -33,6 +33,12 @@ export const sessionRateLimit = makeLimit(5, '24 h', 'ratelimit:session');
 // Webhook MP: 100 / min (proteção contra flood)
 export const webhookRateLimit = makeLimit(100, '1 m', 'ratelimit:webhook');
 
+// Perguntas gratuitas: 3 por 24h por IP (anônimos não podem burlar limpando cache)
+export const freeQuestionsLimit = makeLimit(3, '24 h', 'ratelimit:free-questions');
+
+// Sessões gratuitas: 1 por 24h por IP
+export const freeSessionLimit = makeLimit(1, '24 h', 'ratelimit:free-session');
+
 export async function checkRateLimit(limiter: Ratelimit | null, ip: string): Promise<boolean> {
   if (!limiter) return true;
   const { success } = await limiter.limit(ip);

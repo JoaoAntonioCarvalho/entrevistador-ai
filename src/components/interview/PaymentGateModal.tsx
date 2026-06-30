@@ -9,11 +9,13 @@ import toast from 'react-hot-toast';
 interface PaymentGateModalProps {
   sessionId: string;
   onClose?:  () => void;
+  motivo?:   'normal' | 'free_limit';
 }
 
 export function PaymentGateModal({
   sessionId,
   onClose,
+  motivo = 'normal',
 }: PaymentGateModalProps) {
   const { user } = useAuth();
   const { open } = useAuthModal();
@@ -58,18 +60,41 @@ export function PaymentGateModal({
                         border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-400
-                                animate-pulse" />
-                <p className="text-[11px] font-semibold tracking-widest
-                              uppercase text-zinc-400">
-                  Entrevista pausada
-                </p>
-              </div>
-              <h2 className="text-[17px] font-bold text-zinc-900
-                             dark:text-white leading-snug">
-                Continue de onde parou
-              </h2>
+              {motivo === 'free_limit' ? (
+                <>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400
+                                    animate-pulse" />
+                    <p className="text-[11px] font-semibold tracking-widest
+                                  uppercase text-zinc-400">
+                      Limite gratuito atingido
+                    </p>
+                  </div>
+                  <h2 className="text-[17px] font-bold text-zinc-900
+                                 dark:text-white leading-snug">
+                    Você já praticou hoje!
+                  </h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                    Crie uma conta ou escolha um plano para continuar
+                    praticando sem limites.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400
+                                    animate-pulse" />
+                    <p className="text-[11px] font-semibold tracking-widest
+                                  uppercase text-zinc-400">
+                      Entrevista pausada
+                    </p>
+                  </div>
+                  <h2 className="text-[17px] font-bold text-zinc-900
+                                 dark:text-white leading-snug">
+                    Continue de onde parou
+                  </h2>
+                </>
+              )}
             </div>
             {onClose && (
               <button onClick={onClose}

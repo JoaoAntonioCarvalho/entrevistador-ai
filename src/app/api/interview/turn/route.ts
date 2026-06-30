@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { callAIJSONWithUsage } from '@/lib/services/claude';
-import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { aiRateLimit, checkRateLimit, freeQuestionsLimit, getClientIp } from '@/lib/services/rate-limit';
 import {
   Candidate, Job, InterviewConfig,
   ConversationTurn, InterviewTurnResponse
@@ -409,6 +409,22 @@ export async function POST(req: NextRequest) {
   const perguntasRespondidas = body.perguntasRespondidas ?? 0;
   const totalPerguntas    = body.totalPerguntas ?? 7;
   const authUserId: string | null = body.authUserId ?? null;
+
+  // Rate limit por IP para anônimos: 3 perguntas / 24h
+  // Impede bypass via limpeza de localStorage ou aba anônima
+  if (!authUserId && freeQuestionsLimit) {
+    const { success: temGratis } = await freeQuestionsLimit.limit(ip);
+    if (!temGratis) {
+      return NextResponse.json(
+        {
+          error:   'payment_required',
+          message: 'Você já usou suas perguntas gratuitas. Crie uma conta para continuar.',
+          motivo:  'free_limit_exceeded',
+        },
+        { status: 402 }
+      );
+    }
+  }
 
   if (!candidate || !job || !config) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });

@@ -64,6 +64,7 @@ export default function InterviewPage() {
   const [showVoiceTip, setShowVoiceTip] = useState(true);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [paymentGateMotivo, setPaymentGateMotivo] = useState<'normal' | 'free_limit'>('normal');
   const [mostrarDica, setMostrarDica] = useState(true);
   const [wasReloaded, setWasReloaded] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -157,7 +158,7 @@ export default function InterviewPage() {
       });
 
       if (res.status === 402) {
-        // Ler corpo antes de descartar — o backend inclui a avaliação da última resposta
+        // Ler corpo antes de descartar — o backend inclui avaliação e motivo
         const data402 = await res.json().catch(() => ({}));
         if (!isFirst && response && data402.avaliacao) {
           addEvaluation({
@@ -169,6 +170,9 @@ export default function InterviewPage() {
             resposta_ideal: data402.avaliacao.resposta_ideal ?? '',
           });
         }
+        setPaymentGateMotivo(
+          data402.motivo === 'free_limit_exceeded' ? 'free_limit' : 'normal'
+        );
         setShowPaymentGate(true);
         setInterviewState('waiting');
         setIsThinking(false);
@@ -931,6 +935,7 @@ export default function InterviewPage() {
       {showPaymentGate && (
         <PaymentGateModal
           sessionId={session.id}
+          motivo={paymentGateMotivo}
           onClose={() => setShowPaymentGate(false)}
         />
       )}
