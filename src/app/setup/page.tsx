@@ -131,6 +131,29 @@ export default function SetupPage() {
       setStep(3);
       return;
     }
+    // Salvar sessão ativa antes de resetar o store — permite retomada completa
+    // pós-pagamento, caso o usuário tenha chegado aqui a partir de /interview
+    if (session?.status === 'active' && session?.candidate && session?.id) {
+      try {
+        localStorage.setItem(
+          'mockai-resume-backup',
+          JSON.stringify({
+            id:              session.id,
+            created_at:      session.created_at,
+            status:          'active',
+            candidate:       session.candidate,
+            job:             session.job,
+            config:          session.config,
+            conversation:    session.conversation,
+            evaluations:     session.evaluations,
+            scores:          session.scores,
+            competencias:    session.competencias,
+            feedback_script: session.feedback_script,
+            avatar_profiles: session.avatar_profiles,
+          })
+        );
+      } catch { /* silencioso */ }
+    }
     initSession();
     setSetupStep(1);
   // eslint-disable-next-line react-hooks/exhaustive-deps

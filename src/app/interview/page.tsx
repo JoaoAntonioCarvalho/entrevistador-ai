@@ -15,7 +15,7 @@ import TranscriptPanel from '@/components/interview/TranscriptPanel';
 import MicrophoneButton from '@/components/interview/MicrophoneButton';
 import CameraWidget from '@/components/interview/CameraWidget';
 import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
-import type { InterviewTurnResponse } from '@/lib/types';
+import type { InterviewSession, InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
 import { saveSessionToSupabase } from '@/lib/services/supabase';
 
@@ -542,6 +542,21 @@ export default function InterviewPage() {
         const data = await res.json();
 
         if (data.hasCredit || pagamentoConfirmadoRef.current) {
+          // Se o store foi esvaziado (ex: /setup chamou initSession antes do pagamento),
+          // restaurar a sessão completa a partir do backup salvo em localStorage
+          if (!useSessionStore.getState().session.candidate && resumeSessionId) {
+            try {
+              const rawBackup = localStorage.getItem('mockai-resume-backup');
+              if (rawBackup) {
+                const backup = JSON.parse(rawBackup) as InterviewSession;
+                if (backup.id === resumeSessionId) {
+                  useSessionStore.getState().setSession(backup);
+                  localStorage.removeItem('mockai-resume-backup');
+                }
+              }
+            } catch { /* silencioso */ }
+          }
+
           // Restaurar contagem de perguntas pelo histórico da conversa
           const conv = useSessionStore.getState().session.conversation;
           const candidateTurns = conv.filter(t => t.role === 'candidate');
