@@ -13,23 +13,24 @@ function SucessoContent() {
   const router    = useRouter();
   const params    = useSearchParams();
   const { user }  = useAuth();
-  const plano     = params.get('plano')   ?? '';
   const sessionId = params.get('session') ?? '';
   const [status, setStatus] = useState<Status>('aguardando');
 
   useEffect(() => {
-    const isFinalizarAtual =
-      plano === 'finalizar-atual' && sessionId && sessionId !== 'null';
+    const temSessaoEmAndamento = !!sessionId && sessionId !== 'null';
 
-    if (!isFinalizarAtual) {
-      // Compra de crédito novo — ir para setup
+    if (!temSessaoEmAndamento) {
+      // Compra feita fora de uma entrevista em andamento (ex: via /planos)
+      // — não há para onde voltar, ir para setup
       setTimeout(() => router.push('/setup'), 2500);
       return;
     }
 
-    // Finalizar entrevista atual — fazer polling até confirmar
+    // Há uma entrevista em andamento — não importa o plano comprado
+    // (finalizar-atual, credito-7 ou credito-14), o destino é sempre
+    // voltar para ESSA sessão.
     let tentativas = 0;
-    const MAX = 10; // 10 × 2s = 20s máximo
+    const MAX = 10;
     let cancelled = false;
 
     async function checarPagamento() {
