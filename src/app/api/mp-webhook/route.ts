@@ -17,22 +17,49 @@ const supabase = createClient(
 
 function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
-  if (!secret) return true; // sem secret configurado, pular verificação
+  if (!secret) {
+    console.error('[mp-webhook][debug] SEM secret configurado — pulando verificação');
+    return true;
+  }
 
   const xSignature = req.headers.get('x-signature');
   const xRequestId = req.headers.get('x-request-id') ?? '';
-  if (!xSignature) return false;
+
+  if (!xSignature) {
+    console.error('[mp-webhook][debug] SEM header x-signature — rejeitando');
+    return false;
+  }
 
   const ts = xSignature.split(',').find(p => p.startsWith('ts='))?.split('=')[1];
   const v1 = xSignature.split(',').find(p => p.startsWith('v1='))?.split('=')[1];
-  if (!ts || !v1) return false;
 
-  let dataId = '';
-  try { dataId = JSON.parse(bodyText)?.data?.id ?? ''; } catch { /* ignorar */ }
+  if (!ts || !v1) {
+    console.error('[mp-webhook][debug] ts ou v1 ausentes no header. xSignature recebido:', xSignature);
+    return false;
+  }
+
+  // Usar data.id da QUERY STRING (padrão oficial do MP), com fallback pro body
+  const dataIdQuery = req.nextUrl.searchParams.get('data.id');
+  let dataIdBody = '';
+  try { dataIdBody = JSON.parse(bodyText)?.data?.id ?? ''; } catch { /* ignorar */ }
+  const dataId = dataIdQuery ?? dataIdBody;
 
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const hmac = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
+  const bate = hmac === v1; // comparação simples só para o log — o return usa timingSafeEqual
+
+  console.error('[mp-webhook][debug] dataIdQuery:', dataIdQuery, '| dataIdBody:', dataIdBody);
+  console.error('[mp-webhook][debug] manifest:', manifest);
+  console.error('[mp-webhook][debug] hmac calculado:', hmac);
+  console.error('[mp-webhook][debug] v1 recebido:   ', v1);
+  console.error('[mp-webhook][debug] bate (comparação simples):', bate);
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
+  } catch (e) {
+    console.error('[mp-webhook][debug] timingSafeEqual lançou erro (tamanhos diferentes?):', e);
+    return false;
+  }
 }
 
 export async function POST(req: NextRequest) {
