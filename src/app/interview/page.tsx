@@ -153,7 +153,7 @@ export default function InterviewPage() {
           perguntasRespondidas: perguntasParaCalculo,
           totalPerguntas:       totalPerguntas,
           sessionId:            session.id,
-          authUserId:           user?.id ?? null,
+          authUserId:           authUserIdRef.current ?? user?.id ?? null,
         }),
       });
 

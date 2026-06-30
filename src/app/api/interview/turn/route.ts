@@ -461,9 +461,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Gate de pagamento: verificar antes da IA mas só retornar depois
-  // (para incluir a avaliação da última resposta no corpo do 402)
-  let requiresPayment = false;
+  // Gate de pagamento — mesma lógica de /api/credits/check para consistência
   if (!isFirstTurn && perguntasRespondidas >= 3) {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -472,7 +470,8 @@ export async function POST(req: NextRequest) {
 
     let liberado = false;
 
-    if (sessionId && sessionId !== 'unknown') {
+    // 1. Sessão já marcada como paga
+    if (sessionId) {
       const { data: sess } = await supabaseAdmin
         .from('sessions')
         .select('payment_status')
@@ -481,12 +480,11 @@ export async function POST(req: NextRequest) {
       if (sess?.payment_status === 'paid') liberado = true;
     }
 
+    // 2. Crédito disponível por authUserId (mesma query do credits/check)
     if (!liberado && authUserId) {
-      // Verifica qualquer crédito válido — sem filtro de perguntas, pois o plano
-      // "finalizar-atual" cria crédito com perguntas=7 mesmo para sessões de 14.
       const { data: credit } = await supabaseAdmin
         .from('credits')
-        .select('id')
+        .select('id, perguntas, expires_at')
         .eq('auth_user_id', authUserId)
         .eq('usado', false)
         .eq('mp_status', 'approved')
@@ -497,22 +495,13 @@ export async function POST(req: NextRequest) {
       if (credit) liberado = true;
     }
 
-    // Fallback: crédito de "finalizar-atual" vinculado diretamente à sessão.
-    // Cobre o caso em que authUserId ainda não carregou no frontend (race condition
-    // de auth) e o payment_status da sessão não foi gravado (save falhou antes).
-    if (!liberado && sessionId && sessionId !== 'unknown') {
-      const { data: sessionCredit } = await supabaseAdmin
-        .from('credits')
-        .select('id')
-        .eq('session_id', sessionId)
-        .eq('usado', false)
-        .eq('mp_status', 'approved')
-        .limit(1)
-        .single();
-      if (sessionCredit) liberado = true;
+    if (!liberado) {
+      console.error('[turn] 402 — authUserId recebido:', authUserId, '| sessionId:', sessionId);
+      return NextResponse.json(
+        { error: 'payment_required', message: 'Pagamento necessário para continuar.' },
+        { status: 402 }
+      );
     }
-
-    if (!liberado) requiresPayment = true;
   }
 
   try {
@@ -580,18 +569,6 @@ Com base na resposta acima e no histórico completo, gere a próxima fala do ent
           ? `Thank you for your time today, ${primeiroNome}. It was a pleasure speaking with you. Your feedback report will be ready shortly.`
           : `Obrigado pela sua participação hoje, ${primeiroNome}. Foi um prazer conversar com você. Seu feedback estará disponível em instantes.`;
       }
-    }
-
-    // Gate de pagamento — retornar 402 COM avaliação para não perder a nota da última pergunta
-    if (requiresPayment) {
-      return NextResponse.json(
-        {
-          error:     'payment_required',
-          message:   'Pagamento necessário para continuar.',
-          avaliacao: result.data.avaliacao,
-        },
-        { status: 402 },
-      );
     }
 
     return NextResponse.json({
