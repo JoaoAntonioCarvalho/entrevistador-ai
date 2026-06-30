@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useSessionStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
 import { usePendingSession } from '@/hooks/usePendingSession';
@@ -89,8 +90,35 @@ export default function SetupPage() {
   const [warning,         setWarning]         = useState<string | null>(null);
   const [showWarning,     setShowWarning]     = useState(false);
   const [avatarProfiles,  setLocalProfiles]   = useState<AvatarProfile[] | null>(null);
-  const [loadingAvatars,  setLoadingAvatars]  = useState(false);
-  const [savedManualData, setSavedManualData] = useState<ManualFormData | null>(null);
+  const [loadingAvatars,    setLoadingAvatars]    = useState(false);
+  const [savedManualData,   setSavedManualData]   = useState<ManualFormData | null>(null);
+  const [loadingContinuar,  setLoadingContinuar]  = useState(false);
+
+  async function handleContinuarEFinalizar() {
+    if (!user?.id || !pending?.sessionId) return;
+    setLoadingContinuar(true);
+    try {
+      const res = await fetch('/api/mp-criar-preferencia', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plano:      'finalizar-atual',
+          sessionId:  pending.sessionId,
+          authUserId: user.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.initPoint) {
+        window.location.href = data.initPoint;
+      } else {
+        toast.error('Erro ao iniciar pagamento.');
+        setLoadingContinuar(false);
+      }
+    } catch {
+      toast.error('Erro ao iniciar pagamento.');
+      setLoadingContinuar(false);
+    }
+  }
 
   function irParaPasso(novoStep: 1 | 2 | 3) {
     setStep(novoStep);
@@ -297,14 +325,17 @@ export default function SetupPage() {
                 </span>
               </div>
               <button
-                onClick={() => router.push(
-                  `/interview?resume=true&sessionId=${pending.sessionId}&showPayment=true`
-                )}
+                onClick={handleContinuarEFinalizar}
+                disabled={loadingContinuar}
                 className="w-full bg-white dark:bg-zinc-900 text-zinc-900
                            dark:text-white py-3 rounded-full font-semibold
                            text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800
-                           transition-colors"
+                           transition-colors disabled:opacity-50
+                           flex items-center justify-center gap-2"
               >
+                {loadingContinuar && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
                 Continuar e finalizar →
               </button>
             </div>

@@ -30,11 +30,15 @@ export function useRouteGuard(options: RouteGuardOptions) {
       }
     }
 
-    if (options.needsCandidate && !session.candidate) {
+    const isResuming = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('resume') === 'true'
+      : false;
+
+    if (options.needsCandidate && !session.candidate && !isResuming) {
       router.push('/setup');
       return;
     }
-    if (options.needsJob && !session.job) {
+    if (options.needsJob && !session.job && !isResuming) {
       router.push('/setup');
       return;
     }

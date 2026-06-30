@@ -37,8 +37,16 @@ export default function InterviewPage() {
     (session?.conversation?.length ?? 0) > 0 &&
     session?.status === 'active';
 
-  // Se há sessão salva, a entrevista pode ser restaurada sem precisar dos dados de /setup
-  useRouteGuard({ needsCandidate: !temSessaoSalva, needsJob: !temSessaoSalva });
+  // Estado de retomada — declarado antes do useRouteGuard para poder desligar o guard.
+  // Inicia false e é setado para true no mount effect ao detectar ?resume=true.
+  // Persiste mesmo após os params de URL serem removidos.
+  const [isResuming, setIsResuming]           = useState(false);
+  const [resumeSessionId, setResumeSessionId] = useState('');
+
+  // Se há sessão salva ou está retomando, a entrevista não precisa dos dados de /setup.
+  // Na primeira renderização isResuming = false, mas useRouteGuard lê a URL internamente
+  // e não redireciona quando ?resume=true está presente.
+  useRouteGuard({ needsCandidate: !temSessaoSalva && !isResuming, needsJob: !temSessaoSalva && !isResuming });
 
   const totalPerguntas = session.config?.perguntas ?? 10;
 
@@ -57,8 +65,6 @@ export default function InterviewPage() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [mostrarDica, setMostrarDica] = useState(true);
-  const [isResuming, setIsResuming]         = useState(false);
-  const [resumeSessionId, setResumeSessionId] = useState('');
   const [wasReloaded, setWasReloaded] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
 
@@ -611,7 +617,7 @@ export default function InterviewPage() {
     }
   }
 
-  if (!session.candidate) return null;
+  if (!session.candidate && !isResuming) return null;
 
   const encerrando = interviewState === 'ended';
 
