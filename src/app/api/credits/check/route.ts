@@ -18,10 +18,8 @@ export async function POST(req: NextRequest) {
   try {
     const { authUserId, sessionId } = await req.json();
 
-    if (!authUserId) {
-      return NextResponse.json({ hasCredit: false, creditId: null });
-    }
-
+    // Verificar payment_status da sessão ANTES de checar authUserId —
+    // o webhook do MP seta payment_status independentemente do auth carregar no frontend.
     if (sessionId) {
       const { data: sessionData } = await supabase
         .from('sessions')
@@ -32,6 +30,10 @@ export async function POST(req: NextRequest) {
       if (sessionData?.payment_status === 'paid') {
         return NextResponse.json({ hasCredit: true, creditId: 'session-paid', perguntas: 7 });
       }
+    }
+
+    if (!authUserId) {
+      return NextResponse.json({ hasCredit: false, creditId: null });
     }
 
     const { data: credit } = await supabase

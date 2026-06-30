@@ -28,7 +28,7 @@ export default function InterviewPage() {
   const { session, addConversationTurn, addEvaluation, setStatus } = useSessionStore();
   const addCustoIA  = useSessionStore(s => s.addCustoIA);
   const addCustoTTS = useSessionStore(s => s.addCustoTTS);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   // Sessão válida persistida no store (reload no meio da entrevista)
   const temSessaoSalva =
@@ -524,9 +524,12 @@ export default function InterviewPage() {
   }, []); // SOMENTE no mount
 
   // Verificar crédito quando retomando pós-pagamento
-  // Deps incluem user?.id para aguardar o auth carregar antes de verificar
+  // Aguarda authLoading = false para garantir que user?.id está definitivo
+  // antes de chamar callTurn (evita race condition: auth demora > 1s e callTurn
+  // dispara com authUserId = null → gate rejeita crédito válido).
   useEffect(() => {
     if (!isResuming || resumeVerifiedRef.current) return;
+    if (authLoading) return;
     resumeVerifiedRef.current = true;
 
     async function verificarCreditoResume() {
@@ -583,7 +586,7 @@ export default function InterviewPage() {
 
     verificarCreditoResume();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isResuming, user?.id]);
+  }, [isResuming, user?.id, authLoading]);
 
 
   async function handleEndInterview(automatic = false) {
