@@ -129,6 +129,15 @@ export function useVoiceInput(options: UseVoiceInputOptions) {
     return () => {
       try { recognition.abort(); } catch { /* silencioso */ }
       recognitionRef.current = null;
+      // Limpar timers pendentes para não dispararem após o teardown
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+        processingTimeoutRef.current = null;
+      }
+      if (warmupRef.current) {
+        clearTimeout(warmupRef.current);
+        warmupRef.current = null;
+      }
     };
   // lang é a única dependência — callbacks são acessados via ref
   // eslint-disable-next-line react-hooks/exhaustive-deps

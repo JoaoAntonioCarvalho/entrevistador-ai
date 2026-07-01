@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Job } from '@/lib/types';
+import { Job, normalizeJob } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
@@ -59,7 +59,7 @@ Vaga:
 ${jobDescription.slice(0, 5000)}`;
 
     try {
-      const job = await callAIJSON<Job>('parsing', systemPrompt, userMessage, 2000, sessionId);
+      const job = normalizeJob(await callAIJSON<Job>('parsing', systemPrompt, userMessage, 2000, sessionId));
       job.descricao_completa = jobDescription.slice(0, 500);
       return NextResponse.json({ job });
     } catch {

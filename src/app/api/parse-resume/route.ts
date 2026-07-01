@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { Candidate } from '@/lib/types';
+import { Candidate, normalizeCandidate } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { pdfToBase64Images } from '@/lib/pdf-to-images';
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const candidate = await callVisionForResume(images);
+      const candidate = normalizeCandidate(await callVisionForResume(images));
       return NextResponse.json({ candidate, isImagePdf: true });
     } catch {
       // Fallback: tentar parsear com o texto incompleto se houver algo aproveitável
@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
 
 Texto do currículo:
 ${rawText.slice(0, 4000)}`;
-          const candidate = await callAIJSON<Candidate>('parsing', systemFallback, userFallback, 2000, sessionId);
+          const candidate = normalizeCandidate(await callAIJSON<Candidate>('parsing', systemFallback, userFallback, 2000, sessionId));
           return NextResponse.json({ candidate, isImagePdf: true, warning: 'Parsing parcial — algumas informações podem estar incompletas.' });
         } catch { /* cai no erro abaixo */ }
       }
@@ -275,7 +275,7 @@ Currículo:
 ${rawText.slice(0, 6000)}`;
 
   try {
-    const candidate = await callAIJSON<Candidate>('parsing', systemPrompt, userMessage, 2000, sessionId);
+    const candidate = normalizeCandidate(await callAIJSON<Candidate>('parsing', systemPrompt, userMessage, 2000, sessionId));
     return NextResponse.json({ candidate });
   } catch {
     const fallbackCandidate: Candidate = {

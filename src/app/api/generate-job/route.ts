@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAIJSON } from '@/lib/services/claude';
-import { Job } from '@/lib/types';
+import { Job, normalizeJob } from '@/lib/types';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export async function POST(req: NextRequest) {
@@ -53,13 +53,13 @@ Requisitos:
 - Stack técnica apenas se for vaga técnica (senão array vazio)
 - Empresa com nome brasileiro convincente mas fictício`;
 
-    const job = await callAIJSON<Job>(
+    const job = normalizeJob(await callAIJSON<Job>(
       'parsing',
       systemPrompt,
       userMessage,
       1500,
       sessionId ?? 'unknown'
-    );
+    ));
 
     return NextResponse.json({ job });
 

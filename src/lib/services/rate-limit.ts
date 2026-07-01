@@ -33,6 +33,10 @@ export const sessionRateLimit = makeLimit(5, '24 h', 'ratelimit:session');
 // Webhook MP: 100 / min (proteção contra flood)
 export const webhookRateLimit = makeLimit(100, '1 m', 'ratelimit:webhook');
 
+// Notificações internas (Telegram): bucket próprio para não competir com o
+// parseRateLimit das rotas essenciais de setup. Anti-spam do relay público.
+export const notifyRateLimit = makeLimit(20, '10 m', 'ratelimit:notify');
+
 // Perguntas gratuitas: 3 por 24h por IP (anônimos não podem burlar limpando cache)
 export const freeQuestionsLimit = makeLimit(3, '24 h', 'ratelimit:free-questions');
 

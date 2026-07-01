@@ -26,6 +26,66 @@ export interface Job {
   descricao_completa: string;
 }
 
+// ── Normalizadores ────────────────────────────────────────────
+// Modelos de IA às vezes omitem campos ou retornam tipos errados. Estes
+// normalizadores garantem que Candidate/Job sempre tenham a forma esperada
+// (arrays presentes, strings presentes), evitando TypeError em quem consome
+// esses dados depois — ex.: buildSystemPrompt acessa job.stack_tecnica.join().
+
+function asString(v: unknown): string {
+  return typeof v === 'string' ? v : '';
+}
+
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+}
+
+export function normalizeCandidate(raw: unknown): Candidate {
+  const c = (raw ?? {}) as Record<string, unknown>;
+  const experiencias = Array.isArray(c.experiencias)
+    ? (c.experiencias as unknown[]).map((e) => {
+        const x = (e ?? {}) as Record<string, unknown>;
+        return {
+          cargo:     asString(x.cargo),
+          empresa:   asString(x.empresa),
+          periodo:   asString(x.periodo),
+          descricao: asString(x.descricao),
+        };
+      })
+    : [];
+  const formacao = Array.isArray(c.formacao)
+    ? (c.formacao as unknown[]).map((f) => {
+        const x = (f ?? {}) as Record<string, unknown>;
+        return {
+          curso:       asString(x.curso),
+          instituicao: asString(x.instituicao),
+          periodo:     asString(x.periodo),
+        };
+      })
+    : [];
+  return {
+    nome:          asString(c.nome) || 'Candidato',
+    cargo_atual:   asString(c.cargo_atual),
+    experiencias,
+    habilidades:   asStringArray(c.habilidades),
+    formacao,
+    certificacoes: asStringArray(c.certificacoes),
+  };
+}
+
+export function normalizeJob(raw: unknown): Job {
+  const j = (raw ?? {}) as Record<string, unknown>;
+  return {
+    titulo:                  asString(j.titulo) || 'Vaga',
+    empresa:                 asString(j.empresa),
+    requisitos_obrigatorios: asStringArray(j.requisitos_obrigatorios),
+    requisitos_desejaveis:   asStringArray(j.requisitos_desejaveis),
+    responsabilidades:       asStringArray(j.responsabilidades),
+    stack_tecnica:           asStringArray(j.stack_tecnica),
+    descricao_completa:      asString(j.descricao_completa),
+  };
+}
+
 export interface InterviewConfig {
   idioma: 'pt' | 'en';
   tipo: 'comportamental' | 'tecnica' | 'mista';
@@ -67,7 +127,7 @@ export interface CompetencyScores {
 export interface InterviewSession {
   id: string;
   created_at: string;
-  status: 'setup' | 'active' | 'feedback' | 'completed';
+  status: 'setup' | 'active' | 'feedback' | 'completed' | 'discarded';
   candidate: Candidate | null;
   job: Job | null;
   config: InterviewConfig;

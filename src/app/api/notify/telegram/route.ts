@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  // Endpoint público que retransmite para o Telegram interno — rate limit
+  // evita que alguém use como relay de spam contra o chat da equipe.
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(notifyRateLimit, ip)) {
+    return NextResponse.json({ ok: true }, { status: 429 });
+  }
+
   try {
     const { mensagem } = await req.json();
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Preference } from 'mercadopago';
 import { mpConfig, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
+import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,11 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!await checkRateLimit(aiRateLimit, ip)) {
+    return NextResponse.json({ error: 'Muitas requisições. Aguarde alguns minutos.' }, { status: 429 });
+  }
+
   try {
     const body = await req.json();
     const { plano, sessionId, authUserId } = body;

@@ -75,6 +75,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Texto vazio.' }, { status: 400 });
     }
 
+    // Falas do entrevistador têm 2-3 frases; qualquer coisa muito maior é abuso
+    // ou bug. Limite defensivo de custo (o TTS da OpenAI também rejeita > 4096).
+    if (typeof text !== 'string' || text.length > 2000) {
+      return NextResponse.json({ error: 'Texto muito longo.' }, { status: 400 });
+    }
+
     const languageCode     = (lang as string)?.startsWith('en') ? 'en-US' : 'pt-BR';
     const avatar           = ((avatarId as string) ?? 'sarah').toLowerCase();
     const voice            = VOICE_MAP[avatar]?.[languageCode] ?? VOICE_MAP.sarah[languageCode];
