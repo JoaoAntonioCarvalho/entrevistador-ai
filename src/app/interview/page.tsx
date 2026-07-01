@@ -18,6 +18,7 @@ import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
 import type { InterviewSession, InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
 import { saveSessionToSupabase } from '@/lib/services/supabase';
+import * as Sentry from '@sentry/nextjs';
 
 export const dynamic = 'force-dynamic';
 
@@ -391,7 +392,11 @@ export default function InterviewPage() {
         authUserId: user.id,
         sessionId:  session.id,
       }),
-    }).catch(() => { /* silencioso */ });
+    }).catch((e) => {
+      // Falha ao consumir crédito deixa um crédito pago "não usado" — não
+      // quebra a UX, mas é uma perda de receita potencial que queremos observar.
+      Sentry.captureException(e, { tags: { route: 'credits-consume', origin: 'interview-client' } });
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewState]);
 
@@ -599,11 +604,10 @@ export default function InterviewPage() {
   }, [isResuming, user?.id, authLoading]);
 
 
-  async function handleEndInterview(automatic = false) {
-    if (!automatic) {
-      const confirmed = window.confirm('Encerrar a entrevista agora?');
-      if (!confirmed) return;
-    }
+  // A entrevista só encerra automaticamente: ao completar todas as perguntas
+  // ou como escape do modal de erro (falhas consecutivas de API). Não existe
+  // botão de "encerrar agora" durante o fluxo normal.
+  async function handleEndInterview() {
     setInterviewState('ended');
     const nome = session.candidate?.nome ?? 'candidato';
     const farewell =
@@ -728,7 +732,7 @@ export default function InterviewPage() {
               <button
                 onClick={() => {
                   setShowErrorModal(false);
-                  handleEndInterview(true);
+                  handleEndInterview();
                 }}
                 className="w-full rounded-md border border-zinc-600 text-zinc-400 hover:text-zinc-200 hover:border-zinc-400 px-4 py-2.5 text-sm font-medium transition-colors"
               >

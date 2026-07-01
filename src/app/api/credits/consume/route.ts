@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       .or('expires_at.is.null,expires_at.gt.now()')
       .order('created_at', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (credit) {
       await supabase

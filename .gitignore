@@ -37,3 +37,6 @@ next-env.d.ts
 
 # claude code — controle de loop de build
 .claude/.build-retry-count
+
+.vercel
+.env*

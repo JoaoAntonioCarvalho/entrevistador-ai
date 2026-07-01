@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
@@ -58,10 +59,11 @@ export async function POST(req: NextRequest) {
       pagamentos:        pagamentos ?? [],
       totalEntrevistas:  totalEntrevistas ?? 0,
     });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+  } catch (err) {
+    // Não vazar detalhes internos (mensagens de erro do DB/SDK) para o cliente.
+    Sentry.captureException(err, { tags: { route: 'conta-resumo' } });
     return NextResponse.json(
-      { error: msg },
+      { error: 'Erro ao carregar dados da conta.' },
       { status: 500 }
     );
   }

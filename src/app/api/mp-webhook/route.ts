@@ -17,27 +17,19 @@ const supabase = createClient(
 
 function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET?.trim();
-  console.error('[mp-webhook][debug] secret length:', secret?.length ?? 0);
-  if (!secret) {
-    console.error('[mp-webhook][debug] SEM secret configurado — pulando verificação');
-    return true;
-  }
+  // Sem secret configurado não há como validar. Retornamos false (assinatura
+  // não confiável) e deixamos o fallback — confirmação via API do MP — decidir.
+  if (!secret) return false;
 
   const xSignature = req.headers.get('x-signature');
   const xRequestId = req.headers.get('x-request-id') ?? '';
 
-  if (!xSignature) {
-    console.error('[mp-webhook][debug] SEM header x-signature — rejeitando');
-    return false;
-  }
+  if (!xSignature) return false;
 
   const ts = xSignature.split(',').find(p => p.startsWith('ts='))?.split('=')[1];
   const v1 = xSignature.split(',').find(p => p.startsWith('v1='))?.split('=')[1];
 
-  if (!ts || !v1) {
-    console.error('[mp-webhook][debug] ts ou v1 ausentes no header. xSignature recebido:', xSignature);
-    return false;
-  }
+  if (!ts || !v1) return false;
 
   // Usar data.id da QUERY STRING (padrão oficial do MP), com fallback pro body
   const dataIdQuery = req.nextUrl.searchParams.get('data.id');
@@ -47,18 +39,12 @@ function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
 
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const hmac = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
-  const bate = hmac === v1; // comparação simples só para o log — o return usa timingSafeEqual
 
-  console.error('[mp-webhook][debug] dataIdQuery:', dataIdQuery, '| dataIdBody:', dataIdBody);
-  console.error('[mp-webhook][debug] manifest:', manifest);
-  console.error('[mp-webhook][debug] hmac calculado:', hmac);
-  console.error('[mp-webhook][debug] v1 recebido:   ', v1);
-  console.error('[mp-webhook][debug] bate (comparação simples):', bate);
-
+  // Comparação sempre timing-safe. timingSafeEqual lança se os tamanhos
+  // divergem (v1 malformado) — nesse caso a assinatura é inválida.
   try {
     return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
-  } catch (e) {
-    console.error('[mp-webhook][debug] timingSafeEqual lançou erro (tamanhos diferentes?):', e);
+  } catch {
     return false;
   }
 }
@@ -72,9 +58,10 @@ export async function POST(req: NextRequest) {
   try {
     const bodyText = await req.text();
 
-    if (!verificarAssinaturaMP(req, bodyText)) {
-      return NextResponse.json({ ok: true }, { status: 200 });
-    }
+    // A validação HMAC continua sendo a primeira verificação, mas não é mais
+    // o único ponto de falha silenciosa: se ela falhar, ainda confirmamos o
+    // pagamento pela API autoritativa do MP antes de decidir (ver fallback).
+    const assinaturaValida = verificarAssinaturaMP(req, bodyText);
 
     const body = JSON.parse(bodyText);
 
@@ -85,6 +72,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Fonte da verdade: busca o pagamento na API do MP usando nosso access
+    // token. Isso não pode ser forjado por quem chama o webhook — é o que
+    // torna o fallback de assinatura seguro contra requisições falsificadas.
     const paymentClient = new Payment(mpConfig);
     const payment = await paymentClient.get({ id: Number(paymentId) });
 
@@ -112,6 +102,33 @@ export async function POST(req: NextRequest) {
     const sessionId  = partes[2] && partes[2] !== 'novo' ? partes[2] : null;
 
     if (!authUserId || !UUID_RE.test(authUserId) || !plano) {
+      return NextResponse.json({ ok: true });
+    }
+
+    // Fallback defensivo e temporário: a assinatura HMAC falhou, mas a API do
+    // MP confirma pagamento aprovado com external_reference (UUID) válido.
+    // Processamos mesmo assim e registramos alerta no Sentry, até o
+    // MP_WEBHOOK_SECRET ser sincronizado corretamente entre painel e Vercel.
+    if (!assinaturaValida) {
+      Sentry.captureMessage(
+        'mp-webhook: assinatura HMAC inválida — processado via fallback (pagamento aprovado confirmado pela API do MP)',
+        {
+          level: 'warning',
+          tags: { route: 'mp-webhook', step: 'assinatura-fallback' },
+          extra: { paymentId: String(paymentId), authUserId, plano },
+        },
+      );
+    }
+
+    // Idempotência: MP reenvia webhooks e o fallback abre espaço para replays.
+    // Se já existe crédito para este pagamento, não criamos de novo.
+    const { data: creditosExistentes } = await supabase
+      .from('credits')
+      .select('id')
+      .eq('mp_payment_id', String(paymentId))
+      .limit(1);
+
+    if (creditosExistentes && creditosExistentes.length > 0) {
       return NextResponse.json({ ok: true });
     }
 

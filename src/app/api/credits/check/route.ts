@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         .from('sessions')
         .select('payment_status')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (sessionData?.payment_status === 'paid') {
         return NextResponse.json({ hasCredit: true, creditId: 'session-paid', perguntas: 7 });
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       .or('expires_at.is.null,expires_at.gt.now()')
       .order('created_at', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (credit) {
       return NextResponse.json({

@@ -374,7 +374,7 @@ export async function POST(req: NextRequest) {
         .from('sessions')
         .select('payment_status')
         .eq('id', sessionIdRL)
-        .single();
+        .maybeSingle();
       if (sess?.payment_status === 'paid') isPaid = true;
     }
 
@@ -386,7 +386,7 @@ export async function POST(req: NextRequest) {
         .eq('usado', false)
         .eq('mp_status', 'approved')
         .limit(1)
-        .single();
+        .maybeSingle();
       if (credit) isPaid = true;
     }
 
@@ -476,7 +476,7 @@ export async function POST(req: NextRequest) {
         .from('sessions')
         .select('payment_status')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
       if (sess?.payment_status === 'paid') liberado = true;
     }
 
@@ -491,7 +491,7 @@ export async function POST(req: NextRequest) {
         .or('expires_at.is.null,expires_at.gt.now()')
         .order('created_at', { ascending: true })
         .limit(1)
-        .single();
+        .maybeSingle();
       if (credit) liberado = true;
     }
 
