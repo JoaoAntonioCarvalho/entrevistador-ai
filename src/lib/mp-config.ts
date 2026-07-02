@@ -12,6 +12,17 @@ export const mpConfig = new MercadoPagoConfig({
 // Alias para diagnóstico (mp-diagnostico/route.ts importa `mp`)
 export const mp = mpConfig;
 
+// Access token cru resolvido (prod/test) — para chamadas diretas à API do MP
+// que o SDK não cobre, como GET /authorized_payments/{id} no webhook.
+export const MP_ACCESS_TOKEN = isProducao
+  ? process.env.MP_ACCESS_TOKEN_PROD!
+  : process.env.MP_ACCESS_TOKEN_TEST!;
+
+// Planos que são assinatura recorrente (PreApproval), não compra avulsa.
+export function isAssinatura(plano: string): boolean {
+  return plano === 'mensal-starter' || plano === 'mensal-pro';
+}
+
 export const MP_PUBLIC_KEY = isProducao
   ? process.env.MP_PUBLIC_KEY_PROD!
   : process.env.MP_PUBLIC_KEY_TEST!;

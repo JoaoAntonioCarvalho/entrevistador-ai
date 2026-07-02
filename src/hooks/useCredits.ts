@@ -13,12 +13,13 @@ export function useCredits() {
     totalCreditos:  number;
     isMensal:       boolean;
     mensalEsgotado: boolean;
+    renovaEm:       string | null;
     loading:        boolean;
-  }>({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, loading: true });
+  }>({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, loading: true });
 
   useEffect(() => {
     if (!userId) {
-      setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, loading: false });
+      setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, loading: false });
       return;
     }
 
@@ -36,10 +37,11 @@ export function useCredits() {
           totalCreditos:  data.totalCreditos ?? 0,
           isMensal:       data.isMensal ?? false,
           mensalEsgotado: data.mensalEsgotado ?? false,
+          renovaEm:       data.renovaEm ?? null,
           loading:        false,
         });
       } catch {
-        setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, loading: false });
+        setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, loading: false });
       }
     }
 

@@ -111,7 +111,12 @@ function PlanosContent() {
     try {
       const sessionId = useSessionStore.getState().session?.id ?? null;
 
-      const res = await authedFetch('/api/mp-criar-preferencia', {
+      // Planos mensais são assinatura recorrente (PreApproval); os demais são
+      // compra avulsa (Preference).
+      const isMensal = plano === 'mensal-starter' || plano === 'mensal-pro';
+      const endpoint = isMensal ? '/api/mp-criar-assinatura' : '/api/mp-criar-preferencia';
+
+      const res = await authedFetch(endpoint, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plano, sessionId }),

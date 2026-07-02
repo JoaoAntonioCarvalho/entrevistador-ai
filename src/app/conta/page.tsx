@@ -31,11 +31,20 @@ interface Pagamento {
   mp_payment_id:  string | null;
 }
 
+interface Assinatura {
+  plano:              string;
+  status:             string;
+  perguntas:          number | null;
+  current_period_end: string | null;
+  updated_at:         string;
+}
+
 interface Resumo {
   creditosDisponiveis: Credito[];
   creditosUsados:      Credito[];
   pagamentos:          Pagamento[];
   totalEntrevistas:    number;
+  assinatura:          Assinatura | null;
 }
 
 const PLANO_LABEL: Record<string, string> = {
@@ -68,6 +77,19 @@ export default function ContaPage() {
   const router  = useRouter();
   const [resumo,  setResumo]  = useState<Resumo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmarCancel, setConfirmarCancel] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+
+  function carregarResumo() {
+    return authedFetch('/api/conta/resumo', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then(r => r.json())
+      .then(setResumo)
+      .catch(() => {});
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -76,16 +98,28 @@ export default function ContaPage() {
       return;
     }
 
-    authedFetch('/api/conta/resumo', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    })
-      .then(r => r.json())
-      .then(setResumo)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    carregarResumo().finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, authLoading, router, open]);
+
+  async function cancelarAssinatura() {
+    setCancelando(true);
+    try {
+      const res = await authedFetch('/api/subscription/cancel', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        await carregarResumo();
+      }
+    } catch {
+      /* silencioso */
+    } finally {
+      setCancelando(false);
+      setConfirmarCancel(false);
+    }
+  }
 
   if (authLoading || loading) {
     return (
@@ -101,6 +135,9 @@ export default function ContaPage() {
 
   const disponivel = resumo?.creditosDisponiveis ?? [];
   const pagamentos = resumo?.pagamentos ?? [];
+  const assinatura = resumo?.assinatura ?? null;
+  const assinaturaAtiva =
+    assinatura && ['authorized', 'pending', 'paused'].includes(assinatura.status);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -166,6 +203,65 @@ export default function ContaPage() {
             </div>
           ))}
         </div>
+
+        {/* Assinatura */}
+        {assinaturaAtiva && (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl
+                          border border-emerald-200 dark:border-emerald-900/40
+                          mb-4 overflow-hidden">
+            <div className="px-5 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                      {PLANO_LABEL[assinatura!.plano] ?? assinatura!.plano}
+                    </h2>
+                  </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                    {assinatura!.status === 'pending'
+                      ? 'Aguardando confirmação do pagamento'
+                      : assinatura!.current_period_end
+                      ? `Renova automaticamente em ${formatDate(assinatura!.current_period_end)}`
+                      : 'Renovação mensal automática'}
+                    {' · '}{PLANO_PRECO[assinatura!.plano] ?? ''}/mês
+                  </p>
+                </div>
+                {!confirmarCancel ? (
+                  <button
+                    onClick={() => setConfirmarCancel(true)}
+                    className="shrink-0 text-xs font-medium text-zinc-400
+                               hover:text-red-500 transition-colors">
+                    Cancelar
+                  </button>
+                ) : (
+                  <div className="shrink-0 flex items-center gap-2">
+                    <button
+                      onClick={cancelarAssinatura}
+                      disabled={cancelando}
+                      className="text-xs font-semibold text-red-600
+                                 hover:text-red-700 disabled:opacity-50">
+                      {cancelando ? 'Cancelando…' : 'Confirmar'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmarCancel(false)}
+                      disabled={cancelando}
+                      className="text-xs text-zinc-400 hover:text-zinc-600">
+                      Voltar
+                    </button>
+                  </div>
+                )}
+              </div>
+              {confirmarCancel && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-3
+                              border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                  Você mantém as entrevistas deste mês; a assinatura apenas não
+                  renova no próximo ciclo.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Créditos disponíveis */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl

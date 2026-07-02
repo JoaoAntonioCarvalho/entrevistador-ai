@@ -45,6 +45,15 @@ export async function POST(req: NextRequest) {
       .eq('auth_user_id', authUserId)
       .in('status', ['completed', 'feedback']);
 
+    // Assinatura recorrente (a mais recente do usuário)
+    const { data: assinatura } = await supabase
+      .from('subscriptions')
+      .select('plano, status, perguntas, current_period_end, updated_at')
+      .eq('auth_user_id', authUserId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const creditosDisponiveis = (creditos ?? []).filter(
       c => !c.usado && (
         !c.expires_at ||
@@ -59,6 +68,7 @@ export async function POST(req: NextRequest) {
       creditosUsados,
       pagamentos:        pagamentos ?? [],
       totalEntrevistas:  totalEntrevistas ?? 0,
+      assinatura:        assinatura ?? null,
     });
   } catch (err) {
     // Não vazar detalhes internos (mensagens de erro do DB/SDK) para o cliente.

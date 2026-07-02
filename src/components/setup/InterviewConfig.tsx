@@ -52,7 +52,7 @@ const AVATAR_COLORS: Record<string, string> = {
 export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const { maxPerguntas, totalCreditos, isMensal, mensalEsgotado, hasAnyCredit, loading: loadingCredits } = useCredits();
+  const { maxPerguntas, totalCreditos, isMensal, mensalEsgotado, renovaEm, hasAnyCredit, loading: loadingCredits } = useCredits();
   const { hasHistory } = useHasHistory();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
 
@@ -135,7 +135,9 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
               : 'text-zinc-500 dark:text-zinc-400'
           }`}>
             {mensalEsgotado
-              ? 'Você já usou todas as entrevistas do seu plano mensal neste ciclo. Adquira mais para continuar praticando.'
+              ? (renovaEm
+                  ? `Você já usou as entrevistas do seu plano mensal. Renova em ${new Date(renovaEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}.`
+                  : 'Você já usou todas as entrevistas do seu plano mensal neste ciclo. Ele renova automaticamente no próximo mês.')
               : isMensal
               ? `Plano mensal ativo · ${totalCreditos} ${totalCreditos === 1 ? 'entrevista disponível' : 'entrevistas disponíveis'} (até ${maxPerguntas} perguntas)`
               : `${totalCreditos} ${totalCreditos === 1 ? 'crédito disponível' : 'créditos disponíveis'} · até ${maxPerguntas} perguntas por entrevista`}

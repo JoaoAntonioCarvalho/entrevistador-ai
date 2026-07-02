@@ -16,6 +16,17 @@ import type { NextRequest } from 'next/server';
  * o servidor de auth do Supabase — não é forjável no cliente.
  */
 export async function getAuthUserId(req: NextRequest): Promise<string | null> {
+  return (await getAuthUser(req))?.id ?? null;
+}
+
+/**
+ * Como `getAuthUserId`, mas retorna também o e-mail verificado do usuário —
+ * necessário, por exemplo, para criar a assinatura no MercadoPago (payer_email).
+ * O e-mail vem do token verificado, não do cliente, então não é forjável.
+ */
+export async function getAuthUser(
+  req: NextRequest,
+): Promise<{ id: string; email: string | null } | null> {
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.toLowerCase().startsWith('bearer ')) return null;
 
@@ -30,7 +41,7 @@ export async function getAuthUserId(req: NextRequest): Promise<string | null> {
     const supabase = createClient(url, key);
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) return null;
-    return data.user.id;
+    return { id: data.user.id, email: data.user.email ?? null };
   } catch {
     return null;
   }

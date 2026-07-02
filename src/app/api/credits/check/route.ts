@@ -85,11 +85,23 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (mensalAtivo) {
+      // Data de renovação da assinatura (quando aplicável) para a mensagem
+      // "renova em X" — agora que o plano renova de verdade.
+      const { data: assinatura } = await supabase
+        .from('subscriptions')
+        .select('current_period_end')
+        .eq('auth_user_id', authUserId)
+        .eq('status', 'authorized')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       return NextResponse.json({
         hasCredit:      false,
         creditId:       null,
         isMensal:       true,
         mensalEsgotado: true,
+        renovaEm:       assinatura?.current_period_end ?? mensalAtivo.expires_at ?? null,
       });
     }
 
