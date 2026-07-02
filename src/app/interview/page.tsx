@@ -18,6 +18,7 @@ import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
 import type { InterviewSession, InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
 import { saveSessionToSupabase } from '@/lib/services/supabase';
+import { authedFetch } from '@/lib/services/api-client';
 import * as Sentry from '@sentry/nextjs';
 
 export const dynamic = 'force-dynamic';
@@ -140,7 +141,7 @@ export default function InterviewPage() {
         perguntasAtualizadas ?? perguntasRespondidasRef.current;
       const isLastTurn = !isFirst && perguntasParaCalculo >= totalPerguntas;
 
-      const res = await fetch('/api/interview/turn', {
+      const res = await authedFetch('/api/interview/turn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -154,7 +155,6 @@ export default function InterviewPage() {
           perguntasRespondidas: perguntasParaCalculo,
           totalPerguntas:       totalPerguntas,
           sessionId:            session.id,
-          authUserId:           authUserIdRef.current ?? user?.id ?? null,
         }),
       });
 
@@ -385,11 +385,10 @@ export default function InterviewPage() {
     if (interviewState !== 'ended') return;
     if (creditConsumedRef.current || !user?.id) return;
     creditConsumedRef.current = true;
-    fetch('/api/credits/consume', {
+    authedFetch('/api/credits/consume', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        authUserId: user.id,
         sessionId:  session.id,
       }),
     }).catch((e) => {
@@ -403,11 +402,10 @@ export default function InterviewPage() {
   // Verificar crédito ao detectar login durante a entrevista (retorno pós-gate)
   async function verificarPagamentoAntesDeContinar() {
     try {
-      const res = await fetch('/api/credits/check', {
+      const res = await authedFetch('/api/credits/check', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          authUserId: user?.id ?? null,
           sessionId:  session?.id ?? null,
         }),
       });
@@ -539,11 +537,10 @@ export default function InterviewPage() {
 
     async function verificarCreditoResume() {
       try {
-        const res = await fetch('/api/credits/check', {
+        const res = await authedFetch('/api/credits/check', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            authUserId: user?.id ?? null,
             sessionId:  resumeSessionId,
           }),
         });

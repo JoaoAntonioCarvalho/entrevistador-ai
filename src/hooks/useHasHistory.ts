@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { authedFetch } from '@/lib/services/api-client';
 
 export function useHasHistory() {
   const { user, loading: authLoading } = useAuth();
@@ -18,10 +19,10 @@ export function useHasHistory() {
       return;
     }
 
-    fetch('/api/session/has-history', {
+    authedFetch('/api/session/has-history', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ authUserId: user.id }),
+      body:    JSON.stringify({}),
     })
       .then(r => r.json())
       .then(data => {

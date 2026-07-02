@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
+import { authedFetch } from '@/lib/services/api-client';
 import { Header } from '@/components/layout/Header';
 import {
   CreditCard, Clock, CheckCircle,
@@ -75,10 +76,10 @@ export default function ContaPage() {
       return;
     }
 
-    fetch('/api/conta/resumo', {
+    authedFetch('/api/conta/resumo', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ authUserId: user.id }),
+      body: JSON.stringify({}),
     })
       .then(r => r.json())
       .then(setResumo)

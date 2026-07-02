@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Preference } from 'mercadopago';
 import { mpConfig, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { plano, sessionId, authUserId } = body;
+    const { plano, sessionId } = body;
+
+    // Identidade só do token verificado — o external_reference do pagamento é
+    // amarrado a esse UUID e o webhook credita a partir dele. Aceitar authUserId
+    // do corpo permitiria criar/creditar pagamento em nome de outro usuário.
+    const authUserId = await getAuthUserId(req);
 
     if (!plano) {
       return NextResponse.json({ error: 'Plano é obrigatório.' }, { status: 400 });

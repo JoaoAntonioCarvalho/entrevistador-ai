@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { authUserId, sessionId } = await req.json();
+    const { sessionId } = await req.json();
+    const authUserId = await getAuthUserId(req);
 
     // Verificar payment_status da sessão ANTES de checar authUserId —
     // o webhook do MP seta payment_status independentemente do auth carregar no frontend.

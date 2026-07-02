@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
+import { authedFetch } from '@/lib/services/api-client';
 import { usePendingSession } from '@/hooks/usePendingSession';
 import { Header } from '@/components/layout/Header';
 import { Check, ChevronLeft } from 'lucide-react';
@@ -110,10 +111,10 @@ function PlanosContent() {
     try {
       const sessionId = useSessionStore.getState().session?.id ?? null;
 
-      const res = await fetch('/api/mp-criar-preferencia', {
+      const res = await authedFetch('/api/mp-criar-preferencia', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plano, sessionId, authUserId: user.id }),
+        body: JSON.stringify({ plano, sessionId }),
       });
 
       const data = await res.json();

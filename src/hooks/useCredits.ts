@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { authedFetch } from '@/lib/services/api-client';
 
 export function useCredits() {
   const { user } = useAuth();
@@ -20,10 +21,10 @@ export function useCredits() {
 
     async function checkCredits() {
       try {
-        const res = await fetch('/api/credits/check', {
+        const res = await authedFetch('/api/credits/check', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authUserId: userId, sessionId: null }),
+          body: JSON.stringify({ sessionId: null }),
         });
         const data = await res.json();
         setCreditInfo({

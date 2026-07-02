@@ -50,6 +50,20 @@ export async function checkRateLimit(limiter: Ratelimit | null, ip: string): Pro
 }
 
 export function getClientIp(req: Request): string {
+  // Na Vercel, `x-real-ip` é preenchido pela plataforma com o IP real de quem
+  // conectou e NÃO é forjável pelo cliente. Já o valor MAIS À ESQUERDA de
+  // `x-forwarded-for` é enviado pelo próprio cliente (a Vercel apenas anexa os
+  // hops seguintes), então usá-lo permitiria burlar o rate limit rotacionando o
+  // header. Preferimos `x-real-ip`; no fallback usamos o ÚLTIMO valor de
+  // `x-forwarded-for` (hop mais próximo e confiável), nunca o primeiro.
+  const realIp = req.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+
   const forwarded = req.headers.get('x-forwarded-for');
-  return forwarded?.split(',')[0]?.trim() ?? 'unknown';
+  if (forwarded) {
+    const parts = forwarded.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length > 0) return parts[parts.length - 1];
+  }
+
+  return 'unknown';
 }

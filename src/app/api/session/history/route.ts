@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { authUserId, localUserId } = await req.json();
+    const { localUserId } = await req.json();
+    const authUserId = await getAuthUserId(req);
 
     let sessions: Record<string, unknown>[] = [];
 

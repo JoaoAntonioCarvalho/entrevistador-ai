@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { authedFetch } from '@/lib/services/api-client';
 
 export interface PendingSession {
   sessionId:  string;
@@ -29,10 +30,10 @@ export function usePendingSession() {
     async function check() {
       setLoading(true);
       try {
-        const res = await fetch('/api/session/pending', {
+        const res = await authedFetch('/api/session/pending', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authUserId: userId }),
+          body: JSON.stringify({}),
         });
         const data = await res.json();
 

@@ -1,17 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { InterviewSession } from '../types';
+import { authedFetch } from './api-client';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 const USE_SUPABASE = process.env.NEXT_PUBLIC_USE_SUPABASE === 'true';
-
-function getClient(userId: string) {
-  return createClient(supabaseUrl, supabaseKey, {
-    global: {
-      headers: { 'x-user-id': userId },
-    },
-  });
-}
 
 // ── ID anônimo persistente do usuário ─────────────────────
 const USER_ID_KEY = 'entrevistador-ai-user-id';
@@ -35,12 +28,15 @@ export async function saveSessionToSupabase(
   if (typeof window === 'undefined') return;
 
   const userId = getOrCreateUserId();
+  // authUserId é ignorado pelo servidor (ele deriva a identidade do token via
+  // authedFetch). Mantido na assinatura só por compatibilidade com os callers.
+  void authUserId;
 
   try {
-    const res = await fetch('/api/session/save', {
+    const res = await authedFetch('/api/session/save', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ session, authUserId, userId }),
+      body:    JSON.stringify({ session, userId }),
     });
 
     if (!res.ok) {
@@ -69,18 +65,13 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
   if (typeof window === 'undefined') return [];
 
   try {
-    const { createBrowserClient: makeBrowserClient } = await import('@supabase/ssr');
-    const browser = makeBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const { data: { session: authSession } } = await browser.auth.getSession();
-
-    const res = await fetch('/api/session/history', {
+    // authedFetch anexa o token; o servidor deriva o authUserId dele. Só
+    // enviamos o localUserId (id anônimo do localStorage) para mesclar sessões
+    // antigas sem dono autenticado.
+    const res = await authedFetch('/api/session/history', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        authUserId:  authSession?.user?.id ?? null,
         localUserId: getOrCreateUserId(),
       }),
     });
@@ -95,42 +86,51 @@ export async function getUserHistory(): Promise<SessionSummary[]> {
 }
 
 // ── Buscar histórico por vaga ─────────────────────────────
+// Via rota service-role: a anon key não acessa `sessions` diretamente.
+// authedFetch anexa o token; o servidor deriva o authUserId dele e mescla as
+// sessões anônimas antigas pelo localUserId.
 export async function getHistoryByJob(jobTitulo: string): Promise<SessionSummary[]> {
   if (!USE_SUPABASE) return [];
-  const userId = getOrCreateUserId();
-  const client = getClient(userId);
+  if (typeof window === 'undefined') return [];
 
-  const { data, error } = await client
-    .from('sessions')
-    .select('id, created_at, job_titulo, job_empresa, score_geral, total_perguntas, nivel, tipo')
-    .eq('user_id', userId)
-    .ilike('job_titulo', `%${jobTitulo}%`)
-    .order('created_at', { ascending: true });
-
-  if (error) return [];
-  return (data as SessionSummary[]) ?? [];
+  try {
+    const res = await authedFetch('/api/session/history-by-job', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobTitulo,
+        localUserId: getOrCreateUserId(),
+      }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.sessions ?? [];
+  } catch {
+    return [];
+  }
 }
 
 // ── Buscar sessão por ID (pública) ───────────────────────
+// Via rota service-role, que devolve só os campos seguros para exibição
+// pública (sem transcript, sem resposta_ideal, sem auth_user_id). A anon key
+// não lê mais `sessions` diretamente — ver db/rls-policies.sql (Opção A).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getSessionById(id: string): Promise<any | null> {
-  // Tentar Supabase primeiro se estiver ativo
-  if (process.env.NEXT_PUBLIC_USE_SUPABASE === 'true') {
+  if (process.env.NEXT_PUBLIC_USE_SUPABASE === 'true' && typeof window !== 'undefined') {
     try {
-      const client = createClient(supabaseUrl, supabaseKey);
-      const { data, error } = await client
-        .from('sessions')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (!error && data) {
-        return data;
+      const res = await fetch('/api/session/result', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.session) return data.session;
       }
     } catch { /* fallback para localStorage */ }
   }
 
-  // Fallback: buscar no localStorage
+  // Fallback: buscar no localStorage (sessões antigas/locais)
   try {
     const raw = localStorage.getItem(`entrevistador-ai-session-${id}`);
     if (raw) {

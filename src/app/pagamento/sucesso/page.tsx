@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/hooks/useAuth';
+import { authedFetch } from '@/lib/services/api-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,11 +39,10 @@ function SucessoContent() {
       tentativas++;
 
       try {
-        const res  = await fetch('/api/credits/check', {
+        const res  = await authedFetch('/api/credits/check', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            authUserId: user?.id ?? null,
             sessionId,
           }),
         });

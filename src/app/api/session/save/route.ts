@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,12 @@ export async function POST(req: NextRequest) {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const { session, authUserId, userId } = await req.json();
+    const { session, userId } = await req.json();
+
+    // Identidade só do token verificado. Anônimo (sem token) → null, gravado
+    // como sessão sem dono, exatamente como antes. Nunca aceitar authUserId do
+    // corpo: permitiria atribuir uma sessão a outro usuário.
+    const authUserId = await getAuthUserId(req);
 
     if (!session?.id) {
       return NextResponse.json(
@@ -32,9 +38,13 @@ export async function POST(req: NextRequest) {
       auth_user_id:                authUserId ?? null,
       created_at:                  session.created_at,
       status:                      session.status ?? 'active',
-      // Só inclui payment_status se for 'paid' — evita sobrescrever o valor
-      // atualizado pelo webhook do Mercado Pago com 'pending' em saves subsequentes
-      ...(session.paymentStatus === 'paid' ? { payment_status: 'paid' } : {}),
+      // NUNCA persistir payment_status a partir do corpo enviado pelo cliente.
+      // O único escritor legítimo de payment_status='paid' é o webhook do
+      // Mercado Pago (mp-webhook), que confirma o pagamento pela API autoritativa
+      // do MP. Aceitar esse campo aqui permitia que qualquer requisição marcasse
+      // uma sessão como paga e burlasse o gate de pagamento. Omitir a coluna no
+      // upsert preserva o valor já gravado pelo webhook (Postgres só atualiza as
+      // colunas presentes no insert).
       job_titulo:                  session.job?.titulo      ?? null,
       job_empresa:                 session.job?.empresa     ?? null,
       score_geral:                 session.scores?.geral    ?? null,

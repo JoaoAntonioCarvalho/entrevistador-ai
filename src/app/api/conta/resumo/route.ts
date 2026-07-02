@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { authUserId } = await req.json();
+    const authUserId = await getAuthUserId(req);
     if (!authUserId) {
       return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
     }

@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { callAIJSONWithUsage } from '@/lib/services/claude';
 import { aiRateLimit, checkRateLimit, freeQuestionsLimit, getClientIp } from '@/lib/services/rate-limit';
+import { getAuthUserId } from '@/lib/services/auth-server';
 import {
   Candidate, Job, InterviewConfig,
   ConversationTurn, InterviewTurnResponse
@@ -357,11 +358,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 });
   }
 
+  // Identidade só do token verificado — nunca do corpo. O gate de pagamento e o
+  // bypass de rate limit para pagantes dependem disso: aceitar authUserId do
+  // corpo permitiria liberar a entrevista usando o crédito de outro usuário.
+  const authUserId: string | null = await getAuthUserId(req);
+
   const ip = getClientIp(req);
   if (!await checkRateLimit(aiRateLimit, ip)) {
     // Usuários pagantes não são bloqueados pelo rate limit
     const sessionIdRL  = body.sessionId;
-    const authUserIdRL = body.authUserId;
+    const authUserIdRL = authUserId;
     let isPaid = false;
 
     const supabaseAdmin = createClient(
@@ -408,7 +414,7 @@ export async function POST(req: NextRequest) {
   const sessionId         = body.sessionId   ?? 'unknown';
   const perguntasRespondidas = body.perguntasRespondidas ?? 0;
   const totalPerguntas    = body.totalPerguntas ?? 7;
-  const authUserId: string | null = body.authUserId ?? null;
+  // authUserId já foi derivado do token verificado no topo do handler.
 
   // Rate limit por IP para anônimos: 3 perguntas / 24h
   // Aplica SOMENTE nos primeiros 3 turnos — a partir do 4° o payment gate assume o

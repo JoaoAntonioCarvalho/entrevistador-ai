@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +15,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { sessionId, authUserId } = await req.json();
+    const { sessionId } = await req.json();
+    const authUserId = await getAuthUserId(req);
 
     if (!sessionId || !authUserId) {
       return NextResponse.json({ error: 'Parâmetros inválidos.' }, { status: 400 });

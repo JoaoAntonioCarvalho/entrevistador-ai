@@ -13,6 +13,7 @@ import InterviewConfig from '@/components/setup/InterviewConfig';
 import { AvatarProfile, Candidate, InterviewConfig as IConfig, Job } from '@/lib/types';
 import { Header } from '@/components/layout/Header';
 import { notifyCurriculo, notifyVaga } from '@/lib/services/telegram';
+import { authedFetch } from '@/lib/services/api-client';
 import { useHasHistory } from '@/hooks/useHasHistory';
 
 export const dynamic = 'force-dynamic';
@@ -98,13 +99,12 @@ export default function SetupPage() {
     if (!user?.id || !pending?.sessionId) return;
     setLoadingContinuar(true);
     try {
-      const res = await fetch('/api/mp-criar-preferencia', {
+      const res = await authedFetch('/api/mp-criar-preferencia', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plano:      'finalizar-atual',
           sessionId:  pending.sessionId,
-          authUserId: user.id,
         }),
       });
       const data = await res.json();
@@ -247,10 +247,10 @@ export default function SetupPage() {
   async function iniciarEntrevista() {
     if (hasHistory && user?.id) {
       try {
-        const res = await fetch('/api/credits/check', {
+        const res = await authedFetch('/api/credits/check', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ authUserId: user.id, sessionId: null }),
+          body:    JSON.stringify({ sessionId: null }),
         });
         const data = await res.json();
         if (!data.hasCredit) {
@@ -368,12 +368,11 @@ export default function SetupPage() {
             <button
               onClick={async () => {
                 try {
-                  await fetch('/api/session/discard', {
+                  await authedFetch('/api/session/discard', {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       sessionId:  pending.sessionId,
-                      authUserId: user?.id,
                     }),
                   });
                 } catch { /* silencioso */ }
