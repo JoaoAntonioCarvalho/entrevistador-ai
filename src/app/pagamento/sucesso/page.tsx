@@ -15,66 +15,68 @@ function SucessoContent() {
   const params    = useSearchParams();
   const { user }  = useAuth();
   const sessionId = params.get('session') ?? '';
+  const plano     = params.get('plano')   ?? '';
   const [status, setStatus] = useState<Status>('aguardando');
 
+  // REGRA DE NEGÓCIO:
+  // - `finalizar-atual` + sessão válida → retoma ESSA entrevista (/interview).
+  // - Qualquer outro plano (credito-7/14, mensal-*) é CRÉDITO NOVO → vai para
+  //   /conta. Nunca reabrir a sessão antiga: isso reexecutava a última resposta
+  //   e gerava o feedback de novo (bug relatado ao comprar crédito avulso
+  //   estando com uma entrevista gratuita já encerrada na conta).
+  const isFinalizarAtual =
+    plano === 'finalizar-atual' && !!sessionId && sessionId !== 'null';
+
   useEffect(() => {
-    const temSessaoEmAndamento = !!sessionId && sessionId !== 'null';
-
-    if (!temSessaoEmAndamento) {
-      // Compra feita fora de uma entrevista em andamento (ex: via /planos)
-      // — não há para onde voltar, ir para setup
-      setTimeout(() => router.push('/setup'), 2500);
-      return;
-    }
-
-    // Há uma entrevista em andamento — não importa o plano comprado
-    // (finalizar-atual, credito-7 ou credito-14), o destino é sempre
-    // voltar para ESSA sessão.
+    let cancelled  = false;
     let tentativas = 0;
-    const MAX = 10;
-    let cancelled = false;
+    const MAX = isFinalizarAtual ? 10 : 6;
 
-    async function checarPagamento() {
+    const destino = isFinalizarAtual
+      ? `/interview?resume=true&sessionId=${sessionId}&paid=true`
+      : '/conta';
+
+    async function checar() {
       if (cancelled) return;
       tentativas++;
 
       try {
-        const res  = await authedFetch('/api/credits/check', {
+        const res = await authedFetch('/api/credits/check', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-          }),
+          // finalizar-atual confirma pelo payment_status da própria sessão;
+          // crédito novo confirma qualquer crédito disponível (sessionId null).
+          body: JSON.stringify({ sessionId: isFinalizarAtual ? sessionId : null }),
         });
         const data = await res.json() as { hasCredit: boolean };
 
         if (data.hasCredit) {
           setStatus('confirmado');
-          setTimeout(() => {
-            router.push(`/interview?resume=true&sessionId=${sessionId}&paid=true`);
-          }, 1500);
+          setTimeout(() => router.push(destino), 1500);
           return;
         }
       } catch { /* silencioso */ }
 
       if (tentativas >= MAX) {
+        // Timeout: o crédito aparece assim que o webhook processar. Redireciona
+        // mesmo assim — para crédito novo, /conta mostra o saldo atualizado.
         setStatus('timeout');
-        setTimeout(() => {
-          router.push(`/interview?resume=true&sessionId=${sessionId}&paid=true`);
-        }, 2000);
+        setTimeout(() => router.push(destino), 2000);
         return;
       }
 
-      setTimeout(checarPagamento, 2000);
+      setTimeout(checar, 2000);
     }
 
-    const initialTimer = setTimeout(checarPagamento, 1000);
+    const initialTimer = setTimeout(checar, 1000);
     return () => {
       cancelled = true;
       clearTimeout(initialTimer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  const destinoLabel = isFinalizarAtual ? 'sua entrevista' : 'sua conta';
 
   return (
     <div className="flex flex-col items-center justify-center
@@ -88,7 +90,7 @@ function SucessoContent() {
             Confirmando pagamento...
           </h1>
           <p className="text-sm text-muted-fg">
-            Em instantes você volta para sua entrevista.
+            Em instantes você volta para {destinoLabel}.
           </p>
         </>
       )}
@@ -107,7 +109,7 @@ function SucessoContent() {
             Pagamento confirmado!
           </h1>
           <p className="text-sm text-muted-fg">
-            Voltando para sua entrevista...
+            Voltando para {destinoLabel}...
           </p>
         </>
       )}
@@ -129,7 +131,7 @@ function SucessoContent() {
           </h1>
           <p className="text-sm text-muted-fg">
             Confirmação em processamento.
-            Voltando para sua entrevista...
+            Voltando para {destinoLabel}...
           </p>
         </>
       )}
