@@ -52,7 +52,7 @@ const AVATAR_COLORS: Record<string, string> = {
 export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const { maxPerguntas, totalCreditos, isMensal, hasAnyCredit, loading: loadingCredits } = useCredits();
+  const { maxPerguntas, totalCreditos, isMensal, mensalEsgotado, hasAnyCredit, loading: loadingCredits } = useCredits();
   const { hasHistory } = useHasHistory();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
 
@@ -128,9 +128,15 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
           Quantidade de perguntas
         </h3>
-        {user && !loadingCredits && hasAnyCredit && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mt-1">
-            {isMensal
+        {user && !loadingCredits && (hasAnyCredit || mensalEsgotado) && (
+          <p className={`text-xs -mt-1 ${
+            mensalEsgotado
+              ? 'text-amber-600 dark:text-amber-500'
+              : 'text-zinc-500 dark:text-zinc-400'
+          }`}>
+            {mensalEsgotado
+              ? 'Você já usou todas as entrevistas do seu plano mensal neste ciclo. Adquira mais para continuar praticando.'
+              : isMensal
               ? `Plano mensal ativo · ${totalCreditos} ${totalCreditos === 1 ? 'entrevista disponível' : 'entrevistas disponíveis'} (até ${maxPerguntas} perguntas)`
               : `${totalCreditos} ${totalCreditos === 1 ? 'crédito disponível' : 'créditos disponíveis'} · até ${maxPerguntas} perguntas por entrevista`}
           </p>
@@ -185,6 +191,8 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
                     : bloqueado
                     ? (!user
                         ? 'Pago'
+                        : mensalEsgotado
+                        ? 'Plano esgotado'
                         : hasAnyCredit
                         ? 'Requer plano maior'
                         : 'Sem crédito')

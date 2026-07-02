@@ -69,6 +69,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Sem créditos disponíveis. Verifica se é um assinante mensal que já usou
+    // todas as entrevistas do ciclo atual (algum crédito mensal ainda dentro da
+    // validade) — para mostrar "plano esgotado" em vez de "Sem crédito", que
+    // dava a impressão de que ele nunca pagou.
+    const { data: mensalAtivo } = await supabase
+      .from('credits')
+      .select('tipo, expires_at')
+      .eq('auth_user_id', authUserId)
+      .like('tipo', 'mensal-%')
+      .not('expires_at', 'is', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (mensalAtivo) {
+      return NextResponse.json({
+        hasCredit:      false,
+        creditId:       null,
+        isMensal:       true,
+        mensalEsgotado: true,
+      });
+    }
+
     return NextResponse.json({ hasCredit: false, creditId: null });
 
   } catch {
