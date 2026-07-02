@@ -52,7 +52,7 @@ const AVATAR_COLORS: Record<string, string> = {
 export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const { maxPerguntas, loading: loadingCredits } = useCredits();
+  const { maxPerguntas, totalCreditos, isMensal, hasAnyCredit, loading: loadingCredits } = useCredits();
   const { hasHistory } = useHasHistory();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
 
@@ -128,6 +128,13 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
           Quantidade de perguntas
         </h3>
+        {user && !loadingCredits && hasAnyCredit && (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mt-1">
+            {isMensal
+              ? `Plano mensal ativo · ${totalCreditos} ${totalCreditos === 1 ? 'entrevista disponível' : 'entrevistas disponíveis'} (até ${maxPerguntas} perguntas)`
+              : `${totalCreditos} ${totalCreditos === 1 ? 'crédito disponível' : 'créditos disponíveis'} · até ${maxPerguntas} perguntas por entrevista`}
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           {OPCOES_PERGUNTAS.map(n => {
             const bloqueado = opcaoBloqueada(n);
@@ -176,7 +183,11 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
                   {carregando
                     ? '...'
                     : bloqueado
-                    ? (user ? 'Sem crédito' : 'Pago')
+                    ? (!user
+                        ? 'Pago'
+                        : hasAnyCredit
+                        ? 'Requer plano maior'
+                        : 'Sem crédito')
                     : 'perguntas'}
                 </span>
               </button>

@@ -390,6 +390,7 @@ export default function InterviewPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId:  session.id,
+        perguntas:  session.config?.perguntas ?? totalPerguntas,
       }),
     }).catch((e) => {
       // Falha ao consumir crédito deixa um crédito pago "não usado" — não

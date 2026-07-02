@@ -30,7 +30,10 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (sessionData?.payment_status === 'paid') {
-        return NextResponse.json({ hasCredit: true, creditId: 'session-paid', perguntas: 7 });
+        return NextResponse.json({
+          hasCredit: true, creditId: 'session-paid',
+          perguntas: 7, maxPerguntas: 7, totalCreditos: 1, isMensal: false,
+        });
       }
     }
 
@@ -38,22 +41,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ hasCredit: false, creditId: null });
     }
 
-    const { data: credit } = await supabase
+    // Busca TODOS os créditos disponíveis para calcular o MAIOR tamanho
+    // (perguntas) que o usuário pode usar. Antes só olhávamos o crédito mais
+    // antigo — então quem tinha um crédito de 7 sobrando via a opção de 14
+    // bloqueada mesmo depois de comprar um crédito de 14.
+    const { data: creditos } = await supabase
       .from('credits')
-      .select('id, perguntas, expires_at')
+      .select('id, perguntas, tipo, created_at')
       .eq('auth_user_id', authUserId)
       .eq('usado', false)
       .eq('mp_status', 'approved')
       .or('expires_at.is.null,expires_at.gt.now()')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .order('created_at', { ascending: true });
 
-    if (credit) {
+    if (creditos && creditos.length > 0) {
+      const maxPerguntas = Math.max(...creditos.map(c => Number(c.perguntas) || 0));
+      const isMensal = creditos.some(
+        c => typeof c.tipo === 'string' && c.tipo.startsWith('mensal-'),
+      );
       return NextResponse.json({
-        hasCredit: true,
-        creditId:  credit.id,
-        perguntas: credit.perguntas,
+        hasCredit:     true,
+        creditId:      creditos[0].id,   // mais antigo — mantém compatibilidade
+        perguntas:     maxPerguntas,     // MAIOR tamanho disponível (corrige o lock)
+        maxPerguntas,
+        totalCreditos: creditos.length,
+        isMensal,
       });
     }
 

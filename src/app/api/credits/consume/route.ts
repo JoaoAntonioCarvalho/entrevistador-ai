@@ -17,9 +17,10 @@ export async function POST(req: NextRequest) {
   );
 
   try {
-    const { sessionId, creditId } = await req.json() as {
+    const { sessionId, creditId, perguntas } = await req.json() as {
       sessionId?:  string;
       creditId?:   string;
+      perguntas?:  number;
     };
 
     const authUserId = await getAuthUserId(req);
@@ -38,24 +39,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Marcar o crédito mais antigo não usado
-    const { data: credit } = await supabase
+    const tamanho = Number(perguntas) || 0;
+
+    // Consumir o crédito mais adequado ao tamanho da entrevista: o MENOR crédito
+    // que cobre `tamanho` (ex.: uma entrevista de 7 não gasta um crédito de 14
+    // se houver um de 7). Empate de tamanho → mais antigo primeiro. Se nenhum
+    // cobrir (não deveria acontecer com o lock do /setup), cai no mais antigo.
+    const { data: creditos } = await supabase
       .from('credits')
-      .select('id')
+      .select('id, perguntas, created_at')
       .eq('auth_user_id', authUserId)
       .eq('usado', false)
       .eq('mp_status', 'approved')
       .or('expires_at.is.null,expires_at.gt.now()')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .order('created_at', { ascending: true });
 
-    if (credit) {
-      await supabase
-        .from('credits')
-        .update({ usado: true, session_id: sessionId ?? null })
-        .eq('id', credit.id);
+    if (!creditos || creditos.length === 0) {
+      return NextResponse.json({ ok: true });
     }
+
+    const cobrem = creditos
+      .filter(c => (Number(c.perguntas) || 0) >= tamanho)
+      .sort((a, b) => (Number(a.perguntas) || 0) - (Number(b.perguntas) || 0));
+
+    const alvo = cobrem[0] ?? creditos[0];
+
+    await supabase
+      .from('credits')
+      .update({ usado: true, session_id: sessionId ?? null })
+      .eq('id', alvo.id)
+      .eq('auth_user_id', authUserId);
 
     return NextResponse.json({ ok: true });
   } catch {

@@ -8,14 +8,16 @@ export function useCredits() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const [creditInfo, setCreditInfo] = useState<{
-    hasAnyCredit: boolean;
-    maxPerguntas: number;
-    loading: boolean;
-  }>({ hasAnyCredit: false, maxPerguntas: 0, loading: true });
+    hasAnyCredit:  boolean;
+    maxPerguntas:  number;
+    totalCreditos: number;
+    isMensal:      boolean;
+    loading:       boolean;
+  }>({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, loading: true });
 
   useEffect(() => {
     if (!userId) {
-      setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, loading: false });
+      setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, loading: false });
       return;
     }
 
@@ -28,12 +30,14 @@ export function useCredits() {
         });
         const data = await res.json();
         setCreditInfo({
-          hasAnyCredit: data.hasCredit,
-          maxPerguntas: data.perguntas ?? 0,
-          loading: false,
+          hasAnyCredit:  data.hasCredit ?? false,
+          maxPerguntas:  data.maxPerguntas ?? data.perguntas ?? 0,
+          totalCreditos: data.totalCreditos ?? 0,
+          isMensal:      data.isMensal ?? false,
+          loading:       false,
         });
       } catch {
-        setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, loading: false });
+        setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, loading: false });
       }
     }
 
