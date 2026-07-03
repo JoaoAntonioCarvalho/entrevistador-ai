@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSessionStore } from '@/lib/store';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +21,24 @@ export function useRouteGuard(options: RouteGuardOptions) {
   const { user, loading } = useAuth();
   const { open } = useAuthModal();
 
+  // A hidratação do persist (localStorage) acontece depois do primeiro efeito.
+  // Sem esperar por ela, o guard avalia a sessão vazia padrão e expulsa para
+  // /setup usuários com sessão válida salva (ex.: reload no meio da entrevista).
+  // (useSessionStore.persist não existe no servidor — guardar com ?.)
+  const [hydrated, setHydrated] = useState(
+    () => useSessionStore.persist?.hasHydrated() ?? false
+  );
   useEffect(() => {
+    const p = useSessionStore.persist;
+    if (!p) { setHydrated(true); return; }
+    const unsub = p.onFinishHydration(() => setHydrated(true));
+    if (p.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
     if (options.requireAuth) {
       if (loading) return;
       if (!user) {
@@ -52,5 +69,5 @@ export function useRouteGuard(options: RouteGuardOptions) {
     }
   // options is an object literal — stringify to stabilize the dep
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, router, user, loading, pathname, open]);
+  }, [session, router, user, loading, pathname, open, hydrated]);
 }

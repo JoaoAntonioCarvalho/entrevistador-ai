@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight, Sun, Moon, ChevronDown,
   Mic, FileText, Globe, Users, TrendingUp,
   MessageSquare, Zap, Lock, Shield, CreditCard,
-  Play, BarChart3, Check, Settings,
+  BarChart3, Check, Settings,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,39 +16,98 @@ import { useHasHistory } from '@/hooks/useHasHistory';
 
 export const dynamic = 'force-dynamic';
 
-// ── Hooks ──────────────────────────────────────────────────────────────────
+// ── Demo showcase ───────────────────────────────────────────────────────────
 
-function useCountUp(end: number, duration = 1500, shouldStart = false) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!shouldStart) return;
-    let startTime: number | null = null;
-    function animate(currentTime: number) {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      const eased    = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * end));
-      if (progress < 1) requestAnimationFrame(animate);
-    }
-    requestAnimationFrame(animate);
-  }, [shouldStart, end, duration]);
-  return count;
-}
+const DEMO_SLIDES = [
+  {
+    src:   '/screenshot-setup.png',
+    label: 'Configure',
+    desc:  'Envie seu currículo (ou pule) e informe a vaga. Leva 2 minutos.',
+    alt:   'Tela de setup: escolha entre enviar currículo, preencher manualmente ou pular a etapa',
+  },
+  {
+    src:   '/screenshot-entrevista.png',
+    label: 'Entreviste',
+    desc:  'A entrevistadora fala, você responde pelo microfone. Conversa de verdade.',
+    alt:   'Tela da entrevista com a entrevistadora Sarah e a transcrição da conversa em tempo real',
+  },
+  {
+    src:   '/screenshot-relatorio.png',
+    label: 'Receba o relatório',
+    desc:  'Nota geral, ponto forte, melhorias e análise pergunta por pergunta.',
+    alt:   'Relatório da entrevista com nota 81 de 100, pontos fortes e análise por pergunta',
+  },
+];
 
-function useInView(threshold = 0.3) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
+function DemoShowcase() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) { setInView(true); observer.disconnect(); }
-      },
-      { threshold }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [threshold]);
-  return { ref, inView };
+    if (paused) return;
+    const t = setInterval(() => {
+      setActive((a) => (a + 1) % DEMO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [paused]);
+
+  return (
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+
+      {/* Passos clicáveis */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
+        {DEMO_SLIDES.map((s, i) => (
+          <button key={s.src}
+                  onClick={() => setActive(i)}
+                  aria-pressed={active === i}
+                  className={`text-left rounded-xl p-4 border transition-all duration-200 ${
+                    active === i
+                      ? 'bg-card border-border-strong shadow-card-hover'
+                      : 'bg-transparent border-transparent hover:bg-card hover:border-border'
+                  }`}>
+            <p className={`text-[11px] font-semibold uppercase tracking-eyebrow mb-1.5 ${
+              active === i ? 'text-foreground' : 'text-muted-fg'
+            }`}>
+              {String(i + 1).padStart(2, '0')} · {s.label}
+            </p>
+            <p className="text-[13px] text-muted-fg leading-[1.6]">{s.desc}</p>
+            {/* Barra de progresso do auto-avanço */}
+            <div className="mt-3 h-0.5 rounded-full bg-border overflow-hidden" aria-hidden="true">
+              {active === i && (
+                <div key={`${i}-${paused}`}
+                     className="h-full bg-foreground rounded-full"
+                     style={{
+                       animation: paused ? 'none' : 'demo-progress 5s linear forwards',
+                       width: paused ? '100%' : undefined,
+                     }} />
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes demo-progress { from { width: 0 } to { width: 100% } }
+      `}</style>
+
+      {/* Screenshot ativo com crossfade */}
+      <div className="relative aspect-video rounded-xl overflow-hidden
+                      border border-border bg-card
+                      shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
+        {DEMO_SLIDES.map((s, i) => (
+          <Image key={s.src}
+                 src={s.src}
+                 alt={s.alt}
+                 fill
+                 sizes="(max-width: 800px) 100vw, 800px"
+                 className={`object-cover object-top transition-opacity duration-500 ${
+                   active === i ? 'opacity-100' : 'opacity-0'
+                 }`} />
+        ))}
+      </div>
+
+    </div>
+  );
 }
 
 // ── FAQ data ────────────────────────────────────────────────────────────────
@@ -63,7 +123,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Os meus dados são usados para treinar a IA?',
-    a: 'Não. As respostas que você dá na entrevista são processadas para gerar o feedback e depois não são retidas pelos provedores de IA. Nunca compartilhamos seus dados para fins de treinamento.',
+    a: 'Não. Nós não usamos suas respostas para treinar modelos de IA e nunca compartilhamos seus dados para fins de treinamento ou marketing. Suas respostas são processadas pelos provedores de IA apenas para gerar a entrevista e o feedback, conforme as políticas de privacidade de cada provedor.',
   },
   {
     q: 'Funciona no celular?',
@@ -97,11 +157,6 @@ export default function LandingPage() {
   const [mounted, setMounted]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq]   = useState<number | null>(null);
-
-  // Counter animation for metrics section
-  const metricas = useInView(0.4);
-  const count1 = useCountUp(1000, 1500, metricas.inView);
-  const count2 = useCountUp(5000, 2000, metricas.inView);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -239,24 +294,14 @@ export default function LandingPage() {
           {/* Social proof */}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1
                           text-[13px] text-muted-fg mb-16">
-            {/* TODO: atualizar com número real de candidatos treinados */}
-            <span>1.000+ candidatos já treinaram</span>
+            <span>Feedback detalhado ao final</span>
             <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
             <span>Português e inglês</span>
           </div>
 
-          {/* Product mockup
-              TODO: substituir por screenshot real da tela de entrevista.
-              Dimensões: 1280×720px (16:9). Usar <Image> do Next.js com
-              src="/screenshot-produto.png" width={1280} height={720} priority */}
+          {/* Product screenshot — tela real da entrevista */}
           <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800
                           shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
-            <style>{`
-              @keyframes audio-wave {
-                0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
-                50%       { transform: scaleY(1);   opacity: 1;   }
-              }
-            `}</style>
 
             {/* Browser chrome */}
             <div className="flex items-center gap-1.5 px-4 py-3
@@ -266,46 +311,18 @@ export default function LandingPage() {
               <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
               <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
               <span className="ml-3 text-xs text-zinc-400 font-mono select-none">
-                entrevistador-ai.com.br/entrevista
+                entrevistador-ia.com.br/entrevista
               </span>
             </div>
 
-            {/* Interview UI mockup */}
-            <div className="bg-[#0C0C0A] px-8 py-10 flex flex-col items-center gap-6"
-                 aria-hidden="true">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700
-                                flex items-center justify-center">
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                    <circle cx="20" cy="15" r="8" fill="#52525B" />
-                    <ellipse cx="20" cy="34" rx="13" ry="8" fill="#52525B" />
-                  </svg>
-                </div>
-                <div className="text-center">
-                  <p className="text-white text-sm font-semibold">Sarah</p>
-                  <p className="text-zinc-500 text-xs">Recrutadora de TI · Falando…</p>
-                </div>
-              </div>
-
-              <div className="bg-zinc-900 rounded-xl p-5 max-w-sm w-full">
-                <p className="text-zinc-300 text-sm leading-relaxed text-left">
-                  &ldquo;Me conte sobre um desafio técnico que você resolveu recentemente.
-                  Como você identificou o problema e qual foi a sua abordagem?&rdquo;
-                </p>
-              </div>
-
-              <div className="flex items-center gap-[3px]">
-                {[28, 40, 54, 44, 32, 50, 36, 52, 42, 28, 46, 38, 54, 30].map((h, i) => (
-                  <div key={i}
-                       className="w-[3px] rounded-full bg-zinc-500"
-                       style={{
-                         height: `${h}px`,
-                         animation: 'audio-wave 1.4s ease-in-out infinite',
-                         animationDelay: `${i * 70}ms`,
-                       }} />
-                ))}
-              </div>
-            </div>
+            <Image
+              src="/screenshot-entrevista.png"
+              alt="Tela da entrevista: Sarah, a entrevistadora virtual, conversando com a candidata com transcrição em tempo real"
+              width={1280}
+              height={720}
+              priority
+              className="w-full h-auto block"
+            />
           </div>
 
         </div>
@@ -677,37 +694,17 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Coluna direita — placeholder screenshot */}
+            {/* Coluna direita — screenshot real do relatório */}
             <div className="lg:sticky lg:top-8">
-              {/*
-                TODO: substituir este placeholder por um screenshot real do
-                dashboard/relatório. Ideal: captura da tela de resultado com
-                score, competências e feedback visíveis.
-                Salvar em public/screenshot-relatorio.png e usar:
-                <Image
-                  src="/screenshot-relatorio.png"
-                  alt="Relatório completo de entrevista"
-                  width={600}
-                  height={450}
-                  className="rounded-2xl"
-                />
-              */}
-              <div className="aspect-[4/3] rounded-2xl border border-zinc-200
-                              dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800
-                              flex flex-col items-center justify-center gap-3">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" strokeWidth="1.5"
-                     strokeLinecap="round" strokeLinejoin="round"
-                     className="text-zinc-300 dark:text-zinc-600">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                <p className="text-zinc-400 dark:text-zinc-500 text-sm font-medium">
-                  Screenshot do relatório
-                </p>
-                <p className="text-zinc-300 dark:text-zinc-600 text-xs">em breve</p>
-              </div>
+              <Image
+                src="/screenshot-relatorio.png"
+                alt="Relatório da entrevista: nota geral 81 de 100, scores de clareza, relevância e profundidade, ponto forte, melhoria e análise por pergunta"
+                width={1200}
+                height={900}
+                className="rounded-2xl border border-zinc-200 dark:border-zinc-700
+                           shadow-[0_2px_8px_rgba(0,0,0,0.04),0_16px_40px_rgba(0,0,0,0.08)]
+                           w-full h-auto"
+              />
             </div>
 
           </div>
@@ -727,7 +724,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 5 — DEMO VÍDEO
+          SEÇÃO 5 — VEJA EM AÇÃO (showcase de screenshots reais)
+          Se um dia houver vídeo demo real, ele pode substituir este showcase.
       ───────────────────────────────────────────── */}
       <section className="py-24 lg:py-32 px-6 bg-muted">
         <div className="max-w-[800px] mx-auto">
@@ -738,46 +736,12 @@ export default function LandingPage() {
             </p>
             <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
                            tracking-heading leading-[1.08]">
-              Menos de 30 segundos para entender
+              Do currículo ao relatório,<br className="hidden sm:block" />
+              em 3 passos
             </h2>
           </div>
 
-          {/*
-            TODO: GRAVAR O VÍDEO DE 30 SEGUNDOS
-
-            Roteiro sugerido:
-            0:00–0:05 — Setup: cole uma vaga, upload do currículo sendo processado
-            0:05–0:10 — Config: escolha do avatar (Sarah), idioma PT-BR, 7 perguntas
-            0:10–0:20 — Entrevista: Sarah falando, microfone ativo, ondas de voz
-            0:20–0:28 — Dashboard: score geral, competências, feedback por pergunta
-            0:28–0:30 — Logo + tagline
-
-            Ferramentas: Loom, OBS, ou gravação nativa Mac/Windows.
-            Resolução mínima: 1280×720. Formato: MP4.
-
-            Quando tiver o vídeo, hospedar no YouTube (unlisted) e substituir
-            o placeholder abaixo por:
-
-            <iframe
-              src="https://www.youtube.com/embed/SEU_VIDEO_ID"
-              title="Demonstração Entrevistador.IA"
-              className="w-full h-full"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            />
-          */}
-          <div className="relative aspect-video rounded-xl overflow-hidden
-                          border border-border bg-zinc-950 flex items-center
-                          justify-center group cursor-pointer">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20
-                              flex items-center justify-center
-                              group-hover:bg-white/20 transition-colors duration-200">
-                <Play className="w-7 h-7 text-white ml-0.5" fill="white" aria-hidden="true" />
-              </div>
-              <p className="text-zinc-400 text-sm">Vídeo de demonstração em breve</p>
-            </div>
-          </div>
+          <DemoShowcase />
 
         </div>
       </section>
@@ -859,74 +823,11 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 7 — PROVA SOCIAL
+          SEÇÃO 7 — PROVA SOCIAL (desativada)
+          Reativar quando houver métricas reais e depoimentos reais.
+          Layout original (contadores animados + grid de 3 depoimentos)
+          está no histórico do git deste arquivo.
       ───────────────────────────────────────────── */}
-      <section id="depoimentos" className="py-24 lg:py-32 px-6 bg-muted">
-        <div className="max-w-[1120px] mx-auto">
-
-          {/* 7A — Números com contador animado */}
-          {/* TODO: atualizar os valores de count1 (1000) e count2 (5000) com dados reais */}
-          <div ref={metricas.ref}
-               className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-20 pb-20 border-b border-border">
-            <div>
-              <p className="text-[52px] font-bold font-mono tabular-nums
-                             text-foreground leading-none mb-2">
-                {metricas.inView ? count1.toLocaleString('pt-BR') : '0'}+
-              </p>
-              <p className="text-sm text-muted-fg">candidatos treinaram</p>
-            </div>
-            <div>
-              <p className="text-[52px] font-bold font-mono tabular-nums
-                             text-foreground leading-none mb-2">
-                {metricas.inView ? count2.toLocaleString('pt-BR') : '0'}+
-              </p>
-              <p className="text-sm text-muted-fg">horas de prática simulada</p>
-            </div>
-          </div>
-
-          {/* 7B — Depoimentos */}
-          <div className="mb-10">
-            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
-              O que dizem
-            </p>
-            <h2 className="text-[28px] lg:text-[36px] font-bold text-foreground
-                           tracking-heading leading-[1.08]">
-              Quem praticou, saiu na frente
-            </h2>
-          </div>
-
-          {/* TODO: substituir pelos depoimentos reais — trocar text/name/role/company */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
-              { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
-              { text: '[Depoimento em breve]', name: 'Nome do candidato', role: 'Cargo', company: 'Empresa' },
-            ].map((t, i) => (
-              <div key={i}
-                   className="bg-card rounded-xl p-7 border border-border flex flex-col
-                              hover:-translate-y-0.5 hover:shadow-card-hover
-                              transition-all duration-200">
-                <p className="text-[52px] font-bold text-zinc-200 dark:text-zinc-700
-                               leading-none mb-4 select-none" aria-hidden="true">
-                  &ldquo;
-                </p>
-                <p className="text-muted-fg text-[15px] leading-[1.75] italic mb-6 flex-1">
-                  {t.text}
-                </p>
-                <div className="flex items-center gap-3 pt-5 border-t border-border">
-                  <div className="w-9 h-9 rounded-full bg-muted border border-border shrink-0"
-                       aria-hidden="true" />
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                    <p className="text-xs text-muted-fg">{t.role} · {t.company}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
 
       {/* ─────────────────────────────────────────────
           SEÇÃO 8 — PRICING
@@ -1217,7 +1118,7 @@ export default function LandingPage() {
                   </svg>
                 ),
                 title: 'IA não treina com seus dados',
-                desc: 'Suas respostas não são usadas para treinar modelos de linguagem. Processamos para gerar feedback e ponto final.',
+                desc: 'Não usamos suas respostas para treinar modelos de IA. Elas são processadas pelos provedores apenas para gerar sua entrevista e seu feedback.',
               },
               {
                 icon: <CreditCard className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
@@ -1344,7 +1245,7 @@ export default function LandingPage() {
 
           <div className="border-t border-zinc-800 pt-8">
             <p className="text-sm text-zinc-500">
-              © 2025 Entrevistador.IA · Todos os direitos reservados · São Paulo, Brasil
+              © {new Date().getFullYear()} Entrevistador.IA · Todos os direitos reservados · São Paulo, Brasil
             </p>
           </div>
 

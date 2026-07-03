@@ -86,10 +86,10 @@ export default function TermosPage() {
         <p>
           Dúvidas sobre estes termos ou solicitações relacionadas
           à sua conta podem ser enviadas para:{' '}
-          <a href="mailto:suporte@entrevistador-ai.com.br"
+          <a href="mailto:suporte@entrevistador-ia.com.br"
              className="text-zinc-900 dark:text-white underline
                         hover:opacity-70">
-            suporte@entrevistador-ai.com.br
+            suporte@entrevistador-ia.com.br
           </a>
         </p>
 

@@ -58,11 +58,12 @@ export default function PrivacidadePage() {
           Seus dados de currículo e respostas são processados por
           provedores de IA (Anthropic, e/ou modelos via OpenRouter) e
           de voz (OpenAI) estritamente para gerar a experiência da
-          entrevista — esses provedores não retêm seus dados para
-          treinamento, conforme políticas próprias deles. Dados de
-          pagamento são processados pelo Mercado Pago. Não vendemos
-          nem compartilhamos seus dados com terceiros para fins de
-          marketing.
+          entrevista. Nós não usamos seus dados para treinar modelos
+          de IA; o tratamento feito por esses provedores segue as
+          políticas de privacidade e retenção próprias de cada um.
+          Dados de pagamento são processados pelo Mercado Pago. Não
+          vendemos nem compartilhamos seus dados com terceiros para
+          fins de marketing.
         </p>
 
         <h2>4. Armazenamento e segurança</h2>
@@ -97,10 +98,10 @@ export default function PrivacidadePage() {
           Para exercer seus direitos previstos na LGPD ou
           esclarecer dúvidas sobre o tratamento de dados,
           entre em contato pelo email:{' '}
-          <a href="mailto:suporte@entrevistador-ai.com.br"
+          <a href="mailto:suporte@entrevistador-ia.com.br"
              className="text-zinc-900 dark:text-white underline
                         hover:opacity-70">
-            suporte@entrevistador-ai.com.br
+            suporte@entrevistador-ia.com.br
           </a>
           {'. '}
           Respondemos em até 2 dias úteis.

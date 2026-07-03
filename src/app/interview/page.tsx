@@ -785,10 +785,11 @@ export default function InterviewPage() {
           <button
             onClick={() => {
               navigator.clipboard.writeText(window.location.href)
-                .then(() => alert('Link copiado! Cole no Chrome.'))
-                .catch(() => alert(
-                  'Copie o link e abra no Chrome:\n\n'
-                  + window.location.href
+                .then(() => toast.success('Link copiado! Cole no Chrome.'))
+                .catch(() => toast(
+                  'Copie o link e abra no Chrome: '
+                  + window.location.href,
+                  { duration: 8000 }
                 ));
             }}
             className="text-xs text-red-300 border border-red-700

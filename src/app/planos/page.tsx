@@ -456,9 +456,9 @@ function PlanosContent() {
           </p>
           <p className="text-xs text-muted-fg mt-2">
             Dúvidas?{' '}
-            <a href="mailto:suporte@entrevistador-ai.com.br"
+            <a href="mailto:suporte@entrevistador-ia.com.br"
                className="underline hover:text-foreground transition-colors">
-              suporte@entrevistador-ai.com.br
+              suporte@entrevistador-ia.com.br
             </a>
           </p>
         </div>

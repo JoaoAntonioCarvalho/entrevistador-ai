@@ -6,7 +6,12 @@ import {
   CompetencyScores,
 } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
-import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import {
+  aiRateLimit,
+  feedbackRateLimit,
+  checkRateLimit,
+  getClientIp,
+} from '@/lib/services/rate-limit';
 
 interface FeedbackRequest {
   evaluations: TurnEvaluation[];
@@ -33,7 +38,8 @@ interface FeedbackResponse {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  if (!await checkRateLimit(aiRateLimit, ip)) {
+  if (!await checkRateLimit(aiRateLimit, ip) ||
+      !await checkRateLimit(feedbackRateLimit, ip)) {
     return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
   }
 

@@ -102,7 +102,7 @@ Extraia o máximo de informação possível de TODAS as páginas. Se uma informa
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://entrevistador-ai.com.br',
+        'HTTP-Referer': 'https://entrevistador-ia.com.br',
         'X-Title': 'Entrevistador.IA',
       },
       body: JSON.stringify({

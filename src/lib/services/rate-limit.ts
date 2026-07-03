@@ -43,6 +43,11 @@ export const freeQuestionsLimit = makeLimit(3, '24 h', 'ratelimit:free-questions
 // Sessões gratuitas: 1 por 24h por IP
 export const freeSessionLimit = makeLimit(1, '24 h', 'ratelimit:free-session');
 
+// Feedback final: 1 chamada por sessão na prática. 12/24h por IP cobre as 5
+// sessões diárias permitidas + retentativas, sem deixar a rota (que gera
+// custo de IA e não exige auth) aberta para abuso em massa.
+export const feedbackRateLimit = makeLimit(12, '24 h', 'ratelimit:feedback');
+
 export async function checkRateLimit(limiter: Ratelimit | null, ip: string): Promise<boolean> {
   if (!limiter) return true;
   const { success } = await limiter.limit(ip);
