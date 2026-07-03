@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { authedFetch } from '@/lib/services/api-client';
 
 export type VoiceOutputState = 'idle' | 'speaking' | 'loading';
 
@@ -160,7 +161,7 @@ export function useVoiceOutput(
       options.onTTSChars?.(text.length);
 
       try {
-        const response = await fetch('/api/tts', {
+        const response = await authedFetch('/api/tts', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({

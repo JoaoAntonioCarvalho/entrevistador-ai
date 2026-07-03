@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Job, normalizeJob } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, PARSE_CALL_COST_USD } from '@/lib/services/cost-cap';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 function extractJobTitle(text: string): string {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -24,6 +26,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Muitas requisições. Aguarde alguns minutos.' },
         { status: 429 }
+      );
+    }
+
+    // Disjuntor de custo diário — só tráfego anônimo (gratuito)
+    const authUserId = await getAuthUserId(req);
+    if (!authUserId && await isDailyCapExceeded()) {
+      return NextResponse.json(
+        { error: 'Estamos com alta demanda. Tente novamente mais tarde.' },
+        { status: 503 }
       );
     }
 
@@ -60,6 +71,7 @@ ${jobDescription.slice(0, 5000)}`;
 
     try {
       const job = normalizeJob(await callAIJSON<Job>('parsing', systemPrompt, userMessage, 2000, sessionId));
+      if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
       job.descricao_completa = jobDescription.slice(0, 500);
       return NextResponse.json({ job });
     } catch {

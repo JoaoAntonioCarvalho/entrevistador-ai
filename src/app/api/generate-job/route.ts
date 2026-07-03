@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callAIJSON } from '@/lib/services/claude';
 import { Job, normalizeJob } from '@/lib/types';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, PARSE_CALL_COST_USD } from '@/lib/services/cost-cap';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +12,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Muitas requisições. Aguarde alguns minutos.' },
         { status: 429 }
+      );
+    }
+
+    // Disjuntor de custo diário — só tráfego anônimo (gratuito)
+    const authUserId = await getAuthUserId(req);
+    if (!authUserId && await isDailyCapExceeded()) {
+      return NextResponse.json(
+        { error: 'Estamos com alta demanda. Tente novamente mais tarde.' },
+        { status: 503 }
       );
     }
 
@@ -60,6 +71,8 @@ Requisitos:
       1500,
       sessionId ?? 'unknown'
     ));
+
+    if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
 
     return NextResponse.json({ job });
 

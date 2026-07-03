@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { callAIJSONWithUsage } from '@/lib/services/claude';
 import { aiRateLimit, checkRateLimit, freeQuestionsLimit, getClientIp } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, estimateAICost } from '@/lib/services/cost-cap';
 import { getAuthUserId } from '@/lib/services/auth-server';
 import {
   Candidate, Job, InterviewConfig,
@@ -433,6 +434,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Disjuntor global de custo: quando o gasto estimado do dia com tráfego
+  // gratuito atinge o teto (DAILY_COST_CAP_USD), anônimos param de ser
+  // atendidos. Autenticados nunca são bloqueados — pagar exige conta.
+  if (!authUserId && await isDailyCapExceeded()) {
+    return NextResponse.json(
+      {
+        error:   'daily_cap_exceeded',
+        message: 'Estamos com alta demanda no plano gratuito. Tente novamente mais tarde ou crie uma conta.',
+      },
+      { status: 503 }
+    );
+  }
+
   if (!candidate || !job || !config) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });
   }
@@ -575,6 +589,13 @@ Com base na resposta acima e no histórico completo, gere a próxima fala do ent
           ? `Thank you for your time today, ${primeiroNome}. It was a pleasure speaking with you. Your feedback report will be ready shortly.`
           : `Obrigado pela sua participação hoje, ${primeiroNome}. Foi um prazer conversar com você. Seu feedback estará disponível em instantes.`;
       }
+    }
+
+    // Medir custo do tráfego gratuito no disjuntor diário
+    if (!authUserId) {
+      await addDailyCost(
+        estimateAICost(result.inputTokens, result.outputTokens, result.model)
+      );
     }
 
     return NextResponse.json({

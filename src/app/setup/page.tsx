@@ -190,7 +190,7 @@ export default function SetupPage() {
     setLocalProfiles(null);
 
     try {
-      const res  = await fetch('/api/generate-avatars', {
+      const res  = await authedFetch('/api/generate-avatars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job, sessionId: session.id }),

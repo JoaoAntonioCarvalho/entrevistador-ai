@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callAIJSON } from '@/lib/services/claude';
 import { Job } from '@/lib/types';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, PARSE_CALL_COST_USD } from '@/lib/services/cost-cap';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 interface AvatarGeneratedBilingual {
   sarah: {
@@ -25,6 +27,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Muitas requisições. Aguarde alguns minutos.' },
         { status: 429 }
+      );
+    }
+
+    // Disjuntor de custo diário — só tráfego anônimo (gratuito).
+    // Em caso de 503, o setup usa os AVATAR_PROFILES estáticos (fallback existente).
+    const authUserId = await getAuthUserId(req);
+    if (!authUserId && await isDailyCapExceeded()) {
+      return NextResponse.json(
+        { error: 'Estamos com alta demanda. Tente novamente mais tarde.' },
+        { status: 503 }
       );
     }
 
@@ -95,6 +107,8 @@ alex.titulo_en: "Engineering Manager"`;
       1000,
       sessionId ?? 'unknown'
     );
+
+    if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
 
     return NextResponse.json({ avatars: result });
 

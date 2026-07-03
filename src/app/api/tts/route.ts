@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import OpenAI from 'openai';
 import { checkRateLimit, aiRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, estimateTTSCost } from '@/lib/services/cost-cap';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,6 +70,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Disjuntor de custo diário: anônimo bloqueado quando o teto estoura —
+  // o cliente cai para a voz do navegador (fallback já existente do 503).
+  // Sem header Authorization, getAuthUserId retorna null sem round-trip.
+  const authUserId = await getAuthUserId(req);
+  if (!authUserId && await isDailyCapExceeded()) {
+    return NextResponse.json(
+      { error: 'TTS temporariamente indisponível. Usando voz do navegador.' },
+      { status: 503 }
+    );
+  }
+
   try {
     const { text, avatarId, lang } = await req.json();
 
@@ -97,6 +110,11 @@ export async function POST(req: NextRequest) {
 
     const buffer    = Buffer.from(await mp3Response.arrayBuffer());
     const charCount = textoProcessado.length;
+
+    // Medir custo do tráfego gratuito no disjuntor diário
+    if (!authUserId) {
+      await addDailyCost(estimateTTSCost(charCount));
+    }
 
     return new NextResponse(buffer, {
       status: 200,

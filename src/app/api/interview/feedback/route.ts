@@ -5,13 +5,15 @@ import {
   SessionScores,
   CompetencyScores,
 } from '@/lib/types';
-import { callAIJSON } from '@/lib/services/claude';
+import { callAIJSONWithUsage } from '@/lib/services/claude';
 import {
   aiRateLimit,
   feedbackRateLimit,
   checkRateLimit,
   getClientIp,
 } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, estimateAICost } from '@/lib/services/cost-cap';
+import { getAuthUserId } from '@/lib/services/auth-server';
 
 interface FeedbackRequest {
   evaluations: TurnEvaluation[];
@@ -41,6 +43,17 @@ export async function POST(req: NextRequest) {
   if (!await checkRateLimit(aiRateLimit, ip) ||
       !await checkRateLimit(feedbackRateLimit, ip)) {
     return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
+  }
+
+  // Disjuntor de custo diário: anônimo bloqueado quando o teto estoura.
+  // O cliente (/feedback) tem retry + fallback local de scores, então o
+  // usuário ainda recebe um relatório mesmo com 503 aqui.
+  const authUserId = await getAuthUserId(req);
+  if (!authUserId && await isDailyCapExceeded()) {
+    return NextResponse.json(
+      { error: 'Serviço temporariamente indisponível. Tente novamente mais tarde.' },
+      { status: 503 }
+    );
   }
 
   let evaluations: TurnEvaluation[] = [];
@@ -117,7 +130,7 @@ Os campos clareza, relevancia, profundidade e todas as competências devem ser n
 AVALIAÇÕES:
 ${evaluationsList}`;
 
-    const result = await callAIJSON<FeedbackResponse>(
+    const result = await callAIJSONWithUsage<FeedbackResponse>(
       'feedback',
       systemPrompt,
       userMessage,
@@ -125,9 +138,16 @@ ${evaluationsList}`;
       sessionId
     );
 
-    result.scores.geral = notaGeral;
+    // Medir custo do tráfego gratuito no disjuntor diário
+    if (!authUserId) {
+      await addDailyCost(
+        estimateAICost(result.inputTokens, result.outputTokens, result.model)
+      );
+    }
 
-    return NextResponse.json(result);
+    result.data.scores.geral = notaGeral;
+
+    return NextResponse.json(result.data);
   } catch {
     const notaMedia = evaluations.reduce((s, e) => s + e.nota, 0) / evaluations.length;
     const geral = Math.round(notaMedia * 10);

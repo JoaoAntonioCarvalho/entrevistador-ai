@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/store';
 import { saveSessionToSupabase, saveToLocalHistory } from '@/lib/services/supabase';
+import { authedFetch } from '@/lib/services/api-client';
 import { Header } from '@/components/layout/Header';
 
 export const dynamic = 'force-dynamic';
@@ -77,7 +78,7 @@ export default function FeedbackPage() {
     }
 
     async function chamarApiFeedback() {
-      const res = await fetch('/api/interview/feedback', {
+      const res = await authedFetch('/api/interview/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

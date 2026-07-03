@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Candidate, normalizeCandidate } from '@/lib/types';
 import { callAIJSON } from '@/lib/services/claude';
 import { parseRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { isDailyCapExceeded, addDailyCost, PARSE_CALL_COST_USD } from '@/lib/services/cost-cap';
+import { getAuthUserId } from '@/lib/services/auth-server';
 import { pdfToBase64Images } from '@/lib/pdf-to-images';
 
 function extractName(text: string): string {
@@ -155,6 +157,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Disjuntor de custo diário — só tráfego anônimo (gratuito)
+  const authUserId = await getAuthUserId(req);
+  if (!authUserId && await isDailyCapExceeded()) {
+    return NextResponse.json(
+      { error: 'Estamos com alta demanda. Tente novamente mais tarde.' },
+      { status: 503 }
+    );
+  }
+
   const contentLength = Number(req.headers.get('content-length') ?? 0);
   if (contentLength > 10 * 1024 * 1024) {
     return NextResponse.json({ error: 'Arquivo muito grande. Máximo 10 MB.' }, { status: 413 });
@@ -220,6 +231,8 @@ export async function POST(req: NextRequest) {
       }
 
       const candidate = normalizeCandidate(await callVisionForResume(images));
+      // Vision (imagens) custa mais que parsing de texto — estimativa maior
+      if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD * 4);
       return NextResponse.json({ candidate, isImagePdf: true });
     } catch {
       // Fallback: tentar parsear com o texto incompleto se houver algo aproveitável
@@ -240,6 +253,7 @@ export async function POST(req: NextRequest) {
 Texto do currículo:
 ${rawText.slice(0, 4000)}`;
           const candidate = normalizeCandidate(await callAIJSON<Candidate>('parsing', systemFallback, userFallback, 2000, sessionId));
+          if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
           return NextResponse.json({ candidate, isImagePdf: true, warning: 'Parsing parcial — algumas informações podem estar incompletas.' });
         } catch { /* cai no erro abaixo */ }
       }
@@ -276,6 +290,7 @@ ${rawText.slice(0, 6000)}`;
 
   try {
     const candidate = normalizeCandidate(await callAIJSON<Candidate>('parsing', systemPrompt, userMessage, 2000, sessionId));
+    if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
     return NextResponse.json({ candidate });
   } catch {
     const fallbackCandidate: Candidate = {

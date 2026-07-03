@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Candidate } from '@/lib/types';
 import { useSessionStore } from '@/lib/store';
+import { authedFetch } from '@/lib/services/api-client';
 
 interface ManualFormData {
   nome: string;
@@ -93,7 +94,7 @@ export default function ResumeUpload({
       const formData = new FormData();
       formData.append('file', f);
       formData.append('sessionId', session.id);
-      const res  = await fetch('/api/parse-resume', { method: 'POST', body: formData });
+      const res  = await authedFetch('/api/parse-resume', { method: 'POST', body: formData });
       const data = await res.json() as { candidate?: Candidate; isImagePdf?: boolean; warning?: string; error?: string };
       if (res.status === 429) {
         toast.error(data.error ?? 'Muitas requisições. Aguarde alguns minutos e tente novamente.');

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Job } from '@/lib/types';
 import { useSessionStore } from '@/lib/store';
+import { authedFetch } from '@/lib/services/api-client';
 
 interface Props {
   onComplete:  (job: Job) => void;
@@ -153,7 +154,7 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
               if (text.trim().length < 100) return;
               setStatus('analyzing');
               try {
-                const res  = await fetch('/api/parse-job', {
+                const res  = await authedFetch('/api/parse-job', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ jobDescription: text, sessionId: sid }),
@@ -232,7 +233,7 @@ export default function JobInput({ onComplete, onWarning, sessionId }: Props) {
     setGenerating(true);
     setGenError('');
     try {
-      const res  = await fetch('/api/generate-job', {
+      const res  = await authedFetch('/api/generate-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cargo: cargo.trim(), sessionId: sid }),
