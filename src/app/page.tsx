@@ -110,6 +110,24 @@ function DemoShowcase() {
   );
 }
 
+// ── Depoimentos ─────────────────────────────────────────────────────────────
+// APENAS depoimentos reais, com autorização da pessoa. Depoimento inventado
+// é publicidade enganosa (CDC art. 37). A seção só aparece quando o array
+// tiver itens. Formato:
+//   { text: 'O que a pessoa disse.', name: 'Nome Sobrenome', role: 'Cargo', company: 'Empresa' },
+// (role/company podem ser '' — o card se adapta)
+
+interface Testimonial {
+  text:    string;
+  name:    string;
+  role:    string;
+  company: string;
+}
+
+const TESTIMONIALS: Testimonial[] = [
+  // Aguardando depoimentos reais dos participantes.
+];
+
 // ── FAQ data ────────────────────────────────────────────────────────────────
 
 const FAQ_ITEMS = [
@@ -823,11 +841,61 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 7 — PROVA SOCIAL (desativada)
-          Reativar quando houver métricas reais e depoimentos reais.
-          Layout original (contadores animados + grid de 3 depoimentos)
-          está no histórico do git deste arquivo.
+          SEÇÃO 7 — DEPOIMENTOS
+          Renderiza só quando TESTIMONIALS tiver depoimentos reais.
+          (Métricas com contador animado: layout no histórico do git —
+          reativar quando houver números reais.)
       ───────────────────────────────────────────── */}
+      {TESTIMONIALS.length > 0 && (
+        <section id="depoimentos" className="py-24 lg:py-32 px-6 bg-muted">
+          <div className="max-w-[1120px] mx-auto">
+
+            <div className="mb-10">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+                O que dizem
+              </p>
+              <h2 className="text-[28px] lg:text-[36px] font-bold text-foreground
+                             tracking-heading leading-[1.08]">
+                Quem praticou, saiu na frente
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {TESTIMONIALS.map((t, i) => (
+                <div key={i}
+                     className="bg-card rounded-xl p-7 border border-border flex flex-col
+                                hover:-translate-y-0.5 hover:shadow-card-hover
+                                transition-all duration-200">
+                  <p className="text-[52px] font-bold text-zinc-200 dark:text-zinc-700
+                                 leading-none mb-4 select-none" aria-hidden="true">
+                    &ldquo;
+                  </p>
+                  <p className="text-muted-fg text-[15px] leading-[1.75] italic mb-6 flex-1">
+                    {t.text}
+                  </p>
+                  <div className="flex items-center gap-3 pt-5 border-t border-border">
+                    <div className="w-9 h-9 rounded-full bg-muted border border-border shrink-0
+                                    flex items-center justify-center text-sm font-semibold
+                                    text-muted-fg select-none"
+                         aria-hidden="true">
+                      {t.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                      {(t.role || t.company) && (
+                        <p className="text-xs text-muted-fg">
+                          {[t.role, t.company].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+      )}
 
       {/* ─────────────────────────────────────────────
           SEÇÃO 8 — PRICING
