@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     // Assinatura ativa do próprio usuário (deriva a identidade do token).
     const { data: sub } = await supabase
       .from('subscriptions')
-      .select('mp_preapproval_id, status')
+      .select('mp_preapproval_id, status, plano')
       .eq('auth_user_id', authUserId)
       .in('status', ['authorized', 'pending', 'paused'])
       .order('updated_at', { ascending: false })
@@ -50,6 +50,17 @@ export async function POST(req: NextRequest) {
       .update({ status: 'cancelled', updated_at: new Date().toISOString() })
       .eq('mp_preapproval_id', sub.mp_preapproval_id)
       .eq('auth_user_id', authUserId);
+
+    await Promise.resolve(
+      supabase.from('audit_log').insert({
+        evento:        'assinatura_cancelada_pelo_usuario',
+        auth_user_id:  authUserId,
+        plano:         sub.plano,
+        mp_payment_id: sub.mp_preapproval_id,
+        ip,
+        created_at:    new Date().toISOString(),
+      })
+    ).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (error) {
