@@ -207,11 +207,20 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-  } catch {
-    return NextResponse.json(
-      { error: 'Não foi possível ler o arquivo. Tente com outro PDF ou DOCX.' },
-      { status: 422 }
-    );
+  } catch (err) {
+    if (isPdf) {
+      // pdf-parse falhou (comum em PDFs do Canva/Figma com features
+      // novas do formato) — NÃO desistir: seguir com rawText vazio,
+      // o que força o caminho de visão logo abaixo
+      // (textoTemQualidade('') === false).
+      console.error('[parse-resume] pdf-parse falhou, tentando visão:', err);
+      rawText = '';
+    } else {
+      return NextResponse.json(
+        { error: 'Não foi possível ler o arquivo. Tente com outro PDF ou DOCX.' },
+        { status: 422 }
+      );
+    }
   }
 
   // Detectar PDF de imagem (texto extraído insuficiente ou de baixa qualidade)
@@ -234,7 +243,8 @@ export async function POST(req: NextRequest) {
       // Vision (imagens) custa mais que parsing de texto — estimativa maior
       if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD * 4);
       return NextResponse.json({ candidate, isImagePdf: true });
-    } catch {
+    } catch (err) {
+      console.error('[parse-resume] visão falhou:', err);
       // Fallback: tentar parsear com o texto incompleto se houver algo aproveitável
       if (rawText && rawText.trim().length > 50) {
         try {
@@ -255,7 +265,10 @@ ${rawText.slice(0, 4000)}`;
           const candidate = normalizeCandidate(await callAIJSON<Candidate>('parsing', systemFallback, userFallback, 2000, sessionId));
           if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
           return NextResponse.json({ candidate, isImagePdf: true, warning: 'Parsing parcial — algumas informações podem estar incompletas.' });
-        } catch { /* cai no erro abaixo */ }
+        } catch (err) {
+          console.error('[parse-resume] visão falhou:', err);
+          /* cai no erro abaixo */
+        }
       }
 
       return NextResponse.json(
