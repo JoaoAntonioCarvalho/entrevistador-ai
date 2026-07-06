@@ -43,6 +43,13 @@ export const DESCRICOES = {
   'mensal-pro':      'Entrevistador.IA — Plano Pro (6×14 perguntas/mês)',
 } as const;
 
+// A API de assinaturas (PreApproval) limita `reason` a 40 caracteres —
+// o Checkout Pro avulso (DESCRICOES acima) não tem esse limite.
+export const DESCRICOES_CURTAS = {
+  'mensal-starter': 'Entrevistador.IA Starter',
+  'mensal-pro':     'Entrevistador.IA Pro',
+} as const;
+
 export const PERGUNTAS_POR_PLANO = {
   'finalizar-atual': 7,
   'credito-7':       7,

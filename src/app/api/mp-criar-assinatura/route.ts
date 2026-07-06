@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { PreApproval } from 'mercadopago';
 import {
-  mpConfig, PRECOS, DESCRICOES, PERGUNTAS_POR_PLANO, isAssinatura, type PlanoKey,
+  mpConfig, PRECOS, DESCRICOES_CURTAS, PERGUNTAS_POR_PLANO, isAssinatura, type PlanoKey,
 } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUser } from '@/lib/services/auth-server';
@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
     const preapproval = new PreApproval(mpConfig);
     const result = await preapproval.create({
       body: {
-        reason:             DESCRICOES[plano as PlanoKey],
+        // PreApproval rejeita reason > 40 chars ("reason has more than 40 characters")
+        reason:             DESCRICOES_CURTAS[plano as keyof typeof DESCRICOES_CURTAS],
         external_reference: `${authUser.id}|${plano}`,
         payer_email:        authUser.email,
         back_url:           `${baseUrl}/pagamento/sucesso?plano=${plano}`,

@@ -80,22 +80,6 @@ export default function InterviewPage() {
     /iPad|iPhone|iPod/.test(navigator.userAgent) &&
     /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  // DEBUG TEMPORÁRIO — REMOVER: estado + relógio do AudioContext e resultado
-  // da última reprodução, visíveis no aparelho (não há Mac para debug remoto)
-  const [audioCtxDebug, setAudioCtxDebug]   = useState('sem contexto | t: 0.0');
-  const [audioDebugLast, setAudioDebugLast] = useState('—');
-  useEffect(() => {
-    if (!isIOS) return;
-    const id = setInterval(() => {
-      const ctx = audioContextRef.current;
-      setAudioCtxDebug(
-        ctx ? `${ctx.state} | t: ${ctx.currentTime.toFixed(1)}` : 'sem contexto | t: 0.0'
-      );
-    }, 500);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -142,8 +126,6 @@ export default function InterviewPage() {
     // Recuperação de congelamento (iOS): o hook recria o contexto e devolve
     // o novo aqui — a ref é a fonte da verdade para as próximas falas
     onAudioContextRecreated: (ctx) => { audioContextRef.current = ctx; },
-    // DEBUG TEMPORÁRIO — REMOVER: resultado da última reprodução iOS
-    onIOSPlaybackDebug: (result) => setAudioDebugLast(result),
   });
   const speakRef = useRef(voiceOutput.speak);
   speakRef.current = voiceOutput.speak;
@@ -724,13 +706,6 @@ export default function InterviewPage() {
               Para a melhor experiência, recomendamos usar o Google Chrome no computador.
             </p>
           </div>
-        </div>
-      )}
-
-      {/* DEBUG TEMPORÁRIO — REMOVER: indicador do estado do AudioContext no iOS */}
-      {isIOS && (
-        <div className="fixed bottom-1.5 left-2 z-[60] text-[10px] font-mono text-zinc-500 pointer-events-none select-none">
-          audio: {audioCtxDebug} | last: {audioDebugLast}
         </div>
       )}
 

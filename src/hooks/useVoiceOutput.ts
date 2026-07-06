@@ -20,9 +20,8 @@ export interface UseVoiceOutputOptions {
   // renderização — `audioContext` (acima) é snapshot e fica obsoleto quando
   // o contexto nasce depois da render (toque de unlock no iOS)
   audioContextRef?: MutableRefObject<AudioContext | null>;
-  // iOS apenas: resultado da última reprodução (debug) e troca do contexto
-  // quando a recuperação de congelamento precisa recriá-lo
-  onIOSPlaybackDebug?:      (result: string) => void;
+  // iOS apenas: troca do contexto quando a recuperação de congelamento
+  // precisa recriá-lo
   onAudioContextRecreated?: (ctx: AudioContext) => void;
 }
 
@@ -249,19 +248,12 @@ export function useVoiceOutput(
                   ctx = novoCtx;
                   if (options.audioContextRef) options.audioContextRef.current = novoCtx;
                   options.onAudioContextRecreated?.(novoCtx);
-                  options.onIOSPlaybackDebug?.('ctx-recreated');
                 } catch { /* segue com o contexto original */ }
               }
             }
 
             const arrayBuffer = await response.arrayBuffer();
-            let audioBuffer: AudioBuffer;
-            try {
-              audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-            } catch (err) {
-              options.onIOSPlaybackDebug?.('decode-fail');
-              throw err;
-            }
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
             const source   = ctx.createBufferSource();
             source.buffer  = audioBuffer;
             const gainNode = ctx.createGain();
@@ -274,34 +266,28 @@ export function useVoiceOutput(
             // vez — dupla execução duplicaria a mensagem (Regra 3).
             const playback: IOSPlayback = { ended: false };
             iosPlaybackRef.current = playback;
-            const finishOnce = (result: 'ok' | 'started-no-end') => {
+            const finishOnce = () => {
               if (playback.ended) return;
               playback.ended = true;
               clearTimeout(playback.watchdog);
-              options.onIOSPlaybackDebug?.(result);
               stopReveal();
               setState('idle');
               options?.onSpeakEnd?.();
             };
 
-            source.onended = () => finishOnce('ok');
+            source.onended = finishOnce;
 
             // decode é assíncrono — o iOS pode ter re-suspendido o
             // contexto nesse intervalo; checar de novo antes do start
             if (ctx.state !== 'running') {
               await ctx.resume();
             }
-            try {
-              source.start(0);
-            } catch (err) {
-              options.onIOSPlaybackDebug?.('start-fail');
-              throw err;
-            }
+            source.start(0);
             // Watchdog: se onended nunca disparar (contexto congelou após o
             // start), força a mesma transição de fim — sem isso o estado
             // fica preso em 'speaking' e o microfone nunca libera
             playback.watchdog = setTimeout(
-              () => finishOnce('started-no-end'),
+              finishOnce,
               audioBuffer.duration * 1000 + 3000
             );
             // Estado muda APÓS start — não antes — para que isThinking
@@ -313,12 +299,10 @@ export function useVoiceOutput(
           } catch {
             // fallback
           }
-        } else if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          // iOS sem contexto desbloqueado: o caminho desktop abaixo criará um
-          // AudioContext sem gesto → 'suspended' → mudo. Se esse cenário
-          // voltar, fica visível no indicador em vez de falhar em silêncio.
-          options.onIOSPlaybackDebug?.('no-ctx');
         }
+        // Atenção: no iOS este ponto só deve ser alcançado como fallback de
+        // erro — o caminho desktop abaixo cria AudioContext sem gesto, que
+        // no iOS nasce 'suspended' e toca mudo.
 
         // Caminho desktop — amplificado via GainNode
         const audioBlob   = await response.blob();
