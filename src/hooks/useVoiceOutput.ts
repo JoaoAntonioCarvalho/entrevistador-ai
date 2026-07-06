@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type MutableRefObject } from 'react';
 import { authedFetch } from '@/lib/services/api-client';
 
 export type VoiceOutputState = 'idle' | 'speaking' | 'loading';
@@ -16,6 +16,10 @@ export interface UseVoiceOutputOptions {
   onSpeakEnd?:   () => void;
   onTTSChars?:   (chars: number) => void;
   audioContext?: AudioContext;
+  // Preferir a ref: é lida no MOMENTO da execução do speak(), não na
+  // renderização — `audioContext` (acima) é snapshot e fica obsoleto quando
+  // o contexto nasce depois da render (toque de unlock no iOS)
+  audioContextRef?: MutableRefObject<AudioContext | null>;
   // iOS apenas: resultado da última reprodução (debug) e troca do contexto
   // quando a recuperação de congelamento precisa recriá-lo
   onIOSPlaybackDebug?:      (result: string) => void;
@@ -212,10 +216,18 @@ export function useVoiceOutput(
           return;
         }
 
-        // Caminho iOS: usar AudioContext desbloqueado pelo toque do usuário
-        if (options?.audioContext) {
+        // Caminho iOS: usar AudioContext desbloqueado pelo toque do usuário.
+        // Resolvido AGORA, via ref — o snapshot `options.audioContext` da
+        // renderização fica obsoleto quando o contexto nasce no toque de
+        // unlock (closure antiga entregava undefined → caía no caminho
+        // desktop → contexto sem gesto → 'suspended' → mudo no iOS).
+        const iosCtx = options?.audioContextRef?.current
+          ?? options?.audioContext
+          ?? null;
+
+        if (iosCtx) {
           try {
-            let ctx = options.audioContext;
+            let ctx = iosCtx;
             // iOS re-suspende o contexto quando ele fica ocioso entre o
             // toque de desbloqueio e o start() (turn + TTS + decode levam
             // segundos). start() em contexto 'suspended' falha em silêncio.
@@ -235,6 +247,7 @@ export function useVoiceOutput(
                   if (novoCtx.state !== 'running') await novoCtx.resume();
                   try { void ctx.close(); } catch { /* contexto congelado */ }
                   ctx = novoCtx;
+                  if (options.audioContextRef) options.audioContextRef.current = novoCtx;
                   options.onAudioContextRecreated?.(novoCtx);
                   options.onIOSPlaybackDebug?.('ctx-recreated');
                 } catch { /* segue com o contexto original */ }
@@ -300,6 +313,11 @@ export function useVoiceOutput(
           } catch {
             // fallback
           }
+        } else if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          // iOS sem contexto desbloqueado: o caminho desktop abaixo criará um
+          // AudioContext sem gesto → 'suspended' → mudo. Se esse cenário
+          // voltar, fica visível no indicador em vez de falhar em silêncio.
+          options.onIOSPlaybackDebug?.('no-ctx');
         }
 
         // Caminho desktop — amplificado via GainNode

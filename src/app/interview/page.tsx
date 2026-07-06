@@ -135,7 +135,10 @@ export default function InterviewPage() {
     onSpeakStart: () => { setIsThinking(false); setVisibleText(''); },
     onWordReveal: (text) => setVisibleText(text),
     onSpeakEnd:   () => { setVisibleText(''); setIsThinking(false); },
-    audioContext: audioContextRef.current ?? undefined,
+    // Ref, não snapshot: o hook lê o contexto no momento da execução —
+    // o contexto nasce no toque de unlock, DEPOIS da render que criou
+    // a closure do primeiro turno
+    audioContextRef: audioContextRef,
     // Recuperação de congelamento (iOS): o hook recria o contexto e devolve
     // o novo aqui — a ref é a fonte da verdade para as próximas falas
     onAudioContextRecreated: (ctx) => { audioContextRef.current = ctx; },
@@ -709,7 +712,8 @@ export default function InterviewPage() {
                 setAudioUnlocked(true);
                 if (!firstTurnCalledRef.current) {
                   firstTurnCalledRef.current = true;
-                  setTimeout(() => callTurn(true), 500);
+                  // via ref — a closure desta render é anterior ao toque
+                  setTimeout(() => callTurnRef.current(true), 500);
                 }
               }}
               className="bg-white text-zinc-900 px-8 py-4 rounded-full font-semibold text-base hover:bg-zinc-100 transition-colors w-full mb-6"
