@@ -545,6 +545,9 @@ export default function InterviewPage() {
   useEffect(() => {
     if (!isResuming || resumeVerifiedRef.current) return;
     if (authLoading) return;
+    // iOS/Safari: aguardar o toque de desbloqueio de áudio antes de
+    // retomar — sem isso o TTS toca sem som (AudioContext inexistente)
+    if (needsUnlock && !audioUnlocked) return;
     resumeVerifiedRef.current = true;
 
     async function verificarCreditoResume() {
@@ -610,7 +613,7 @@ export default function InterviewPage() {
 
     verificarCreditoResume();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isResuming, user?.id, authLoading]);
+  }, [isResuming, user?.id, authLoading, audioUnlocked]);
 
 
   // A entrevista só encerra automaticamente: ao completar todas as perguntas
