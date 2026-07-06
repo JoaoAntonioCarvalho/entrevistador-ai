@@ -90,6 +90,14 @@ const nextConfig = {
       'pdfjs-dist',
       'pdf-parse',
     ],
+    // O worker do pdfjs é carregado por caminho em runtime (não é import
+    // estático), então o file tracing não o detecta — incluir explicitamente
+    // no deploy da função de parse
+    outputFileTracingIncludes: {
+      '/api/parse-resume': [
+        './node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs',
+      ],
+    },
   },
   webpack: (config, { isServer }) => {
     if (isServer) {

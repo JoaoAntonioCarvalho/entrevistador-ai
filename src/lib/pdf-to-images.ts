@@ -4,10 +4,16 @@ export async function pdfToBase64Images(buffer: ArrayBuffer): Promise<string[]> 
   // Dynamic import: usa o legacy build (com polyfills para DOMMatrix no Node.js)
   // e adia a inicialização para o momento do uso, evitando erros no build do Next.js
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  // pdfjs-dist roda externo ao bundle (serverComponentsExternalPackages), então
-  // o fake worker é carregado via import() deste specifier em runtime — string
-  // vazia faz o setup do fake worker falhar fora do webpack
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.mjs';
+  // Registrar o worker no globalThis em vez de usar workerSrc: o fake worker
+  // do pdfjs consulta globalThis.pdfjsWorker.WorkerMessageHandler ANTES de
+  // tentar import(workerSrc) — evita resolver caminho de arquivo em runtime,
+  // que falha na função serverless (worker fora do bundle) e no Windows
+  // (import() exige URL file:// para caminho absoluto)
+  if (!(globalThis as { pdfjsWorker?: unknown }).pdfjsWorker) {
+    (globalThis as { pdfjsWorker?: unknown }).pdfjsWorker = await import(
+      'pdfjs-dist/legacy/build/pdf.worker.mjs'
+    );
+  }
 
   const pdf = await pdfjsLib.getDocument({
     data: new Uint8Array(buffer),

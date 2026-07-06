@@ -193,8 +193,15 @@ export async function POST(req: NextRequest) {
 
   try {
     if (isPdf) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse: (buf: Buffer) => Promise<{ text: string }> = require('pdf-parse');
+      // Import dinâmico com interop CJS/ESM: com pdf-parse em
+      // serverComponentsExternalPackages, require() direto quebra
+      // ("TypeError: e is not a function") — a função pode vir em .default
+      const pdfParseMod = (await import('pdf-parse')) as unknown as {
+        default?: unknown;
+      };
+      const pdfParse = (pdfParseMod.default ?? pdfParseMod) as (
+        buf: Buffer
+      ) => Promise<{ text: string }>;
       const result = await pdfParse(buffer);
       rawText = result.text;
     } else if (isDocx) {
