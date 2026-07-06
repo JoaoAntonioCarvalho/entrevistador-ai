@@ -16,6 +16,25 @@ export interface UseVoiceOutputOptions {
   onSpeakEnd?:   () => void;
   onTTSChars?:   (chars: number) => void;
   audioContext?: AudioContext;
+  // iOS apenas: resultado da última reprodução (debug) e troca do contexto
+  // quando a recuperação de congelamento precisa recriá-lo
+  onIOSPlaybackDebug?:      (result: string) => void;
+  onAudioContextRecreated?: (ctx: AudioContext) => void;
+}
+
+interface IOSPlayback {
+  ended:     boolean;
+  watchdog?: ReturnType<typeof setTimeout>;
+}
+
+// Bug conhecido do WebKit/iOS: o contexto reporta state 'running' mas está
+// internamente congelado — currentTime para de avançar e nada é processado.
+// O state sozinho não é confiável; o teste real é o relógio andar.
+async function isContextFrozen(ctx: AudioContext): Promise<boolean> {
+  if (ctx.state !== 'running') return false;
+  const t0 = ctx.currentTime;
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return ctx.state === 'running' && ctx.currentTime === t0;
 }
 
 interface UseVoiceOutputResult {
@@ -36,6 +55,7 @@ export function useVoiceOutput(
   const desktopSourceRef         = useRef<AudioBufferSourceNode | null>(null);
   const revealCancelRef          = useRef<boolean>(false);
   const revealTimerRef           = useRef<ReturnType<typeof setTimeout>>();
+  const iosPlaybackRef           = useRef<IOSPlayback | null>(null);
 
   // setTimeout recursivo elimina o race condition do setInterval:
   // cada próximo tick só é agendado DENTRO do callback,
@@ -141,6 +161,13 @@ export function useVoiceOutput(
 
     window.speechSynthesis?.cancel();
     stopReveal();
+    // iOS: invalida o fim-de-fala da reprodução anterior (onended atrasado
+    // ou watchdog pendente) — a transição de fim nunca pode rodar duas vezes
+    if (iosPlaybackRef.current) {
+      iosPlaybackRef.current.ended = true;
+      clearTimeout(iosPlaybackRef.current.watchdog);
+      iosPlaybackRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -188,33 +215,82 @@ export function useVoiceOutput(
         // Caminho iOS: usar AudioContext desbloqueado pelo toque do usuário
         if (options?.audioContext) {
           try {
+            let ctx = options.audioContext;
             // iOS re-suspende o contexto quando ele fica ocioso entre o
             // toque de desbloqueio e o start() (turn + TTS + decode levam
             // segundos). start() em contexto 'suspended' falha em silêncio.
-            if (options.audioContext.state !== 'running') {
-              await options.audioContext.resume();
+            if (ctx.state !== 'running') {
+              await ctx.resume();
             }
+
+            // 'running' congelado (currentTime parado): tentar destravar com
+            // suspend/resume; se persistir, recriar o contexto. Recriação é
+            // SÓ recuperação de falha — a operação normal continua sendo um
+            // único contexto persistente por sessão (Regra 8).
+            if (await isContextFrozen(ctx)) {
+              try { await ctx.suspend(); await ctx.resume(); } catch { /* tenta recriar */ }
+              if (await isContextFrozen(ctx)) {
+                try {
+                  const novoCtx = new AudioContext();
+                  if (novoCtx.state !== 'running') await novoCtx.resume();
+                  try { void ctx.close(); } catch { /* contexto congelado */ }
+                  ctx = novoCtx;
+                  options.onAudioContextRecreated?.(novoCtx);
+                  options.onIOSPlaybackDebug?.('ctx-recreated');
+                } catch { /* segue com o contexto original */ }
+              }
+            }
+
             const arrayBuffer = await response.arrayBuffer();
-            const audioBuffer = await options.audioContext.decodeAudioData(arrayBuffer);
-            const source   = options.audioContext.createBufferSource();
+            let audioBuffer: AudioBuffer;
+            try {
+              audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+            } catch (err) {
+              options.onIOSPlaybackDebug?.('decode-fail');
+              throw err;
+            }
+            const source   = ctx.createBufferSource();
             source.buffer  = audioBuffer;
-            const gainNode = options.audioContext.createGain();
+            const gainNode = ctx.createGain();
             gainNode.gain.value = 2.2;
             source.connect(gainNode);
-            gainNode.connect(options.audioContext.destination);
+            gainNode.connect(ctx.destination);
 
-            source.onended = () => {
+            // Fim de fala único: onended OU watchdog, o que vier primeiro.
+            // A flag + clearTimeout garantem que a transição roda uma única
+            // vez — dupla execução duplicaria a mensagem (Regra 3).
+            const playback: IOSPlayback = { ended: false };
+            iosPlaybackRef.current = playback;
+            const finishOnce = (result: 'ok' | 'started-no-end') => {
+              if (playback.ended) return;
+              playback.ended = true;
+              clearTimeout(playback.watchdog);
+              options.onIOSPlaybackDebug?.(result);
               stopReveal();
               setState('idle');
               options?.onSpeakEnd?.();
             };
 
+            source.onended = () => finishOnce('ok');
+
             // decode é assíncrono — o iOS pode ter re-suspendido o
             // contexto nesse intervalo; checar de novo antes do start
-            if (options.audioContext.state !== 'running') {
-              await options.audioContext.resume();
+            if (ctx.state !== 'running') {
+              await ctx.resume();
             }
-            source.start(0);
+            try {
+              source.start(0);
+            } catch (err) {
+              options.onIOSPlaybackDebug?.('start-fail');
+              throw err;
+            }
+            // Watchdog: se onended nunca disparar (contexto congelou após o
+            // start), força a mesma transição de fim — sem isso o estado
+            // fica preso em 'speaking' e o microfone nunca libera
+            playback.watchdog = setTimeout(
+              () => finishOnce('started-no-end'),
+              audioBuffer.duration * 1000 + 3000
+            );
             // Estado muda APÓS start — não antes — para que isThinking
             // permaneça true durante todo o carregamento do TTS
             setState('speaking');
@@ -288,6 +364,12 @@ export function useVoiceOutput(
   function stop() {
     window.speechSynthesis?.cancel();
     stopReveal();
+    // iOS: invalida onended/watchdog pendentes — stop() já faz a transição
+    if (iosPlaybackRef.current) {
+      iosPlaybackRef.current.ended = true;
+      clearTimeout(iosPlaybackRef.current.watchdog);
+      iosPlaybackRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
