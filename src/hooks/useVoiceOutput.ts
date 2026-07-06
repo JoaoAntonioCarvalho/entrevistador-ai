@@ -188,6 +188,12 @@ export function useVoiceOutput(
         // Caminho iOS: usar AudioContext desbloqueado pelo toque do usuário
         if (options?.audioContext) {
           try {
+            // iOS re-suspende o contexto quando ele fica ocioso entre o
+            // toque de desbloqueio e o start() (turn + TTS + decode levam
+            // segundos). start() em contexto 'suspended' falha em silêncio.
+            if (options.audioContext.state !== 'running') {
+              await options.audioContext.resume();
+            }
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await options.audioContext.decodeAudioData(arrayBuffer);
             const source   = options.audioContext.createBufferSource();
@@ -203,6 +209,11 @@ export function useVoiceOutput(
               options?.onSpeakEnd?.();
             };
 
+            // decode é assíncrono — o iOS pode ter re-suspendido o
+            // contexto nesse intervalo; checar de novo antes do start
+            if (options.audioContext.state !== 'running') {
+              await options.audioContext.resume();
+            }
             source.start(0);
             // Estado muda APÓS start — não antes — para que isThinking
             // permaneça true durante todo o carregamento do TTS

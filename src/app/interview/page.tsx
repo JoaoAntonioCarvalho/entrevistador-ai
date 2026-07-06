@@ -80,6 +80,17 @@ export default function InterviewPage() {
     /iPad|iPhone|iPod/.test(navigator.userAgent) &&
     /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
+  // DEBUG TEMPORÁRIO — REMOVER: estado do AudioContext visível no aparelho
+  const [audioCtxDebugState, setAudioCtxDebugState] = useState('sem contexto');
+  useEffect(() => {
+    if (!isIOS) return;
+    const id = setInterval(() => {
+      setAudioCtxDebugState(audioContextRef.current?.state ?? 'sem contexto');
+    }, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -671,6 +682,10 @@ export default function InterviewPage() {
                 try {
                   const ctx = new AudioContext();
                   audioContextRef.current = ctx;
+                  // resume() disparado DENTRO do gesto de toque, de forma
+                  // síncrona, antes de qualquer await — iOS só considera o
+                  // contexto desbloqueado se isso acontecer no próprio gesto
+                  if (ctx.state !== 'running') void ctx.resume();
                   const buf = ctx.createBuffer(1, 1, 22050);
                   const src = ctx.createBufferSource();
                   src.buffer = buf;
@@ -692,6 +707,13 @@ export default function InterviewPage() {
               Para a melhor experiência, recomendamos usar o Google Chrome no computador.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* DEBUG TEMPORÁRIO — REMOVER: indicador do estado do AudioContext no iOS */}
+      {isIOS && (
+        <div className="fixed bottom-1.5 left-2 z-[60] text-[10px] font-mono text-zinc-500 pointer-events-none select-none">
+          audio: {audioCtxDebugState}
         </div>
       )}
 
