@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { AlertTriangle, Send, Sun, Moon } from 'lucide-react';
+import { AlertTriangle, Send, Sun, Moon, Volume2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useSessionStore } from '@/lib/store';
 import { useRouteGuard } from '@/hooks/useRouteGuard';
@@ -79,9 +79,6 @@ export default function InterviewPage() {
   const isSafari = typeof window !== 'undefined' &&
     /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   const needsUnlock = isIOS || isSafari;
-  const isIOSSafari = typeof window !== 'undefined' &&
-    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-    /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -681,6 +678,14 @@ export default function InterviewPage() {
             <p className="text-zinc-400 text-sm mb-8 leading-relaxed">
               Toque para iniciar a entrevista
             </p>
+            <div className="flex items-start gap-3 text-left border border-zinc-700 rounded-lg px-4 py-3 mb-8">
+              <Volume2 className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-zinc-300 leading-relaxed">
+                {session.config?.idioma === 'en'
+                  ? 'Turn off silent mode — the interviewer speaks to you out loud.'
+                  : 'Tire o celular do modo silencioso — o entrevistador fala com você por voz.'}
+              </p>
+            </div>
             <button
               onClick={async () => {
                 try {
@@ -708,9 +713,6 @@ export default function InterviewPage() {
             >
               Iniciar entrevista
             </button>
-            <p className="text-zinc-600 text-xs leading-relaxed">
-              Para a melhor experiência, recomendamos usar o Google Chrome no computador.
-            </p>
           </div>
         </div>
       )}
@@ -792,35 +794,6 @@ export default function InterviewPage() {
           )}
         </div>
       </header>
-
-      {isIOSSafari && (
-        <div className="shrink-0 bg-red-950/80 border-b
-                        border-red-800/50 px-4 py-2.5
-                        flex items-center justify-between gap-3">
-          <p className="text-red-300 text-xs leading-relaxed">
-            ⚠️ Safari pode apresentar instabilidade.
-            Para 100% de desempenho, abra no
-            <strong className="text-red-200"> Google Chrome</strong>.
-          </p>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href)
-                .then(() => toast.success('Link copiado! Cole no Chrome.'))
-                .catch(() => toast(
-                  'Copie o link e abra no Chrome: '
-                  + window.location.href,
-                  { duration: 8000 }
-                ));
-            }}
-            className="text-xs text-red-300 border border-red-700
-                       px-3 py-1.5 rounded-full whitespace-nowrap
-                       hover:bg-red-900/50 transition-colors
-                       flex-shrink-0"
-          >
-            Copiar link
-          </button>
-        </div>
-      )}
 
       {/* Banner de entrevista restaurada após reload */}
       {temSessaoSalva && wasReloaded && (

@@ -145,7 +145,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Funciona no celular?',
-    a: 'Ainda não. A versão atual foi desenvolvida para desktop e requer Chrome ou Safari no computador para funcionar corretamente — especialmente o microfone e o áudio do entrevistador. Estamos desenvolvendo um aplicativo nativo para iOS e Android. Se quiser ser avisado quando lançar, envie um email para suporte@entrevistador-ia.com.br com o assunto "App mobile".',
+    a: 'Sim. O Entrevistador.IA funciona no navegador do celular (Safari ou Chrome) e no computador. No iPhone, lembre-se de tirar o aparelho do modo silencioso para ouvir o entrevistador.',
   },
   {
     q: 'Posso cancelar a assinatura quando quiser?',
