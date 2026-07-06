@@ -81,6 +81,16 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  experimental: {
+    // Pacotes nativos/Node-only não podem ser empacotados pelo webpack —
+    // precisam ser resolvidos em runtime no node_modules da função (Vercel).
+    // Sem isso: "ReferenceError: DOMMatrix is not defined" no parse de PDF.
+    serverComponentsExternalPackages: [
+      '@napi-rs/canvas',
+      'pdfjs-dist',
+      'pdf-parse',
+    ],
+  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
