@@ -13,6 +13,7 @@ import {
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasHistory } from '@/hooks/useHasHistory';
+import { AccountMenu, MobileMenu } from '@/components/layout/HeaderMenus';
 
 export const dynamic = 'force-dynamic';
 
@@ -225,11 +226,9 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             {user ? (
-              <button onClick={() => router.push('/historico')}
-                className="hidden md:block text-sm text-muted-fg
-                           hover:text-foreground transition-colors duration-150">
-                Meu histórico
-              </button>
+              <div className="hidden md:block">
+                <AccountMenu />
+              </div>
             ) : (
               <button onClick={() => router.push('/entrar')}
                 className="hidden md:block text-sm text-muted-fg
@@ -255,6 +254,8 @@ export default function LandingPage() {
                 {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
               </button>
             ) : <div className="w-8 h-8" />}
+
+            <MobileMenu />
           </div>
         </div>
       </header>

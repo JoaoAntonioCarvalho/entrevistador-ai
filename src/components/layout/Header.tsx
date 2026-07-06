@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
+import { AccountMenu, MobileMenu } from '@/components/layout/HeaderMenus';
 
 interface HeaderProps {
   backTo?:       string;
@@ -18,7 +18,7 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const { open } = useAuthModal();
 
   useEffect(() => {
@@ -63,22 +63,9 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
             <>
               {!loading && (
                 user ? (
-                  <>
-                    <Link
-                      href="/conta"
-                      className="text-sm text-muted-fg hover:text-foreground
-                                 transition-colors duration-150 hidden md:block"
-                    >
-                      Minha conta
-                    </Link>
-                    <button
-                      onClick={signOut}
-                      className="text-sm text-muted-fg hover:text-foreground
-                                 transition-colors duration-150 hidden md:block"
-                    >
-                      Sair
-                    </button>
-                  </>
+                  <div className="hidden md:block">
+                    <AccountMenu />
+                  </div>
                 ) : (
                   <button
                     onClick={() => open()}
@@ -104,6 +91,8 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
                   : <Moon className="w-3.5 h-3.5" />
                 }
               </button>
+
+              <MobileMenu />
             </>
           ) : (
             <div className="w-8 h-8" />
