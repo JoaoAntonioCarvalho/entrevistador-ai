@@ -14,6 +14,45 @@ export default function CameraWidget({ candidateName }: Props) {
   const [hasPermission, setHasPermission] = useState<Permission>('unknown');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [posicao, setPosicao] = useState<'direita' | 'esquerda'>('direita');
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // Hint "Toque para mover": uma única vez por sessão, some sozinho em 4s
+  useEffect(() => {
+    if (!isMobile || !isOpen) return;
+    if (sessionStorage.getItem('camera-hint-shown') === 'true') return;
+    sessionStorage.setItem('camera-hint-shown', 'true');
+    setShowHint(true);
+    const t = setTimeout(() => setShowHint(false), 4000);
+    return () => clearTimeout(t);
+  }, [isMobile, isOpen]);
+
+  // Mobile: toque no widget alterna entre os cantos inferiores.
+  // bottom fica acima do footer do microfone (bottom-36 = offset já usado
+  // hoje no mobile); cantos superiores nunca são usados.
+  function handleTapMove() {
+    if (!isMobile) return;
+    setPosicao(p => (p === 'direita' ? 'esquerda' : 'direita'));
+  }
+
+  const posClasses = isMobile
+    ? `bottom-36 ${posicao === 'direita' ? 'right-3' : 'left-3'}`
+    : 'bottom-24 right-4';
+
+  const hint = showHint ? (
+    <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/70 text-white text-xs px-2.5 py-1 rounded-full pointer-events-none">
+      Toque para mover
+    </div>
+  ) : null;
 
   // Connect stream to video element when both are available
   useEffect(() => {
@@ -79,7 +118,7 @@ export default function CameraWidget({ candidateName }: Props) {
   if (!isOpen) {
     return (
       <div
-        className="fixed bottom-36 md:bottom-24 right-4 z-50 cursor-pointer group"
+        className={`fixed z-50 cursor-pointer group transition-all duration-300 ${posClasses}`}
         onClick={handleOpen}
         title="Abrir câmera"
       >
@@ -100,12 +139,19 @@ export default function CameraWidget({ candidateName }: Props) {
   // ── OPEN — DENIED ────────────────────────────────────────────────────────────
   if (hasPermission === 'denied') {
     return (
-      <div className="fixed bottom-36 md:bottom-24 right-4 z-50">
+      <div
+        className={`fixed z-50 transition-all duration-300 ${posClasses}`}
+        onClick={handleTapMove}
+      >
+        {hint}
         <div className="relative w-40 h-20 bg-zinc-800 rounded-xl border-2 border-zinc-600 flex flex-col items-center justify-center gap-1">
           <CameraOff className="w-5 h-5 text-zinc-400" />
           <span className="text-xs text-zinc-400">Permissão negada</span>
           <button
-            onClick={handleClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClose();
+            }}
             className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors"
           >
             <X className="w-3.5 h-3.5 text-white" />
@@ -117,8 +163,14 @@ export default function CameraWidget({ candidateName }: Props) {
 
   // ── OPEN — GRANTED ───────────────────────────────────────────────────────────
   return (
-    <div className="fixed bottom-36 md:bottom-24 right-4 z-50">
-      <div className="relative w-40 h-[120px] rounded-xl overflow-hidden border-2 border-zinc-600">
+    <div
+      className={`fixed z-50 transition-all duration-300 ${posClasses}`}
+      onClick={handleTapMove}
+    >
+      {/* Mobile: compacto fixo (não cobre mic/chat em 390px);
+          desktop: proporcional à viewport com limites, aspect 4:3 preservado */}
+      {hint}
+      <div className="relative w-28 md:w-[clamp(140px,13vw,260px)] aspect-[4/3] rounded-xl overflow-hidden border-2 border-zinc-600">
         <video
           ref={videoRef}
           autoPlay
@@ -127,7 +179,10 @@ export default function CameraWidget({ candidateName }: Props) {
           className="w-full h-full object-cover"
         />
         <button
-          onClick={handleClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClose();
+          }}
           className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors"
         >
           <X className="w-3.5 h-3.5 text-white" />
