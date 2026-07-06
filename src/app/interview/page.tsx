@@ -66,6 +66,9 @@ export default function InterviewPage() {
   const [showVoiceTip, setShowVoiceTip] = useState(true);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
+  // Fechou o gate sem pagar: microfone bloqueado até confirmar crédito —
+  // sem isso o usuário tenta responder de novo e pode ganhar pergunta extra
+  const [gateDismissed, setGateDismissed] = useState(false);
   const [paymentGateMotivo, setPaymentGateMotivo] = useState<'normal' | 'free_limit'>('normal');
   const [mostrarDica, setMostrarDica] = useState(true);
   const [wasReloaded, setWasReloaded] = useState(false);
@@ -427,6 +430,7 @@ export default function InterviewPage() {
         const candidateTurns = session.conversation.filter(t => t.role === 'candidate').length;
         perguntasRespondidasRef.current = candidateTurns;
         setPerguntasRespondidas(candidateTurns);
+        setGateDismissed(false);
         setInterviewState('waiting');
       }
     } catch {
@@ -581,6 +585,7 @@ export default function InterviewPage() {
           perguntasRespondidasRef.current = count;
           setPerguntasRespondidas(count);
           setShowPaymentGate(false);
+          setGateDismissed(false);
 
           // Guarda defensivo: se candidate ainda for null após todos os restores
           // (ex: localStorage limpo em modo privado), não chamar callTurn — evita
@@ -640,6 +645,7 @@ export default function InterviewPage() {
   const showUnsupportedBanner = speechChecked && !voiceInput.isSupported;
 
   const micState = (() => {
+    if (gateDismissed)                    return 'disabled' as const;
     if (interviewState === 'ended')       return 'disabled' as const;
     if (interviewState === 'loading')     return 'disabled' as const;
     if (interviewState === 'processing')  return 'disabled' as const;
@@ -836,8 +842,25 @@ export default function InterviewPage() {
         </div>
       )}
 
+      {/* Gate fechado sem pagamento: microfone bloqueado, oferecer reabertura */}
+      {gateDismissed && !showPaymentGate && (
+        <button
+          onClick={() => setShowPaymentGate(true)}
+          className="absolute bottom-[120px] left-1/2 -translate-x-1/2
+                     bg-zinc-900/90 dark:bg-zinc-100/90
+                     text-white dark:text-zinc-900
+                     text-sm px-4 py-2.5 rounded-full
+                     shadow-lg whitespace-nowrap
+                     hover:opacity-90 transition-opacity
+                     animate-fade-in-up z-10">
+          {session.config?.idioma === 'en'
+            ? 'Continue interview →'
+            : 'Continuar entrevista →'}
+        </button>
+      )}
+
       {/* Dica da primeira pergunta — desaparece após 6s ou ao tocar o microfone */}
-      {mostrarDica && perguntasRespondidas === 0 && interviewState === 'waiting' && (
+      {!gateDismissed && mostrarDica && perguntasRespondidas === 0 && interviewState === 'waiting' && (
         <div className="absolute bottom-[120px] left-1/2 -translate-x-1/2
                         bg-zinc-900/90 dark:bg-zinc-100/90
                         text-white dark:text-zinc-900
@@ -981,7 +1004,7 @@ export default function InterviewPage() {
         <PaymentGateModal
           sessionId={session.id}
           motivo={paymentGateMotivo}
-          onClose={() => setShowPaymentGate(false)}
+          onClose={() => { setShowPaymentGate(false); setGateDismissed(true); }}
         />
       )}
     </div>
