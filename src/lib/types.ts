@@ -147,7 +147,6 @@ export interface AvatarProfile {
   id:            'sarah' | 'carlos' | 'alex';
   nome:          string;
   genero:        'feminino' | 'masculino' | 'neutro';
-  imagem:        string;
   voice_id_pt:   string;
   voice_id_en:   string;
 

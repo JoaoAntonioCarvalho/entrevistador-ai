@@ -221,7 +221,7 @@ export default function SetupPage() {
       const profiles: AvatarProfile[] = [
         {
           id: 'sarah', nome: 'Sarah', genero: 'feminino',
-          imagem: '/avatars/sarah.jpg', voice_id_pt: '', voice_id_en: '',
+          voice_id_pt: '', voice_id_en: '',
           titulo_pt:        data.avatars.sarah.titulo_pt,
           descricao_pt:     data.avatars.sarah.descricao_pt,
           especialidade_pt: data.avatars.sarah.especialidade_pt,
@@ -231,7 +231,7 @@ export default function SetupPage() {
         },
         {
           id: 'carlos', nome: 'Carlos', genero: 'masculino',
-          imagem: '/avatars/carlos.jpg', voice_id_pt: '', voice_id_en: '',
+          voice_id_pt: '', voice_id_en: '',
           titulo_pt:        data.avatars.carlos.titulo_pt,
           descricao_pt:     data.avatars.carlos.descricao_pt,
           especialidade_pt: data.avatars.carlos.especialidade_pt,
@@ -241,7 +241,7 @@ export default function SetupPage() {
         },
         {
           id: 'alex', nome: 'Alex', genero: 'neutro',
-          imagem: '/avatars/alex.jpg', voice_id_pt: '', voice_id_en: '',
+          voice_id_pt: '', voice_id_en: '',
           titulo_pt:        data.avatars.alex.titulo_pt,
           descricao_pt:     data.avatars.alex.descricao_pt,
           especialidade_pt: data.avatars.alex.especialidade_pt,

@@ -38,6 +38,8 @@ interface FeedbackResponse {
   competencias: CompetencyScores;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!await checkRateLimit(aiRateLimit, ip) ||
@@ -78,6 +80,13 @@ export async function POST(req: NextRequest) {
       { error: 'Nenhuma avaliação encontrada.' },
       { status: 400 }
     );
+  }
+
+  // Gate mínimo: sessionId válido (UUID gerado pelo app via crypto.randomUUID).
+  // Não exige login — o fluxo grátis anônimo continua funcionando; o custo
+  // anônimo já é limitado pelo isDailyCapExceeded acima.
+  if (!sessionId || !UUID_RE.test(sessionId)) {
+    return NextResponse.json({ error: 'Sessão inválida.' }, { status: 400 });
   }
 
   const avgNota = evaluations.reduce((sum, e) => sum + e.nota, 0) / evaluations.length;
