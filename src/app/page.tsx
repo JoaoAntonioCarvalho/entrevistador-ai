@@ -286,15 +286,15 @@ export default function LandingPage() {
           <h1 className="text-[44px] sm:text-[60px] lg:text-[72px] font-bold
                          tracking-display leading-[1.02] text-foreground mb-6
                          animate-fade-in-up-delay-1">
-            A entrevista que você<br />
-            precisa praticar.
+            A entrevista real não tem<br />
+            segunda chance. O treino tem.
           </h1>
 
           <p className="text-lg sm:text-xl text-muted-fg leading-[1.75] mb-10
                         max-w-[540px] mx-auto animate-fade-in-up-delay-2">
-            Treine com um entrevistador virtual que fala de verdade, ouve suas
-            respostas e entrega feedback detalhado — para você chegar na próxima
-            entrevista pronto.
+            Um entrevistador de IA que fala com você por voz, pergunta sobre o
+            seu currículo e a sua vaga, e mostra exatamente onde você perde
+            pontos — antes do recrutador ver.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3
@@ -319,7 +319,7 @@ export default function LandingPage() {
           <p className="text-[13px] text-muted-fg mb-12">
             {hasHistory && user
               ? 'Adicione créditos para continuar praticando'
-              : 'Sem cartão de crédito'}
+              : '3 perguntas grátis · Sem cartão · Sem cadastro'}
           </p>
 
           {/* Social proof */}
@@ -372,9 +372,9 @@ export default function LandingPage() {
               Mas na hora trava.
             </h2>
             <p className="text-zinc-400 text-lg leading-[1.75]">
-              A maioria das entrevistas não é perdida por falta de conhecimento.
-              É perdida por falta de prática — nervoso, respostas vagas, sem saber
-              como estruturar.
+              Entrevista não se perde por falta de conhecimento. Se perde por
+              falta de treino — e treino de verdade, com pressão, ninguém tem
+              onde fazer.
             </p>
           </div>
 
@@ -383,17 +383,17 @@ export default function LandingPage() {
               {
                 icon: <Zap className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
                 title: 'Você fica nervoso',
-                desc: 'Adrenalina bloqueia o raciocínio na hora H. Você sabe a resposta, mas o nervosismo toma conta.',
+                desc: 'Você ensaiou no chuveiro, no espelho, na cabeça. Mas sem alguém do outro lado fazendo a pergunta, o nervosismo da hora H continua intacto.',
               },
               {
                 icon: <MessageSquare className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
                 title: 'Suas respostas soam vagas',
-                desc: 'Você sabe, mas não sabe como explicar bem. Falta estrutura e clareza para convencer o recrutador.',
+                desc: 'Você sabe o que fez, mas a resposta sai solta, sem começo, meio e fim. O recrutador não avalia o que você sabe — avalia o que você consegue explicar.',
               },
               {
                 icon: <Users className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
                 title: 'Você não treina porque não tem com quem',
-                desc: 'Pedir para amigos simular é constrangedor e ineficaz. Sem feedback real, você fica no escuro.',
+                desc: 'Pedir pra um amigo fingir de recrutador é constrangedor — e ele não vai te dizer a verdade. Você sai da entrevista real sem saber o que errou.',
               },
             ].map((item, i) => (
               <div key={i}
@@ -421,11 +421,11 @@ export default function LandingPage() {
 
           <div className="mb-14">
             <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
-              Simples assim
+              Do zero à entrevista em 2 minutos
             </p>
             <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
                            tracking-heading leading-[1.08]">
-              Do currículo ao feedback em minutos
+              Quatro passos. Nenhuma desculpa.
             </h2>
           </div>
 
@@ -436,25 +436,25 @@ export default function LandingPage() {
                 num: '01',
                 icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Compartilhe seu currículo',
-                desc: 'Faça upload do seu PDF ou responda 4 perguntas rápidas sobre sua experiência. Se preferir, pode pular esta etapa — mas as perguntas serão mais genéricas.',
+                desc: 'Envie o PDF ou responda 4 perguntas rápidas. Com o currículo, as perguntas miram a SUA experiência — não um roteiro genérico.',
               },
               {
                 num: '02',
                 icon: <MessageSquare className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Informe a vaga',
-                desc: 'Cole a descrição da vaga que você quer praticar, ou digite o cargo e deixe a IA gerar uma vaga realista para você automaticamente.',
+                desc: 'Cole a descrição da vaga que você quer. Não tem uma? Digite o cargo e a IA monta uma vaga realista na hora.',
               },
               {
                 num: '03',
                 icon: <Settings className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Configure e inicie',
-                desc: 'Escolha seu entrevistador (Sarah, Carlos ou Alex), o idioma (português ou inglês), o nível da vaga e a quantidade de perguntas. Depois é só começar.',
+                desc: 'Sarah, Carlos ou Alex. Português ou inglês. 7 ou 14 perguntas. Trinta segundos de escolhas e a entrevista começa.',
               },
               {
                 num: '04',
                 icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Receba seu feedback',
-                desc: 'Ao final, você recebe nota geral, análise de competências, feedback por pergunta e a resposta ideal para cada uma. Tudo em menos de 5 minutos.',
+                desc: 'Nota geral, mapa de competências, análise de cada resposta e como um profissional sênior teria respondido. Pronto em segundos.',
               },
             ].map((step, i, arr) => (
               <Fragment key={step.num}>
@@ -492,22 +492,22 @@ export default function LandingPage() {
                   {
                     num: '01',
                     title: 'Compartilhe seu currículo',
-                    desc: 'Faça upload do seu PDF ou responda 4 perguntas rápidas sobre sua experiência.',
+                    desc: 'Envie o PDF ou responda 4 perguntas rápidas. Com o currículo, as perguntas miram a SUA experiência — não um roteiro genérico.',
                   },
                   {
                     num: '02',
                     title: 'Informe a vaga',
-                    desc: 'Cole a descrição da vaga ou deixe a IA gerar uma vaga realista para você.',
+                    desc: 'Cole a descrição da vaga que você quer. Não tem uma? Digite o cargo e a IA monta uma vaga realista na hora.',
                   },
                   {
                     num: '03',
                     title: 'Configure e inicie',
-                    desc: 'Escolha entrevistador, idioma e quantidade de perguntas. Depois é só começar.',
+                    desc: 'Sarah, Carlos ou Alex. Português ou inglês. 7 ou 14 perguntas. Trinta segundos de escolhas e a entrevista começa.',
                   },
                   {
                     num: '04',
                     title: 'Receba seu feedback',
-                    desc: 'Nota geral, análise de competências e feedback por pergunta em menos de 5 minutos.',
+                    desc: 'Nota geral, mapa de competências, análise de cada resposta e como um profissional sênior teria respondido. Pronto em segundos.',
                   },
                 ].map((step) => (
                   <div key={step.num} className="flex gap-4 items-start">
@@ -555,12 +555,12 @@ export default function LandingPage() {
               {
                 icon: <Mic className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Voz humana real',
-                desc: 'Seu entrevistador fala. Você responde pelo microfone. Sem digitar, sem fingir.',
+                desc: 'O entrevistador fala. Você responde pelo microfone, em voz alta — porque é falando que você trava, não digitando.',
               },
               {
                 icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Personalizado para sua vaga',
-                desc: 'As perguntas são geradas com base na vaga e no seu currículo. Nada genérico.',
+                desc: 'As perguntas nascem do seu currículo e da vaga que você colou. A pergunta difícil daqui é a mesma que vem na entrevista real.',
               },
               {
                 icon: <Globe className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
@@ -575,7 +575,7 @@ export default function LandingPage() {
               {
                 icon: <MessageSquare className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
                 title: 'Feedback por pergunta',
-                desc: 'Saiba exatamente onde errou e como deveria ter respondido. Resposta ideal inclusa.',
+                desc: 'Cada resposta recebe nota, ponto forte e o que faltou — com a resposta ideal do lado, pra você ver a diferença.',
               },
               {
                 icon: <TrendingUp className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
@@ -922,10 +922,11 @@ export default function LandingPage() {
             </p>
             <h2 className="text-[32px] lg:text-[44px] font-bold text-foreground
                            tracking-heading leading-[1.08] mb-3">
-              Simples e acessível
+              Menos que o Uber até a entrevista.
             </h2>
             <p className="text-muted-fg text-lg">
-              Comece de graça. Pague só quando quiser ir mais fundo.
+              Teste grátis, sem cadastro. Uma entrevista completa custa menos
+              que um lanche.
             </p>
           </div>
 
@@ -1227,12 +1228,12 @@ export default function LandingPage() {
         <div className="max-w-[640px] mx-auto text-center">
           <h2 className="text-[40px] sm:text-[52px] font-bold text-white
                          tracking-display leading-[1.04] mb-6">
-            Sua próxima entrevista<br />
-            pode ser diferente.
+            Trave aqui, onde ninguém<br />
+            está avaliando. Não lá.
           </h2>
           <p className="text-zinc-400 text-lg leading-[1.75] mb-10">
-            Comece agora. As 3 primeiras perguntas são gratuitas
-            — sem cartão, sem cadastro.
+            Sua próxima entrevista pode ser em dias. As 3 primeiras perguntas
+            são grátis — dá tempo de descobrir onde você trava hoje.
           </p>
           <button
             onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
