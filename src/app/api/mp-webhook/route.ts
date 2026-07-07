@@ -139,12 +139,33 @@ async function handlePayment(paymentId: string, assinaturaValida: boolean, ip: s
   const isMensal   = plano.startsWith('mensal-'); // legado — mensal agora é assinatura
   const quantidade = isMensal ? MENSAL_QTD : 1;
 
+  // credits.session_id tem FK para sessions(id): se o sessionId do
+  // external_reference nunca foi salvo no banco (sessão só no localStorage
+  // do cliente), o insert falharia inteiro — crédito criado sem vínculo é
+  // 100% válido, o acesso é verificado por auth_user_id.
+  let sessionIdValido: string | null = null;
+  if (sessionId) {
+    const { data: sessExiste } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .maybeSingle();
+    sessionIdValido = sessExiste ? sessionId : null;
+    if (!sessExiste) {
+      Sentry.captureMessage('mp-webhook: sessionId do external_reference não existe em sessions — crédito criado sem vínculo', {
+        level: 'warning',
+        tags: { route: 'mp-webhook' },
+        extra: { sessionId, authUserId, plano },
+      });
+    }
+  }
+
   const creditos = Array.from({ length: quantidade }, () => ({
     auth_user_id:  authUserId,
     tipo:          plano,
     perguntas,
     usado:         false,
-    session_id:    plano === 'finalizar-atual' && sessionId ? sessionId : null,
+    session_id:    plano === 'finalizar-atual' ? sessionIdValido : null,
     mp_payment_id: String(paymentId),
     mp_status:     'approved',
     expires_at:    isMensal ? new Date(Date.now() + 30 * 864e5).toISOString() : null,
@@ -153,9 +174,9 @@ async function handlePayment(paymentId: string, assinaturaValida: boolean, ip: s
   const { error: creditError } = await supabase.from('credits').insert(creditos);
   if (creditError) Sentry.captureException(creditError, { tags: { route: 'mp-webhook', step: 'credits' } });
 
-  if (plano === 'finalizar-atual' && sessionId) {
+  if (plano === 'finalizar-atual' && sessionIdValido) {
     const { error: sessError } = await supabase
-      .from('sessions').update({ payment_status: 'paid' }).eq('id', sessionId);
+      .from('sessions').update({ payment_status: 'paid' }).eq('id', sessionIdValido);
     if (sessError) Sentry.captureException(sessError, { tags: { route: 'mp-webhook', step: 'session' } });
   }
 
