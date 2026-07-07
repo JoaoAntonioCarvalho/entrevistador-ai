@@ -67,13 +67,15 @@ function DemoShowcase() {
   return (
     <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
 
-      {/* Passos clicáveis */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
+      {/* Passos clicáveis — grid de 6 colunas (cada card ocupa 2) para a
+          segunda linha (04/05) ficar centralizada sob a primeira */}
+      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 mb-6">
         {DEMO_SLIDES.map((s, i) => (
           <button key={s.src}
                   onClick={() => setActive(i)}
                   aria-pressed={active === i}
-                  className={`text-left rounded-xl p-4 border transition-all duration-200 ${
+                  className={`text-left rounded-xl p-4 border transition-all duration-200
+                              sm:col-span-2 ${i === 3 ? 'sm:col-start-2' : ''} ${
                     active === i
                       ? 'bg-card border-border-strong shadow-card-hover'
                       : 'bg-transparent border-transparent hover:bg-card hover:border-border'
@@ -324,37 +326,34 @@ export default function LandingPage() {
 
           {/* Social proof */}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1
-                          text-[13px] text-muted-fg mb-16">
+                          text-[13px] text-muted-fg">
             <span>Feedback detalhado ao final</span>
             <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
             <span>Português e inglês</span>
           </div>
 
-          {/* Product screenshot — tela real da entrevista */}
-          <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800
-                          shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
+        </div>
+      </section>
 
-            {/* Browser chrome */}
-            <div className="flex items-center gap-1.5 px-4 py-3
-                            bg-zinc-100 dark:bg-zinc-900
-                            border-b border-zinc-200 dark:border-zinc-800">
-              <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
-              <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
-              <div className="w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-700" aria-hidden="true" />
-              <span className="ml-3 text-xs text-zinc-400 font-mono select-none">
-                entrevistador-ia.com.br/entrevista
-              </span>
-            </div>
+      {/* ─────────────────────────────────────────────
+          SEÇÃO 1B — VEJA EM AÇÃO (showcase de screenshots reais)
+          Se um dia houver vídeo demo real, ele pode substituir este showcase.
+      ───────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32 px-6 bg-muted">
+        <div className="max-w-[800px] mx-auto">
 
-            <Image
-              src="/screenshot-entrevista.png"
-              alt="Tela da entrevista: Sarah, a entrevistadora virtual, conversando com a candidata com transcrição em tempo real"
-              width={1280}
-              height={720}
-              priority
-              className="w-full h-auto block"
-            />
+          <div className="mb-12 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
+              Veja em ação
+            </p>
+            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
+                           tracking-heading leading-[1.08]">
+              Do currículo ao relatório,{' '}<br className="hidden sm:block" />
+              em 5 passos
+            </h2>
           </div>
+
+          <DemoShowcase />
 
         </div>
       </section>
@@ -750,29 +749,6 @@ export default function LandingPage() {
               sem espera, sem formulário, sem custo adicional.
             </p>
           </div>
-
-        </div>
-      </section>
-
-      {/* ─────────────────────────────────────────────
-          SEÇÃO 5 — VEJA EM AÇÃO (showcase de screenshots reais)
-          Se um dia houver vídeo demo real, ele pode substituir este showcase.
-      ───────────────────────────────────────────── */}
-      <section className="py-24 lg:py-32 px-6 bg-muted">
-        <div className="max-w-[800px] mx-auto">
-
-          <div className="mb-12 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
-              Veja em ação
-            </p>
-            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
-                           tracking-heading leading-[1.08]">
-              Do currículo ao relatório,{' '}<br className="hidden sm:block" />
-              em 5 passos
-            </h2>
-          </div>
-
-          <DemoShowcase />
 
         </div>
       </section>
