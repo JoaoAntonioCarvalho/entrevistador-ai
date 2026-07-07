@@ -98,10 +98,10 @@ export default function PrivacidadePage() {
           Para exercer seus direitos previstos na LGPD ou
           esclarecer dúvidas sobre o tratamento de dados,
           entre em contato pelo email:{' '}
-          <a href="mailto:suporte@entrevistador-ia.com.br"
+          <a href="mailto:suporte.entrevistador.ia@gmail.com"
              className="text-zinc-900 dark:text-white underline
                         hover:opacity-70">
-            suporte@entrevistador-ia.com.br
+            suporte.entrevistador.ia@gmail.com
           </a>
           {'. '}
           Respondemos em até 2 dias úteis.

@@ -688,7 +688,7 @@ export default function ContaPage() {
             Privacidade
           </Link>
           <span>·</span>
-          <a href="mailto:suporte@entrevistador-ia.com.br"
+          <a href="mailto:suporte.entrevistador.ia@gmail.com"
              className="hover:text-zinc-600 transition-colors">
             Suporte
           </a>

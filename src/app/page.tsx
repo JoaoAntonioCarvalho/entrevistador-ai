@@ -154,7 +154,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'E se eu não gostar e quiser reembolso?',
-    a: 'Você tem 7 dias de garantia a partir da compra, conforme o art. 49 do Código de Defesa do Consumidor. É só mandar um email para suporte@entrevistador-ia.com.br.',
+    a: 'Você tem 7 dias de garantia a partir da compra, conforme o art. 49 do Código de Defesa do Consumidor. É só mandar um email para suporte.entrevistador.ia@gmail.com.',
   },
   {
     q: 'Consigo fazer entrevistas em inglês mesmo não sendo fluente?',
@@ -1252,9 +1252,9 @@ export default function LandingPage() {
                 Simulador de entrevistas de emprego com IA. Treine, receba feedback
                 e chegue preparado para a entrevista que importa.
               </p>
-              <a href="mailto:suporte@entrevistador-ia.com.br"
+              <a href="mailto:suporte.entrevistador.ia@gmail.com"
                  className="text-zinc-500 text-sm hover:text-zinc-300 transition-colors duration-150">
-                suporte@entrevistador-ia.com.br
+                suporte.entrevistador.ia@gmail.com
               </a>
             </div>
 
@@ -1303,9 +1303,9 @@ export default function LandingPage() {
               <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-5">
                 Suporte
               </p>
-              <a href="mailto:suporte@entrevistador-ia.com.br"
+              <a href="mailto:suporte.entrevistador.ia@gmail.com"
                  className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors duration-150 block mb-2">
-                suporte@entrevistador-ia.com.br
+                suporte.entrevistador.ia@gmail.com
               </a>
               <p className="text-sm text-zinc-500">Respondemos em até 2 dias úteis</p>
             </div>

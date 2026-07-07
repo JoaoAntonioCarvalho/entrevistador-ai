@@ -71,9 +71,9 @@ function PagamentoFalhouContent() {
 
         <p className="text-xs text-muted-fg mt-6">
           Dúvidas? Email para{' '}
-          <a href="mailto:suporte@entrevistador-ia.com.br"
+          <a href="mailto:suporte.entrevistador.ia@gmail.com"
              className="underline">
-            suporte@entrevistador-ia.com.br
+            suporte.entrevistador.ia@gmail.com
           </a>
         </p>
 

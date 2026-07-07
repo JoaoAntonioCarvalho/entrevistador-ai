@@ -51,7 +51,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const bodyText = await req.text();
-    const assinaturaValida = verificarAssinaturaMP(req, bodyText);
+
+    // Assinatura HMAC inválida → rejeitar sem nenhum efeito colateral.
+    // 200 para o MP não reenviar em loop.
+    if (!verificarAssinaturaMP(req, bodyText)) {
+      Sentry.captureMessage(
+        'mp-webhook: assinatura HMAC inválida — request rejeitado',
+        { level: 'warning', tags: { route: 'mp-webhook' } }
+      );
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
     const body = JSON.parse(bodyText);
 
     const tipo   = String(body.type ?? body.topic ?? '');
@@ -67,7 +77,7 @@ export async function POST(req: NextRequest) {
     } else if (tipo.includes('preapproval')) {
       await handlePreapproval(String(dataId));
     } else if (tipo === 'payment') {
-      await handlePayment(String(dataId), assinaturaValida, ip);
+      await handlePayment(String(dataId), ip);
     }
 
     return NextResponse.json({ ok: true });
@@ -78,7 +88,7 @@ export async function POST(req: NextRequest) {
 }
 
 // ── Pagamento avulso (finalizar-atual, credito-7, credito-14) ───────────────
-async function handlePayment(paymentId: string, assinaturaValida: boolean, ip: string) {
+async function handlePayment(paymentId: string, ip: string) {
   const paymentClient = new Payment(mpConfig);
   const payment = await paymentClient.get({ id: Number(paymentId) });
 
@@ -122,14 +132,6 @@ async function handlePayment(paymentId: string, assinaturaValida: boolean, ip: s
   const sessionId  = partes[2] && partes[2] !== 'novo' ? partes[2] : null;
 
   if (!authUserId || !UUID_RE.test(authUserId) || !plano) return;
-
-  if (!assinaturaValida) {
-    Sentry.captureMessage(
-      'mp-webhook: assinatura HMAC inválida — processado via fallback (pagamento aprovado confirmado pela API do MP)',
-      { level: 'warning', tags: { route: 'mp-webhook', step: 'assinatura-fallback' },
-        extra: { paymentId: String(paymentId), authUserId, plano } },
-    );
-  }
 
   const { data: creditosExistentes } = await supabase
     .from('credits').select('id').eq('mp_payment_id', String(paymentId)).limit(1);
