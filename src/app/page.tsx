@@ -22,9 +22,21 @@ export const dynamic = 'force-dynamic';
 const DEMO_SLIDES = [
   {
     src:   '/screenshot-setup.png',
-    label: 'Configure',
-    desc:  'Envie seu currículo (ou pule) e informe a vaga. Leva 2 minutos.',
+    label: 'Envie seu currículo',
+    desc:  'Envie seu currículo em PDF ou preencha 4 campos. Pode pular se preferir.',
     alt:   'Tela de setup: escolha entre enviar currículo, preencher manualmente ou pular a etapa',
+  },
+  {
+    src:   '/screenshot-vaga.png',
+    label: 'Cole a vaga',
+    desc:  'Cole a descrição da vaga que você quer — ou deixe a IA gerar uma a partir do cargo.',
+    alt:   'Tela da vaga: descrição da vaga colada no campo de texto, pronta para ser analisada',
+  },
+  {
+    src:   '/screenshot-config.png',
+    label: 'Configure a entrevista',
+    desc:  'Escolha o entrevistador, o idioma, o nível e a quantidade de perguntas.',
+    alt:   'Tela de configuração: quantidade de perguntas, nível e escolha entre os entrevistadores Sarah, Carlos e Alex',
   },
   {
     src:   '/screenshot-entrevista.png',
@@ -756,7 +768,7 @@ export default function LandingPage() {
             <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
                            tracking-heading leading-[1.08]">
               Do currículo ao relatório,<br className="hidden sm:block" />
-              em 3 passos
+              em 5 passos
             </h2>
           </div>
 
