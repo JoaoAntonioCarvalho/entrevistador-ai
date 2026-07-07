@@ -14,6 +14,7 @@ import AvatarDisplay from '@/components/interview/AvatarDisplay';
 import TranscriptPanel from '@/components/interview/TranscriptPanel';
 import MicrophoneButton from '@/components/interview/MicrophoneButton';
 import CameraWidget from '@/components/interview/CameraWidget';
+import SilentModeHint from '@/components/interview/SilentModeHint';
 import { PaymentGateModal } from '@/components/interview/PaymentGateModal';
 import type { InterviewSession, InterviewTurnResponse } from '@/lib/types';
 import { notifyEntrevistaIniciada } from '@/lib/services/telegram';
@@ -73,6 +74,7 @@ export default function InterviewPage() {
   const [mostrarDica, setMostrarDica] = useState(true);
   const [wasReloaded, setWasReloaded] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [showSilentHint, setShowSilentHint] = useState(false);
 
   const isIOS = typeof window !== 'undefined' &&
     /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -102,6 +104,9 @@ export default function InterviewPage() {
   // Persiste o último user.id conhecido — garante que saveSessionToSupabase
   // recebe o ID mesmo se user ainda for null por timing de auth
   const authUserIdRef             = useRef<string | null>(null);
+  // Popup de silencioso iOS: só na primeira fala, nunca reaparece na sessão
+  const silentHintUsedRef         = useRef(false);
+  const silentHintTimerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -294,6 +299,31 @@ export default function InterviewPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewState]);
+
+  // Popup "não está ouvindo?" (iOS apenas): 3s após a PRIMEIRA fala começar,
+  // some quando ela termina ou ao toque, nunca reaparece na sessão. Puramente
+  // visual — observa interviewState, não altera nenhuma lógica de áudio.
+  useEffect(() => {
+    if (!isIOS) return;
+    if (interviewState === 'speaking' && !silentHintUsedRef.current) {
+      silentHintUsedRef.current = true;
+      silentHintTimerRef.current = setTimeout(() => setShowSilentHint(true), 3000);
+      return;
+    }
+    if (interviewState !== 'speaking' && silentHintUsedRef.current) {
+      if (silentHintTimerRef.current) {
+        clearTimeout(silentHintTimerRef.current);
+        silentHintTimerRef.current = null;
+      }
+      setShowSilentHint(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewState, isIOS]);
+
+  // Limpa o timer do popup no unmount
+  useEffect(() => () => {
+    if (silentHintTimerRef.current) clearTimeout(silentHintTimerRef.current);
+  }, []);
 
   // Mark speech support check complete after mount
   useEffect(() => {
@@ -718,6 +748,13 @@ export default function InterviewPage() {
       )}
 
       <CameraWidget candidateName={session.candidate?.nome ?? ''} />
+
+      {isIOS && showSilentHint && (
+        <SilentModeHint
+          idioma={session.config?.idioma}
+          onDismiss={() => setShowSilentHint(false)}
+        />
+      )}
 
       {/* Unsupported browser banner */}
       {showUnsupportedBanner && (
