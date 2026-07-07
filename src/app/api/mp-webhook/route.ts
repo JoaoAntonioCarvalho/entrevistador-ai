@@ -84,11 +84,33 @@ async function handlePayment(paymentId: string, assinaturaValida: boolean, ip: s
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const preferenceId = (payment as any).preference_id as string | undefined;
+  const novoStatus = payment.status ?? 'unknown';
+
   if (preferenceId) {
     await supabase
       .from('payment_sessions')
-      .update({ mp_payment_id: String(paymentId), status: payment.status ?? 'unknown' })
+      .update({ mp_payment_id: String(paymentId), status: novoStatus })
       .eq('mp_preference_id', preferenceId);
+  } else if (payment.external_reference) {
+    // Fallback: preference_id ausente na resposta do MP — localizar a
+    // tentativa de checkout pendente mais recente deste usuário+plano.
+    // Pode marcar mais de uma tentativa pendente do mesmo usuário+plano
+    // como aprovada (checkout aberto várias vezes, pago uma) — aceitável:
+    // são tentativas do MESMO pagamento e a criação de crédito abaixo
+    // continua acontecendo uma única vez.
+    const [refUser, refPlano, refSession] = payment.external_reference.split('|');
+    if (refUser && refPlano) {
+      const query = supabase
+        .from('payment_sessions')
+        .update({ mp_payment_id: String(paymentId), status: novoStatus })
+        .eq('auth_user_id', refUser)
+        .eq('plano', refPlano)
+        .eq('status', 'pending');
+      if (refSession && refSession !== 'novo') {
+        query.eq('session_id', refSession);
+      }
+      await query;
+    }
   }
 
   if (payment.status !== 'approved') return;
