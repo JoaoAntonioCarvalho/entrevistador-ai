@@ -767,7 +767,7 @@ export default function LandingPage() {
             </p>
             <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
                            tracking-heading leading-[1.08]">
-              Do currículo ao relatório,<br className="hidden sm:block" />
+              Do currículo ao relatório,{' '}<br className="hidden sm:block" />
               em 5 passos
             </h2>
           </div>
