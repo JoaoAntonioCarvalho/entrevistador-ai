@@ -11,6 +11,8 @@ export interface PendingSession {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   config:     any;
   createdAt:  string;
+  // false = sessão legada sem transcript no banco; retomada impossível
+  restauravel: boolean;
 }
 
 export function usePendingSession() {
@@ -38,11 +40,12 @@ export function usePendingSession() {
         const data = await res.json();
 
         setPending(data.hasPending ? {
-          sessionId:  data.sessionId,
-          jobTitulo:  data.jobTitulo,
-          jobEmpresa: data.jobEmpresa,
-          config:     data.config,
-          createdAt:  data.createdAt,
+          sessionId:   data.sessionId,
+          jobTitulo:   data.jobTitulo,
+          jobEmpresa:  data.jobEmpresa,
+          config:      data.config,
+          createdAt:   data.createdAt,
+          restauravel: data.restauravel ?? true,
         } : null);
       } catch {
         setPending(null);

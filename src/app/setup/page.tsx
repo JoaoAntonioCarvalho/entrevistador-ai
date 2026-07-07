@@ -120,6 +120,27 @@ export default function SetupPage() {
     }
   }
 
+  async function handleDescartar() {
+    if (!pending?.sessionId) return;
+    try {
+      const res = await authedFetch('/api/session/discard', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: pending.sessionId }),
+      });
+      const data = await res.json();
+      // Só recarrega se o descarte realmente aconteceu — recarregar com a
+      // sessão ainda 'active' reabriria este overlay em loop
+      if (data.ok === true) {
+        window.location.reload();
+        return;
+      }
+      toast.error('Não foi possível descartar. Tente novamente.');
+    } catch {
+      toast.error('Não foi possível descartar. Tente novamente.');
+    }
+  }
+
   function irParaPasso(novoStep: 1 | 2 | 3) {
     setStep(novoStep);
     setSetupStep(novoStep);
@@ -327,7 +348,9 @@ export default function SetupPage() {
               ou descartar a entrevista atual primeiro.
             </p>
 
-            {/* Card de desconto */}
+            {/* Card de desconto — só quando a sessão tem transcript para
+                restaurar; sessões legadas não podem ser retomadas */}
+            {pending.restauravel ? (
             <div className="bg-zinc-950 dark:bg-zinc-100 rounded-2xl p-5 mb-4 text-left">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold text-zinc-400
@@ -363,27 +386,35 @@ export default function SetupPage() {
                 Continuar e finalizar →
               </button>
             </div>
+            ) : (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400
+                            leading-relaxed mb-6">
+                Esta entrevista foi iniciada em uma versão anterior e não
+                pode ser retomada.
+              </p>
+            )}
 
             {/* Descartar */}
-            <button
-              onClick={async () => {
-                try {
-                  await authedFetch('/api/session/discard', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      sessionId:  pending.sessionId,
-                    }),
-                  });
-                } catch { /* silencioso */ }
-                window.location.reload();
-              }}
-              className="text-sm text-zinc-400 dark:text-zinc-500
-                         hover:text-zinc-600 dark:hover:text-zinc-400
-                         transition-colors underline"
-            >
-              Descartar entrevista e começar do zero
-            </button>
+            {pending.restauravel ? (
+              <button
+                onClick={handleDescartar}
+                className="text-sm text-zinc-400 dark:text-zinc-500
+                           hover:text-zinc-600 dark:hover:text-zinc-400
+                           transition-colors underline"
+              >
+                Descartar entrevista e começar do zero
+              </button>
+            ) : (
+              <button
+                onClick={handleDescartar}
+                className="w-full bg-zinc-900 dark:bg-white text-white
+                           dark:text-zinc-900 py-3 rounded-full font-semibold
+                           text-sm hover:bg-zinc-700 dark:hover:bg-zinc-100
+                           transition-colors"
+              >
+                Descartar e começar do zero
+              </button>
+            )}
 
           </div>
         </div>

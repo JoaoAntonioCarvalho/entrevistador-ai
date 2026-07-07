@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // Usa NOT IN para status e cobertura explícita de payment_status null/unpaid
     const { data: session } = await supabase
       .from('sessions')
-      .select('id, job_titulo, job_empresa, config, created_at, status, payment_status')
+      .select('id, job_titulo, job_empresa, config, created_at, status, payment_status, transcript')
       .eq('auth_user_id', authUserId)
       .not('status', 'in', '(completed,discarded,feedback)')
       .or('payment_status.is.null,payment_status.neq.paid')
@@ -37,6 +37,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ hasPending: false });
     }
 
+    // Sessões anteriores ao salvamento completo não têm transcript — pagar
+    // para "continuar" não teria de onde restaurar. Só o boolean vai ao
+    // cliente, nunca o transcript em si.
+    const restauravel =
+      Array.isArray(session.transcript) && session.transcript.length > 0;
+
     return NextResponse.json({
       hasPending:  true,
       sessionId:   session.id,
@@ -44,6 +50,7 @@ export async function POST(req: NextRequest) {
       jobEmpresa:  session.job_empresa ?? '',
       config:      session.config,
       createdAt:   session.created_at,
+      restauravel,
     });
 
   } catch {

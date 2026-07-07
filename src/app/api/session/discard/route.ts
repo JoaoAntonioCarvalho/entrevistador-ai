@@ -22,14 +22,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Parâmetros inválidos.' }, { status: 400 });
     }
 
-    // Marcar sessão como descartada — só permite para sessão do próprio usuário e não paga
-    await supabase
+    // Marcar sessão como descartada — só permite para sessão do próprio
+    // usuário e não paga. payment_status tem default 'pending' e nunca é
+    // null, por isso o filtro é neq 'paid' (is null não encontraria nada).
+    const { data, error } = await supabase
       .from('sessions')
       .update({ status: 'discarded' })
       .eq('id', sessionId)
       .eq('auth_user_id', authUserId)
-      .is('payment_status', null);
+      .neq('payment_status', 'paid')
+      .select('id');
 
+    if (error) {
+      return NextResponse.json({ error: 'Erro ao descartar sessão.' }, { status: 500 });
+    }
+    if (!data || data.length === 0) {
+      return NextResponse.json({ ok: false, motivo: 'nao_encontrada_ou_paga' });
+    }
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Erro ao descartar sessão.' }, { status: 500 });
