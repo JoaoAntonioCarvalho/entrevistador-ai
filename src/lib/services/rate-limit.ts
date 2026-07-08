@@ -37,8 +37,8 @@ export const webhookRateLimit = makeLimit(100, '1 m', 'ratelimit:webhook');
 // parseRateLimit das rotas essenciais de setup. Anti-spam do relay público.
 export const notifyRateLimit = makeLimit(20, '10 m', 'ratelimit:notify');
 
-// Perguntas gratuitas: 3 por 24h por IP (anônimos não podem burlar limpando cache)
-export const freeQuestionsLimit = makeLimit(3, '24 h', 'ratelimit:free-questions');
+// Perguntas gratuitas: 9 por 24h por IP (anônimos não podem burlar limpando cache)
+export const freeQuestionsLimit = makeLimit(9, '24 h', 'ratelimit:free-questions');
 
 // Sessões gratuitas: 1 por 24h por IP
 export const freeSessionLimit = makeLimit(1, '24 h', 'ratelimit:free-session');

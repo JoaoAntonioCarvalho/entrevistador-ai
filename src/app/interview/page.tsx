@@ -101,6 +101,10 @@ export default function InterviewPage() {
   const resumeVerifiedRef         = useRef(false);
   // Evita exibir payment gate após retorno confirmado de /pagamento/sucesso
   const pagamentoConfirmadoRef    = useRef(false);
+  // Uma única retentativa silenciosa de 402 por confirmação de pagamento —
+  // cobre a corrida entre o webhook do MP criar o crédito e o primeiro
+  // turno pós-retorno chegar antes disso. Reseta a cada nova confirmação.
+  const retriedAfterPaymentRef    = useRef(false);
   // Persiste o último user.id conhecido — garante que saveSessionToSupabase
   // recebe o ID mesmo se user ainda for null por timing de auth
   const authUserIdRef             = useRef<string | null>(null);
@@ -142,7 +146,7 @@ export default function InterviewPage() {
     isFirst: boolean,
     response?: string,
     perguntasAtualizadas?: number
-  ) => {
+  ): Promise<void> => {
     try {
       setWasReloaded(false); // limpa banner de restauração ao retomar
       setInterviewState('processing');
@@ -175,6 +179,16 @@ export default function InterviewPage() {
       if (res.status === 402) {
         // Ler corpo antes de descartar — o backend inclui avaliação e motivo
         const data402 = await res.json().catch(() => ({}));
+
+        // Se acabamos de confirmar pagamento nesta sessão, pode ser
+        // race condition do webhook ainda processando — esperar 1.5s e
+        // tentar mais uma vez antes de mostrar o gate de novo.
+        if (pagamentoConfirmadoRef.current && !retriedAfterPaymentRef.current) {
+          retriedAfterPaymentRef.current = true;
+          await new Promise(r => setTimeout(r, 1500));
+          return callTurnRef.current(isFirst, response, perguntasAtualizadas);
+        }
+
         if (!isFirst && response && data402.avaliacao) {
           addEvaluation({
             pergunta:       currentQuestion,
@@ -472,7 +486,7 @@ export default function InterviewPage() {
   useEffect(() => {
     if (user?.id && prevUserRef.current === null) {
       const candidateTurns = session.conversation.filter(t => t.role === 'candidate').length;
-      if (candidateTurns >= 3) {
+      if (candidateTurns >= 9) {
         verificarPagamentoAntesDeContinar();
       }
     }
@@ -544,6 +558,7 @@ export default function InterviewPage() {
     const paidParam = params.get('paid') === 'true';
     if (paidParam) {
       pagamentoConfirmadoRef.current = true;
+      retriedAfterPaymentRef.current = false; // libera uma nova retentativa para esta confirmação
     }
 
     // Retorno pós-pagamento → verificar crédito e continuar
