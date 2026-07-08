@@ -139,24 +139,36 @@ const COMO_FUNCIONA_STEPS = [
     icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
     title: 'Currículo e vaga',
     desc: 'Envie seu PDF (ou responda 4 perguntas) e cole a vaga que você quer. Não tem uma? A IA monta uma vaga realista na hora.',
+    img: '/screenshot-setup.png',
+    imgAlt: 'Tela de setup: escolha entre enviar currículo, preencher manualmente ou pular a etapa',
+    imgRatio: 'video' as const,
   },
   {
     num: '02',
     icon: <Settings className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
     title: 'Configure',
     desc: 'Sarah, Carlos ou Alex. Português ou inglês. 7 ou 14 perguntas. Trinta segundos e começa.',
+    img: '/screenshot-config.png',
+    imgAlt: 'Tela de configuração: quantidade de perguntas, nível e escolha entre os entrevistadores Sarah, Carlos e Alex',
+    imgRatio: 'video' as const,
   },
   {
     num: '03',
     icon: <Mic className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
     title: 'Entreviste por voz',
     desc: 'A entrevistadora fala, você responde pelo microfone. Pressão de verdade, sem ninguém te julgando.',
+    img: '/screenshot-entrevista.png',
+    imgAlt: 'Tela da entrevista com a entrevistadora Sarah e a transcrição da conversa em tempo real',
+    imgRatio: 'video' as const,
   },
   {
     num: '04',
     icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
     title: 'Receba o relatório',
     desc: 'Nota geral, mapa de competências, análise por pergunta e como um sênior teria respondido.',
+    img: '/screenshot-relatorio.png',
+    imgAlt: 'Relatório da entrevista com nota geral, competências e análise por pergunta',
+    imgRatio: 'portrait' as const,
   },
 ];
 
@@ -531,23 +543,35 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          {/* Desktop: grid de 4 colunas em linha única */}
-          <div className="hidden md:grid md:grid-cols-4 gap-4">
-            {COMO_FUNCIONA_STEPS.map((step) => (
+          {/* Desktop: showcase zig-zag, imagem + texto alternados por passo */}
+          <div className="hidden md:block">
+            {COMO_FUNCIONA_STEPS.map((step, i) => (
               <div key={step.num}
-                   className="bg-card rounded-xl p-7 border border-border
-                              hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
-                              transition-all duration-200">
-                <span aria-hidden="true"
-                      className="block text-[44px] font-bold font-mono tabular-nums
-                                 text-zinc-200 dark:text-zinc-700 leading-none mb-5">
-                  {step.num}
-                </span>
-                <div className="mb-4" aria-hidden="true">{step.icon}</div>
-                <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-3">
-                  {step.title}
-                </h3>
-                <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
+                   className={`flex items-center gap-14 lg:gap-20 py-16 lg:py-24
+                               ${i > 0 ? 'border-t border-border' : ''}
+                               ${i % 2 === 1 ? 'flex-row-reverse' : ''}`}>
+                <div className="flex-1">
+                  <Image
+                    src={step.img}
+                    alt={step.imgAlt}
+                    width={1200}
+                    height={step.imgRatio === 'portrait' ? 900 : 675}
+                    className="rounded-xl border border-zinc-200 dark:border-zinc-700
+                               shadow-card w-full h-auto"
+                  />
+                </div>
+                <div className="flex-1 max-w-[440px]">
+                  <span aria-hidden="true"
+                        className="block text-[56px] font-bold font-mono tabular-nums
+                                   text-zinc-200 dark:text-zinc-700 leading-none mb-6">
+                    {step.num}
+                  </span>
+                  <div className="mb-4" aria-hidden="true">{step.icon}</div>
+                  <h3 className="font-semibold text-foreground text-2xl leading-snug mb-4">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-fg text-base leading-[1.7]">{step.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -576,8 +600,9 @@ export default function LandingPage() {
             <SnapDots count={COMO_FUNCIONA_STEPS.length} active={comoFuncionaActive} />
           </div>
 
-          {/* Prévia pequena do relatório — único mockup mantido dos passos antigos */}
-          <div className="mt-10 md:mt-14 max-w-[380px] mx-auto">
+          {/* Prévia pequena do relatório — mobile apenas; desktop já mostra o
+              relatório em tamanho maior no passo 04 do showcase zig-zag acima */}
+          <div className="md:hidden mt-10 max-w-[380px] mx-auto">
             <Image
               src="/screenshot-relatorio.png"
               alt="Relatório da entrevista com nota geral, competências e análise por pergunta"
