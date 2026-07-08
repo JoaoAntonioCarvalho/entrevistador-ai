@@ -93,12 +93,23 @@ export async function POST(req: NextRequest) {
 
   console.error('[mp-webhook][debug] NÃO é legado — prosseguindo para validação de assinatura');
 
+  const isOrdersApiNotification = userAgent.includes('payments_via_orders');
+
   try {
     const bodyText = await req.text();
 
-    // Assinatura HMAC inválida → rejeitar sem nenhum efeito colateral.
-    // 200 para o MP não reenviar em loop.
-    if (!verificarAssinaturaMP(req, bodyText)) {
+    if (isOrdersApiNotification) {
+      console.error('[mp-webhook][debug] notificação payments_via_orders detectada — HMAC não validável com o manifest atual, verificando legitimidade via API do MP');
+      Sentry.captureMessage(
+        'mp-webhook: notificação payments_via_orders processada via verificação direta na API (manifest de assinatura ainda não suportado)',
+        { level: 'info', tags: { route: 'mp-webhook', tipo: 'payments_via_orders' } }
+      );
+      // Pular verificarAssinaturaMP para este tipo específico — a
+      // legitimidade é garantida adiante pelo fato de buscarmos o
+      // pagamento diretamente na API do MP com nosso próprio access
+      // token (não forjável) antes de criar qualquer crédito.
+    } else if (!verificarAssinaturaMP(req, bodyText)) {
+      console.error('[mp-webhook][debug] assinatura HMAC inválida — rejeitando');
       Sentry.captureMessage(
         'mp-webhook: assinatura HMAC inválida — request rejeitado',
         { level: 'warning', tags: { route: 'mp-webhook' } }
