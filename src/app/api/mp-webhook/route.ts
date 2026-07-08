@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { Payment, PreApproval } from 'mercadopago';
-import { mpConfig, MP_ACCESS_TOKEN, PERGUNTAS_POR_PLANO, type PlanoKey } from '@/lib/mp-config';
+import { mpConfig, MP_ACCESS_TOKEN, PERGUNTAS_POR_PLANO, isProducao, type PlanoKey } from '@/lib/mp-config';
 import { webhookRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,10 @@ const supabase = createClient(
 );
 
 function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
-  const secret = process.env.MP_WEBHOOK_SECRET?.trim();
+  const secret = (isProducao
+    ? process.env.MP_WEBHOOK_SECRET_PROD
+    : process.env.MP_WEBHOOK_SECRET_TEST
+  )?.trim();
   if (!secret) return false;
 
   const xSignature = req.headers.get('x-signature');

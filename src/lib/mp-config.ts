@@ -1,6 +1,6 @@
 import { MercadoPagoConfig } from 'mercadopago';
 
-const isProducao = process.env.MP_MODO === 'producao';
+export const isProducao = process.env.MP_MODO === 'producao';
 
 
 export const mpConfig = new MercadoPagoConfig({
