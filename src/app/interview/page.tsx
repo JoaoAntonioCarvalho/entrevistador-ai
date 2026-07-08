@@ -107,6 +107,9 @@ export default function InterviewPage() {
   // Popup de silencioso iOS: só na primeira fala, nunca reaparece na sessão
   const silentHintUsedRef         = useRef(false);
   const silentHintTimerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Suprime o aviso de saída (beforeunload) quando a navegação para fora da
+  // página foi disparada pelo próprio app (redirect para o Mercado Pago)
+  const suppressLeaveWarningRef   = useRef(false);
 
   const incrementarPerguntas = useCallback(() => {
     perguntasRespondidasRef.current += 1;
@@ -493,6 +496,24 @@ export default function InterviewPage() {
       audioContextRef.current?.close().catch(() => {});
     };
   }, []);
+
+  // Aviso de saída (fechar aba, atualizar, digitar nova URL) durante a
+  // entrevista — suprimido no redirect deliberado para o Mercado Pago e
+  // depois que a entrevista termina
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (suppressLeaveWarningRef.current) return;
+      if (interviewState === 'ended') return;
+      if (!session.candidate) return;
+
+      e.preventDefault();
+      e.returnValue = ''; // necessário para o Chrome disparar o dialog
+      return '';
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [interviewState, session.candidate]);
 
   // Auto-ocultar dica de primeira pergunta após 6 segundos
   useEffect(() => {
@@ -1015,6 +1036,7 @@ export default function InterviewPage() {
           sessionId={session.id}
           motivo={paymentGateMotivo}
           onClose={() => { setShowPaymentGate(false); setGateDismissed(true); }}
+          onBeforeRedirectToPayment={() => { suppressLeaveWarningRef.current = true; }}
         />
       )}
     </div>

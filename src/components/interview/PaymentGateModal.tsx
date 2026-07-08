@@ -11,12 +11,14 @@ interface PaymentGateModalProps {
   sessionId: string;
   onClose?:  () => void;
   motivo?:   'normal' | 'free_limit';
+  onBeforeRedirectToPayment?: () => void;
 }
 
 export function PaymentGateModal({
   sessionId,
   onClose,
   motivo = 'normal',
+  onBeforeRedirectToPayment,
 }: PaymentGateModalProps) {
   const { user } = useAuth();
   const { open } = useAuthModal();
@@ -42,6 +44,7 @@ export function PaymentGateModal({
       });
       const data = await res.json();
       if (data.initPoint) {
+        onBeforeRedirectToPayment?.();
         window.location.href = data.initPoint;
       } else {
         toast.error('Erro ao iniciar pagamento.');
