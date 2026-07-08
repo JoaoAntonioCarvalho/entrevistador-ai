@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,7 +8,7 @@ import {
   ArrowRight, Sun, Moon, ChevronDown,
   Mic, FileText, Globe, Users, TrendingUp,
   MessageSquare, Zap, Lock, Shield, CreditCard,
-  BarChart3, Check, Settings,
+  BarChart3, Check, Settings, Calendar,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,110 +17,78 @@ import { AccountMenu, MobileMenu } from '@/components/layout/HeaderMenus';
 
 export const dynamic = 'force-dynamic';
 
-// ── Demo showcase ───────────────────────────────────────────────────────────
+// ── Carrossel mobile (scroll-snap + dots) ───────────────────────────────────
+// CSS scroll-snap puro cuida do movimento; o observer só atualiza qual dot
+// está ativo, sem interferir no scroll vertical da página.
 
-const DEMO_SLIDES = [
-  {
-    src:   '/screenshot-setup.png',
-    label: 'Envie seu currículo',
-    desc:  'Envie seu currículo em PDF ou preencha 4 campos. Pode pular se preferir.',
-    alt:   'Tela de setup: escolha entre enviar currículo, preencher manualmente ou pular a etapa',
-  },
-  {
-    src:   '/screenshot-vaga.png',
-    label: 'Cole a vaga',
-    desc:  'Cole a descrição da vaga que você quer — ou deixe a IA gerar uma a partir do cargo.',
-    alt:   'Tela da vaga: descrição da vaga colada no campo de texto, pronta para ser analisada',
-  },
-  {
-    src:   '/screenshot-config.png',
-    label: 'Configure a entrevista',
-    desc:  'Escolha o entrevistador, o idioma, o nível e a quantidade de perguntas.',
-    alt:   'Tela de configuração: quantidade de perguntas, nível e escolha entre os entrevistadores Sarah, Carlos e Alex',
-  },
-  {
-    src:   '/screenshot-entrevista.png',
-    label: 'Entreviste',
-    desc:  'A entrevistadora fala, você responde pelo microfone. Conversa de verdade.',
-    alt:   'Tela da entrevista com a entrevistadora Sarah e a transcrição da conversa em tempo real',
-  },
-  {
-    src:   '/screenshot-relatorio.png',
-    label: 'Receba o relatório',
-    desc:  'Nota geral, ponto forte, melhorias e análise pergunta por pergunta.',
-    alt:   'Relatório da entrevista com nota 81 de 100, pontos fortes e análise por pergunta',
-  },
-];
-
-function DemoShowcase() {
+function useSnapActiveIndex(ref: RefObject<HTMLDivElement>, count: number) {
   const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused) return;
-    const t = setInterval(() => {
-      setActive((a) => (a + 1) % DEMO_SLIDES.length);
-    }, 5000);
-    return () => clearInterval(t);
-  }, [paused]);
+    const container = ref.current;
+    if (!container) return;
+    const cards = Array.from(container.children) as HTMLElement[];
 
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+          const idx = cards.indexOf(entry.target as HTMLElement);
+          if (idx !== -1) setActive(idx);
+        }
+      });
+    }, { root: container, threshold: [0.6] });
+
+    cards.forEach((c) => observer.observe(c));
+    return () => observer.disconnect();
+  }, [ref, count]);
+
+  return active;
+}
+
+function SnapDots({ count, active }: { count: number; active: number }) {
   return (
-    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    <div className="flex md:hidden justify-center gap-1.5 mt-5" aria-hidden="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <span key={i}
+              className={`h-1.5 rounded-full transition-all duration-200 ${
+                active === i ? 'w-5 bg-foreground' : 'w-1.5 bg-border'
+              }`} />
+      ))}
+    </div>
+  );
+}
 
-      {/* Passos clicáveis — grid de 6 colunas (cada card ocupa 2) para a
-          segunda linha (04/05) ficar centralizada sob a primeira */}
-      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 mb-6">
-        {DEMO_SLIDES.map((s, i) => (
-          <button key={s.src}
-                  onClick={() => setActive(i)}
-                  aria-pressed={active === i}
-                  className={`text-left rounded-xl p-4 border transition-all duration-200
-                              sm:col-span-2 ${i === 3 ? 'sm:col-start-2' : ''} ${
-                    active === i
-                      ? 'bg-card border-border-strong shadow-card-hover'
-                      : 'bg-transparent border-transparent hover:bg-card hover:border-border'
-                  }`}>
-            <p className={`text-[11px] font-semibold uppercase tracking-eyebrow mb-1.5 ${
-              active === i ? 'text-foreground' : 'text-muted-fg'
-            }`}>
-              {String(i + 1).padStart(2, '0')} · {s.label}
-            </p>
-            <p className="text-[13px] text-muted-fg leading-[1.6]">{s.desc}</p>
-            {/* Barra de progresso do auto-avanço */}
-            <div className="mt-3 h-0.5 rounded-full bg-border overflow-hidden" aria-hidden="true">
-              {active === i && (
-                <div key={`${i}-${paused}`}
-                     className="h-full bg-foreground rounded-full"
-                     style={{
-                       animation: paused ? 'none' : 'demo-progress 5s linear forwards',
-                       width: paused ? '100%' : undefined,
-                     }} />
-              )}
-            </div>
-          </button>
-        ))}
+interface Persona {
+  name: string; situation: string; pain: string; result: string;
+}
+
+function PersonaCard({ p, className = '' }: { p: Persona; className?: string }) {
+  return (
+    <div className={`bg-card rounded-xl p-7 border border-border
+                     hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
+                     transition-all duration-200 cursor-pointer ${className}`}>
+      <div className="mb-5">
+        <p className="font-semibold text-foreground text-[15px]">{p.name}</p>
+        <p className="text-[11px] uppercase tracking-eyebrow text-muted-fg mt-1">
+          {p.situation}
+        </p>
       </div>
-
-      <style>{`
-        @keyframes demo-progress { from { width: 0 } to { width: 100% } }
-      `}</style>
-
-      {/* Screenshot ativo com crossfade */}
-      <div className="relative aspect-video rounded-xl overflow-hidden
-                      border border-border bg-card
-                      shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
-        {DEMO_SLIDES.map((s, i) => (
-          <Image key={s.src}
-                 src={s.src}
-                 alt={s.alt}
-                 fill
-                 sizes="(max-width: 800px) 100vw, 800px"
-                 className={`object-cover object-top transition-opacity duration-500 ${
-                   active === i ? 'opacity-100' : 'opacity-0'
-                 }`} />
-        ))}
+      <div className="space-y-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                         text-zinc-400 dark:text-zinc-500 mb-1.5">
+            Dor
+          </p>
+          <p className="text-sm text-muted-fg leading-[1.7]">{p.pain}</p>
+        </div>
+        <div className="border-t border-border pt-4">
+          <p className="text-[11px] font-semibold uppercase tracking-eyebrow
+                         text-[#16a34a] mb-1.5">
+            Resultado
+          </p>
+          <p className="text-sm text-foreground leading-[1.7]">{p.result}</p>
+        </div>
       </div>
-
     </div>
   );
 }
@@ -141,6 +109,117 @@ interface Testimonial {
 
 const TESTIMONIALS: Testimonial[] = [
   // Aguardando depoimentos reais dos participantes.
+];
+
+// ── Dor (seção "Você sabe a resposta...") ────────────────────────────────────
+
+const DOR_ITEMS = [
+  {
+    icon: <Zap className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
+    title: 'Você fica nervoso',
+    desc: 'Você ensaiou no chuveiro, no espelho, na cabeça. Mas sem alguém do outro lado fazendo a pergunta, o nervosismo da hora H continua intacto.',
+  },
+  {
+    icon: <MessageSquare className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
+    title: 'Suas respostas soam vagas',
+    desc: 'Você sabe o que fez, mas a resposta sai solta, sem começo, meio e fim. O recrutador não avalia o que você sabe — avalia o que você consegue explicar.',
+  },
+  {
+    icon: <Users className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
+    title: 'Você não treina porque não tem com quem',
+    desc: 'Pedir pra um amigo fingir de recrutador é constrangedor — e ele não vai te dizer a verdade. Você sai da entrevista real sem saber o que errou.',
+  },
+];
+
+// ── Como funciona (fusão de "veja em ação" + "como funciona") ───────────────
+
+const COMO_FUNCIONA_STEPS = [
+  {
+    num: '01',
+    icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Currículo e vaga',
+    desc: 'Envie seu PDF (ou responda 4 perguntas) e cole a vaga que você quer. Não tem uma? A IA monta uma vaga realista na hora.',
+  },
+  {
+    num: '02',
+    icon: <Settings className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Configure',
+    desc: 'Sarah, Carlos ou Alex. Português ou inglês. 7 ou 14 perguntas. Trinta segundos e começa.',
+  },
+  {
+    num: '03',
+    icon: <Mic className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Entreviste por voz',
+    desc: 'A entrevistadora fala, você responde pelo microfone. Pressão de verdade, sem ninguém te julgando.',
+  },
+  {
+    num: '04',
+    icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Receba o relatório',
+    desc: 'Nota geral, mapa de competências, análise por pergunta e como um sênior teria respondido.',
+  },
+];
+
+// ── Personas ("Para quem é") ─────────────────────────────────────────────────
+
+const PERSONAS = [
+  {
+    name: 'Pedro, 24 anos',
+    situation: 'Recém-formado · Primeiro emprego',
+    pain: 'Nunca fez uma entrevista formal de verdade. Trava quando perguntam sobre experiência.',
+    result: 'Treina como apresentar seu potencial mesmo sem histórico profissional extenso.',
+  },
+  {
+    name: 'Marina, 31 anos',
+    situation: 'Em transição de carreira · Mudando de área',
+    pain: 'Tem 7 anos de experiência, mas em outra função. Não sabe como vender sua trajetória.',
+    result: 'Aprende a conectar experiência anterior com o novo cargo e convencer o recrutador.',
+  },
+  {
+    name: 'Rafael, 29 anos',
+    situation: 'Dev buscando senioridade',
+    pain: 'É bom tecnicamente, mas trava em perguntas comportamentais e de liderança.',
+    result: 'Pratica as respostas técnicas e comportamentais separadamente, por tipo de vaga.',
+  },
+  {
+    name: 'Camila, 38 anos',
+    situation: 'Buscando posição de liderança',
+    pain: 'Quer uma posição C-level mas precisa refinar como comunica visão e resultados.',
+    result: 'Pratica estruturar raciocínio estratégico e liderança com exemplos concretos.',
+  },
+];
+
+// ── Segurança e privacidade ──────────────────────────────────────────────────
+
+const SEGURANCA_ITEMS = [
+  {
+    icon: <Lock className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Dados protegidos',
+    desc: 'Seus dados são armazenados com segurança no Supabase e nunca compartilhados com terceiros para marketing.',
+  },
+  {
+    icon: <Shield className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Conforme a LGPD',
+    desc: 'Tratamos seus dados conforme a Lei nº 13.709. Você pode solicitar exclusão a qualquer momento.',
+  },
+  {
+    icon: (
+      <svg className="w-5 h-5 text-muted-fg" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+           strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+    ),
+    title: 'IA não treina com seus dados',
+    desc: 'Não usamos suas respostas para treinar modelos de IA. Elas são processadas pelos provedores apenas para gerar sua entrevista e seu feedback.',
+  },
+  {
+    icon: <CreditCard className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
+    title: 'Pagamento seguro',
+    desc: 'Pagamentos via Mercado Pago com certificação PCI DSS. Não armazenamos dados de cartão.',
+  },
 ];
 
 // ── FAQ data ────────────────────────────────────────────────────────────────
@@ -190,6 +269,12 @@ export default function LandingPage() {
   const [mounted, setMounted]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq]   = useState<number | null>(null);
+  const [pricingTab, setPricingTab] = useState<'avulso' | 'mensal'>('avulso');
+
+  const comoFuncionaRef    = useRef<HTMLDivElement>(null);
+  const comoFuncionaActive = useSnapActiveIndex(comoFuncionaRef, COMO_FUNCIONA_STEPS.length);
+  const personasRef        = useRef<HTMLDivElement>(null);
+  const personasActive     = useSnapActiveIndex(personasRef, PERSONAS.length);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -275,9 +360,9 @@ export default function LandingPage() {
       </header>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 1 — HERO
+          SEÇÃO 1 — HERO (compacto no mobile)
       ───────────────────────────────────────────── */}
-      <section className="pt-32 pb-20 lg:pt-44 lg:pb-28 px-6 bg-background">
+      <section className="pt-28 pb-10 lg:pt-44 lg:pb-28 px-6 bg-background">
         <div className="max-w-[680px] mx-auto text-center">
 
           <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-6
@@ -285,14 +370,20 @@ export default function LandingPage() {
             Simulador de entrevistas com IA
           </p>
 
-          <h1 className="text-[44px] sm:text-[60px] lg:text-[72px] font-bold
-                         tracking-display leading-[1.02] text-foreground mb-6
+          <h1 className="text-4xl sm:text-[60px] lg:text-[72px] font-bold
+                         tracking-display leading-[1.08] sm:leading-[1.02] text-foreground mb-6
                          animate-fade-in-up-delay-1">
             A entrevista real não tem<br />
             segunda chance. O treino tem.
           </h1>
 
-          <p className="text-lg sm:text-xl text-muted-fg leading-[1.75] mb-10
+          {/* Mobile: versão curta de 1 frase. Desktop: versão longa. */}
+          <p className="sm:hidden text-lg text-muted-fg leading-[1.75] mb-10
+                        max-w-[540px] mx-auto animate-fade-in-up-delay-2">
+            Um entrevistador de IA que fala com você, pergunta sobre a SUA
+            vaga e mostra onde você perde pontos.
+          </p>
+          <p className="hidden sm:block text-lg sm:text-xl text-muted-fg leading-[1.75] mb-10
                         max-w-[540px] mx-auto animate-fade-in-up-delay-2">
             Um entrevistador de IA que fala com você por voz, pergunta sobre o
             seu currículo e a sua vaga, e mostra exatamente onde você perde
@@ -309,8 +400,16 @@ export default function LandingPage() {
               {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
+
+            {/* Mobile: link de texto discreto (não segundo botão de largura cheia) */}
             <a href="#como-funciona"
-               className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+               className="sm:hidden text-sm text-muted-fg hover:text-foreground
+                          transition-colors duration-150 min-h-[44px] inline-flex items-center">
+              Ver como funciona
+            </a>
+            {/* Desktop: botão secundário, como antes */}
+            <a href="#como-funciona"
+               className="hidden sm:inline-flex items-center justify-center gap-1.5
                           border border-border text-foreground px-7 py-3.5 rounded-lg
                           font-medium text-[15px] hover:bg-muted hover:border-border-strong
                           transition-all duration-150">
@@ -324,8 +423,8 @@ export default function LandingPage() {
               : '3 perguntas grátis · Sem cartão · Sem cadastro'}
           </p>
 
-          {/* Social proof */}
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1
+          {/* Social proof — repete o que já está na seção de Recursos, então some no mobile */}
+          <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-3 gap-y-1
                           text-[13px] text-muted-fg">
             <span>Feedback detalhado ao final</span>
             <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
@@ -336,24 +435,26 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 1B — VEJA EM AÇÃO (showcase de screenshots reais)
-          Se um dia houver vídeo demo real, ele pode substituir este showcase.
+          SEÇÃO 2 — PROVA IMEDIATA (mockup da entrevista)
       ───────────────────────────────────────────── */}
-      <section className="py-24 lg:py-32 px-6 bg-muted">
+      <section className="pb-16 pt-2 sm:pb-24 sm:pt-4 lg:pb-32 lg:pt-6 px-6 bg-background">
         <div className="max-w-[800px] mx-auto">
 
-          <div className="mb-12 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
-              Veja em ação
-            </p>
-            <h2 className="text-[32px] lg:text-[40px] font-bold text-foreground
-                           tracking-heading leading-[1.08]">
-              Do currículo ao relatório,{' '}<br className="hidden sm:block" />
-              em 5 passos
-            </h2>
+          <div className="relative mx-4 sm:mx-0 max-h-[70vh] sm:max-h-none
+                          rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700
+                          shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
+            <Image
+              src="/screenshot-entrevista.png"
+              alt="Tela da entrevista com a entrevistadora Sarah e a transcrição da conversa em tempo real"
+              width={1200}
+              height={675}
+              className="w-full h-auto object-cover object-top"
+              priority
+            />
           </div>
-
-          <DemoShowcase />
+          <p className="text-center text-[13px] text-muted-fg mt-4">
+            Entrevista real, por voz, com a Sarah — uma das 3 entrevistadoras.
+          </p>
 
         </div>
       </section>
@@ -377,24 +478,9 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                icon: <Zap className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
-                title: 'Você fica nervoso',
-                desc: 'Você ensaiou no chuveiro, no espelho, na cabeça. Mas sem alguém do outro lado fazendo a pergunta, o nervosismo da hora H continua intacto.',
-              },
-              {
-                icon: <MessageSquare className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
-                title: 'Suas respostas soam vagas',
-                desc: 'Você sabe o que fez, mas a resposta sai solta, sem começo, meio e fim. O recrutador não avalia o que você sabe — avalia o que você consegue explicar.',
-              },
-              {
-                icon: <Users className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />,
-                title: 'Você não treina porque não tem com quem',
-                desc: 'Pedir pra um amigo fingir de recrutador é constrangedor — e ele não vai te dizer a verdade. Você sai da entrevista real sem saber o que errou.',
-              },
-            ].map((item, i) => (
+          {/* Desktop: cards grandes em grid de 3 colunas */}
+          <div className="hidden md:grid md:grid-cols-3 gap-4">
+            {DOR_ITEMS.map((item, i) => (
               <div key={i}
                    className="bg-zinc-900 dark:bg-zinc-800 rounded-xl p-7
                               border border-zinc-800 dark:border-zinc-700
@@ -409,11 +495,28 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* Mobile: linhas compactas, ícone à esquerda */}
+          <div className="md:hidden space-y-3">
+            {DOR_ITEMS.map((item, i) => (
+              <div key={i}
+                   className="flex items-start gap-4 bg-zinc-900 dark:bg-zinc-800 rounded-xl
+                              px-4 py-4 border border-zinc-800 dark:border-zinc-700">
+                <div className="shrink-0 mt-0.5" aria-hidden="true">{item.icon}</div>
+                <div>
+                  <h3 className="font-semibold text-white text-[14px] leading-snug mb-1">
+                    {item.title}
+                  </h3>
+                  <p className="text-zinc-400 text-[13px] leading-[1.6]">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────
-          SEÇÃO 3 — COMO FUNCIONA (4 passos)
+          SEÇÃO 5 — COMO FUNCIONA (fusão: "veja em ação" + "como funciona")
       ───────────────────────────────────────────── */}
       <section id="como-funciona" className="py-24 lg:py-32 px-6 bg-muted">
         <div className="max-w-[1120px] mx-auto">
@@ -428,104 +531,61 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          {/* Desktop: 4 cards em linha com setas */}
-          <div className="hidden md:flex items-start gap-1">
-            {[
-              {
-                num: '01',
-                icon: <FileText className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Compartilhe seu currículo',
-                desc: 'Envie o PDF ou responda 4 perguntas rápidas. Com o currículo, as perguntas miram a SUA experiência — não um roteiro genérico.',
-              },
-              {
-                num: '02',
-                icon: <MessageSquare className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Informe a vaga',
-                desc: 'Cole a descrição da vaga que você quer. Não tem uma? Digite o cargo e a IA monta uma vaga realista na hora.',
-              },
-              {
-                num: '03',
-                icon: <Settings className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Configure e inicie',
-                desc: 'Sarah, Carlos ou Alex. Português ou inglês. 7 ou 14 perguntas. Trinta segundos de escolhas e a entrevista começa.',
-              },
-              {
-                num: '04',
-                icon: <BarChart3 className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Receba seu feedback',
-                desc: 'Nota geral, mapa de competências, análise de cada resposta e como um profissional sênior teria respondido. Pronto em segundos.',
-              },
-            ].map((step, i, arr) => (
-              <Fragment key={step.num}>
-                <div className="flex-1 bg-card rounded-xl p-7 border border-border
-                                hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
-                                transition-all duration-200">
+          {/* Desktop: grid de 4 colunas em linha única */}
+          <div className="hidden md:grid md:grid-cols-4 gap-4">
+            {COMO_FUNCIONA_STEPS.map((step) => (
+              <div key={step.num}
+                   className="bg-card rounded-xl p-7 border border-border
+                              hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
+                              transition-all duration-200">
+                <span aria-hidden="true"
+                      className="block text-[44px] font-bold font-mono tabular-nums
+                                 text-zinc-200 dark:text-zinc-700 leading-none mb-5">
+                  {step.num}
+                </span>
+                <div className="mb-4" aria-hidden="true">{step.icon}</div>
+                <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile: scroll-snap horizontal, um card por vez, dots de progresso */}
+          <div className="md:hidden">
+            <div ref={comoFuncionaRef}
+                 className="flex gap-4 overflow-x-auto snap-x snap-mandatory
+                            scrollbar-none -mx-6 px-6 pb-1">
+              {COMO_FUNCIONA_STEPS.map((step) => (
+                <div key={step.num}
+                     className="snap-start shrink-0 w-[85%] bg-card rounded-xl p-6 border border-border">
                   <span aria-hidden="true"
-                        className="block text-[44px] font-bold font-mono tabular-nums
-                                   text-zinc-200 dark:text-zinc-700 leading-none mb-5">
+                        className="block text-[36px] font-bold font-mono tabular-nums
+                                   text-zinc-200 dark:text-zinc-700 leading-none mb-4">
                     {step.num}
                   </span>
-                  <div className="mb-4" aria-hidden="true">{step.icon}</div>
-                  <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-3">
+                  <div className="mb-3" aria-hidden="true">{step.icon}</div>
+                  <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-2">
                     {step.title}
                   </h3>
                   <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
                 </div>
-                {i < arr.length - 1 && (
-                  <div className="flex items-center justify-center shrink-0 pt-14 px-0.5"
-                       aria-hidden="true">
-                    <ArrowRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />
-                  </div>
-                )}
-              </Fragment>
-            ))}
+              ))}
+            </div>
+            <SnapDots count={COMO_FUNCIONA_STEPS.length} active={comoFuncionaActive} />
           </div>
 
-          {/* Mobile: lista vertical com linha conectora à esquerda */}
-          <div className="md:hidden">
-            <div className="relative pl-10">
-              <div className="absolute left-[18px] top-5 bottom-5 w-px bg-border"
-                   aria-hidden="true" />
-              <div className="space-y-5">
-                {[
-                  {
-                    num: '01',
-                    title: 'Compartilhe seu currículo',
-                    desc: 'Envie o PDF ou responda 4 perguntas rápidas. Com o currículo, as perguntas miram a SUA experiência — não um roteiro genérico.',
-                  },
-                  {
-                    num: '02',
-                    title: 'Informe a vaga',
-                    desc: 'Cole a descrição da vaga que você quer. Não tem uma? Digite o cargo e a IA monta uma vaga realista na hora.',
-                  },
-                  {
-                    num: '03',
-                    title: 'Configure e inicie',
-                    desc: 'Sarah, Carlos ou Alex. Português ou inglês. 7 ou 14 perguntas. Trinta segundos de escolhas e a entrevista começa.',
-                  },
-                  {
-                    num: '04',
-                    title: 'Receba seu feedback',
-                    desc: 'Nota geral, mapa de competências, análise de cada resposta e como um profissional sênior teria respondido. Pronto em segundos.',
-                  },
-                ].map((step) => (
-                  <div key={step.num} className="flex gap-4 items-start">
-                    <div className="w-9 h-9 shrink-0 rounded-full bg-card border border-border
-                                    flex items-center justify-center z-10 relative">
-                      <span className="text-[10px] font-bold font-mono text-muted-fg">
-                        {step.num}
-                      </span>
-                    </div>
-                    <div className="bg-card rounded-xl p-5 border border-border flex-1">
-                      <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-2">
-                        {step.title}
-                      </h3>
-                      <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Prévia pequena do relatório — único mockup mantido dos passos antigos */}
+          <div className="mt-10 md:mt-14 max-w-[380px] mx-auto">
+            <Image
+              src="/screenshot-relatorio.png"
+              alt="Relatório da entrevista com nota geral, competências e análise por pergunta"
+              width={1200}
+              height={900}
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700
+                         shadow-card w-full h-auto"
+            />
           </div>
 
         </div>
@@ -602,10 +662,10 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────
           SEÇÃO 4B — RELATÓRIO DETALHADO
       ───────────────────────────────────────────── */}
-      <section id="relatorio" className="py-24 lg:py-32 px-6 bg-muted">
+      <section id="relatorio" className="py-16 lg:py-32 px-6 bg-muted">
         <div className="max-w-[1120px] mx-auto">
 
-          <div className="mb-14">
+          <div className="mb-8 lg:mb-14">
             <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-4">
               Relatório completo
             </p>
@@ -621,7 +681,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-16 items-start">
 
             {/* Coluna esquerda — itens do relatório */}
             <div className="flex flex-col">
@@ -706,7 +766,7 @@ export default function LandingPage() {
                 },
               ].map((item, i, arr) => (
                 <div key={i}>
-                  <div className="flex gap-4 py-6 hover:-translate-y-0.5 transition-transform duration-200">
+                  <div className="flex gap-4 py-4 lg:py-6 hover:-translate-y-0.5 transition-transform duration-200">
                     <div className="mt-0.5 shrink-0 text-muted-fg" aria-hidden="true">
                       {item.icon}
                     </div>
@@ -740,7 +800,7 @@ export default function LandingPage() {
           </div>
 
           {/* Nota de destaque */}
-          <div className="mt-12 p-6 rounded-2xl bg-zinc-950 dark:bg-zinc-900 text-center">
+          <div className="mt-8 lg:mt-12 p-5 lg:p-6 rounded-2xl bg-zinc-950 dark:bg-zinc-900 text-center">
             <p className="text-white font-semibold text-lg mb-1">
               Tudo isso em menos de 5 minutos.
             </p>
@@ -769,61 +829,21 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              {
-                name: 'Pedro, 24 anos',
-                situation: 'Recém-formado · Primeiro emprego',
-                pain: 'Nunca fez uma entrevista formal de verdade. Trava quando perguntam sobre experiência.',
-                result: 'Treina como apresentar seu potencial mesmo sem histórico profissional extenso.',
-              },
-              {
-                name: 'Marina, 31 anos',
-                situation: 'Em transição de carreira · Mudando de área',
-                pain: 'Tem 7 anos de experiência, mas em outra função. Não sabe como vender sua trajetória.',
-                result: 'Aprende a conectar experiência anterior com o novo cargo e convencer o recrutador.',
-              },
-              {
-                name: 'Rafael, 29 anos',
-                situation: 'Dev buscando senioridade',
-                pain: 'É bom tecnicamente, mas trava em perguntas comportamentais e de liderança.',
-                result: 'Pratica as respostas técnicas e comportamentais separadamente, por tipo de vaga.',
-              },
-              {
-                name: 'Camila, 38 anos',
-                situation: 'Buscando posição de liderança',
-                pain: 'Quer uma posição C-level mas precisa refinar como comunica visão e resultados.',
-                result: 'Pratica estruturar raciocínio estratégico e liderança com exemplos concretos.',
-              },
-            ].map((p, i) => (
-              <div key={i}
-                   className="bg-card rounded-xl p-7 border border-border
-                              hover:-translate-y-0.5 hover:border-border-strong hover:shadow-card-hover
-                              transition-all duration-200 cursor-pointer">
-                <div className="mb-5">
-                  <p className="font-semibold text-foreground text-[15px]">{p.name}</p>
-                  <p className="text-[11px] uppercase tracking-eyebrow text-muted-fg mt-1">
-                    {p.situation}
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow
-                                   text-zinc-400 dark:text-zinc-500 mb-1.5">
-                      Dor
-                    </p>
-                    <p className="text-sm text-muted-fg leading-[1.7]">{p.pain}</p>
-                  </div>
-                  <div className="border-t border-border pt-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow
-                                   text-[#16a34a] mb-1.5">
-                      Resultado
-                    </p>
-                    <p className="text-sm text-foreground leading-[1.7]">{p.result}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+          {/* Desktop: grid 2x2, como já era */}
+          <div className="hidden md:grid md:grid-cols-2 gap-4">
+            {PERSONAS.map((p, i) => <PersonaCard key={i} p={p} />)}
+          </div>
+
+          {/* Mobile: scroll-snap horizontal, um card por vez, dots de progresso */}
+          <div className="md:hidden">
+            <div ref={personasRef}
+                 className="flex gap-4 overflow-x-auto snap-x snap-mandatory
+                            scrollbar-none -mx-6 px-6 pb-1">
+              {PERSONAS.map((p, i) => (
+                <PersonaCard key={i} p={p} className="snap-start shrink-0 w-[85%]" />
+              ))}
+            </div>
+            <SnapDots count={PERSONAS.length} active={personasActive} />
           </div>
 
         </div>
@@ -906,7 +926,175 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Mobile: toggle Avulso / Mensal — 2 cards compactos por aba */}
+          <div className="md:hidden mb-6">
+            <div className="flex gap-1 p-1 rounded-full bg-muted border border-border w-fit mx-auto mb-6">
+              <button
+                onClick={() => setPricingTab('avulso')}
+                className={`flex items-center gap-1.5 px-4 min-h-[44px] rounded-full text-sm font-medium
+                            transition-all duration-150 ${
+                  pricingTab === 'avulso'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-fg hover:text-foreground'
+                }`}>
+                <Zap className="w-3.5 h-3.5" aria-hidden="true" />
+                Avulso
+              </button>
+              <button
+                onClick={() => setPricingTab('mensal')}
+                className={`flex items-center gap-1.5 px-4 min-h-[44px] rounded-full text-sm font-medium
+                            transition-all duration-150 ${
+                  pricingTab === 'mensal'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-fg hover:text-foreground'
+                }`}>
+                <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+                Mensal
+              </button>
+            </div>
+
+            {pricingTab === 'avulso' ? (
+              <div className="grid grid-cols-2 gap-3">
+                {hasHistory && user ? (
+                  <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
+                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
+                      Sua conta
+                    </p>
+                    <p className="text-2xl font-bold font-mono text-foreground leading-none mb-3">✓</p>
+                    <ul className="space-y-1.5 mb-4 flex-1">
+                      {['Histórico salvo', 'Resultados anteriores', 'Continue evoluindo']
+                        .map((f) => (
+                        <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
+                          <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/historico"
+                      className="block w-full text-center border border-border text-muted-fg
+                                 py-2 min-h-[44px] flex items-center justify-center rounded-lg text-xs font-medium">
+                      Ver histórico
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
+                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
+                      Grátis
+                    </p>
+                    <p className="text-2xl font-bold font-mono text-foreground leading-none mb-3">R$0</p>
+                    <ul className="space-y-1.5 mb-4 flex-1">
+                      {['3 perguntas grátis', 'Sem cadastro', 'Veja antes de pagar']
+                        .map((f) => (
+                        <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
+                          <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/setup"
+                      className="block w-full text-center border border-border text-muted-fg
+                                 py-2 min-h-[44px] flex items-center justify-center rounded-lg text-xs font-medium">
+                      Começar
+                    </Link>
+                  </div>
+                )}
+
+                <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-4
+                                border border-transparent relative flex flex-col">
+                  <div className="absolute -top-2.5 left-4">
+                    <span className="bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950
+                                     text-[9px] font-semibold px-2 py-0.5 rounded-full">
+                      Mais popular
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-3">
+                    Avulso
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-white dark:text-zinc-950 leading-none mb-1">
+                    R$12,90
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mb-3">
+                    ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$22,90</span> p/ 14 perguntas
+                  </p>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {['Entrevista completa', 'Nota e feedback', 'Sem assinatura']
+                      .map((f) => (
+                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-zinc-300 dark:text-zinc-600">
+                        <Check className="w-3 h-3 text-zinc-400 shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/planos"
+                    className="block w-full text-center bg-white dark:bg-zinc-950
+                               text-zinc-950 dark:text-white py-2 min-h-[44px] flex items-center justify-center
+                               rounded-lg text-xs font-semibold">
+                    Ver opções
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
+                  <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
+                    Starter
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-foreground leading-none mb-1">R$39,90</p>
+                  <p className="text-[10px] text-muted-fg mb-3">/ mês</p>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {['6 entrevistas de 7 perguntas', 'Histórico de evolução', 'Cancele quando quiser']
+                      .map((f) => (
+                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
+                        <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/planos"
+                    className="block w-full text-center border border-border text-muted-fg
+                               py-2 min-h-[44px] flex items-center justify-center rounded-lg text-xs font-medium">
+                    Assinar
+                  </Link>
+                </div>
+
+                <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-4
+                                border border-transparent relative flex flex-col">
+                  <div className="absolute -top-2.5 left-4">
+                    <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                      RECOMENDADO
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-3">
+                    Pro
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-white dark:text-zinc-950 leading-none mb-1">
+                    R$59,90
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mb-3">
+                    / mês · <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$9,98</span> por entrevista
+                  </p>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {['6 entrevistas de 14 perguntas', 'Aprofundamento máximo', 'Cancele quando quiser']
+                      .map((f) => (
+                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-zinc-300 dark:text-zinc-600">
+                        <Check className="w-3 h-3 text-zinc-400 shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/planos"
+                    className="block w-full text-center bg-white dark:bg-zinc-950
+                               text-zinc-950 dark:text-white py-2 min-h-[44px] flex items-center justify-center
+                               rounded-lg text-xs font-semibold">
+                    Assinar
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: 4 cards lado a lado, sem toggle */}
+          <div className="hidden md:grid md:grid-cols-4 gap-4 mb-6">
 
             {/* Grátis / Sua conta */}
             {hasHistory && user ? (
@@ -1153,37 +1341,9 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                icon: <Lock className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Dados protegidos',
-                desc: 'Seus dados são armazenados com segurança no Supabase e nunca compartilhados com terceiros para marketing.',
-              },
-              {
-                icon: <Shield className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Conforme a LGPD',
-                desc: 'Tratamos seus dados conforme a Lei nº 13.709. Você pode solicitar exclusão a qualquer momento.',
-              },
-              {
-                icon: (
-                  <svg className="w-5 h-5 text-muted-fg" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
-                       strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                  </svg>
-                ),
-                title: 'IA não treina com seus dados',
-                desc: 'Não usamos suas respostas para treinar modelos de IA. Elas são processadas pelos provedores apenas para gerar sua entrevista e seu feedback.',
-              },
-              {
-                icon: <CreditCard className="w-5 h-5 text-muted-fg" strokeWidth={1.5} />,
-                title: 'Pagamento seguro',
-                desc: 'Pagamentos via Mercado Pago com certificação PCI DSS. Não armazenamos dados de cartão.',
-              },
-            ].map((item, i) => (
+          {/* Desktop: cards com descrição, como antes */}
+          <div className="hidden md:grid md:grid-cols-4 gap-4">
+            {SEGURANCA_ITEMS.map((item, i) => (
               <div key={i} className="p-6 rounded-xl border border-border bg-card
                                       hover:-translate-y-0.5 hover:shadow-card-hover
                                       transition-all duration-200">
@@ -1192,6 +1352,24 @@ export default function LandingPage() {
                 <p className="text-muted-fg text-sm leading-[1.7]">{item.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* Mobile: lista compacta 2x2, só ícone + título */}
+          <div className="md:hidden">
+            <div className="grid grid-cols-2 gap-3">
+              {SEGURANCA_ITEMS.map((item, i) => (
+                <div key={i} className="flex items-center gap-2.5 p-4 rounded-xl border border-border bg-card">
+                  <div className="shrink-0" aria-hidden="true">{item.icon}</div>
+                  <h3 className="font-semibold text-foreground text-[13px] leading-snug">{item.title}</h3>
+                </div>
+              ))}
+            </div>
+            <Link href="/privacidade"
+              className="inline-flex items-center gap-1 mt-4 text-[13px] text-muted-fg
+                         hover:text-foreground transition-colors duration-150">
+              Ler política de privacidade completa
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </Link>
           </div>
 
         </div>

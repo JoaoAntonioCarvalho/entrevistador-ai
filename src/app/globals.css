@@ -148,6 +148,10 @@ body {
 /* Chevron rotation for native <details> accordion */
 details[open] .rotate-on-open { transform: rotate(180deg); }
 
+/* Esconde a scrollbar dos carrosséis de scroll-snap horizontal (mobile) */
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 /* Prevent iOS auto-zoom on inputs */
 input, textarea, select {
   font-size: 16px !important;
