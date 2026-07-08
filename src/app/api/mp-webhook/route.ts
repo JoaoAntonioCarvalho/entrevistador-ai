@@ -21,34 +21,15 @@ function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
     ? process.env.MP_WEBHOOK_SECRET_PROD
     : process.env.MP_WEBHOOK_SECRET_TEST
   )?.trim();
-
-  console.error('[mp-webhook][debug] isProducao:', isProducao);
-  console.error('[mp-webhook][debug] secret length:', secret?.length ?? 0);
-  console.error('[mp-webhook][debug] secret preview:',
-    secret ? `${secret.slice(0,6)}...${secret.slice(-4)}` : 'AUSENTE');
-
-  if (!secret) {
-    console.error('[mp-webhook][debug] SEM secret configurado');
-    return false;
-  }
+  if (!secret) return false;
 
   const xSignature = req.headers.get('x-signature');
   const xRequestId = req.headers.get('x-request-id') ?? '';
-  console.error('[mp-webhook][debug] x-signature header:', xSignature);
-  console.error('[mp-webhook][debug] x-request-id header:', xRequestId);
-
-  if (!xSignature) {
-    console.error('[mp-webhook][debug] SEM header x-signature');
-    return false;
-  }
+  if (!xSignature) return false;
 
   const ts = xSignature.split(',').find(p => p.startsWith('ts='))?.split('=')[1];
   const v1 = xSignature.split(',').find(p => p.startsWith('v1='))?.split('=')[1];
-
-  if (!ts || !v1) {
-    console.error('[mp-webhook][debug] ts ou v1 ausentes');
-    return false;
-  }
+  if (!ts || !v1) return false;
 
   const dataIdQuery = req.nextUrl.searchParams.get('data.id');
   let dataIdBody = '';
@@ -58,16 +39,9 @@ function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const hmac = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
 
-  console.error('[mp-webhook][debug] dataId usado:', dataId);
-  console.error('[mp-webhook][debug] manifest completo:', manifest);
-  console.error('[mp-webhook][debug] hmac calculado:', hmac);
-  console.error('[mp-webhook][debug] v1 recebido:   ', v1);
-  console.error('[mp-webhook][debug] tamanhos - hmac:', hmac.length, '| v1:', v1.length);
-
   try {
     return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
-  } catch (e) {
-    console.error('[mp-webhook][debug] timingSafeEqual falhou:', e);
+  } catch {
     return false;
   }
 }
@@ -76,6 +50,16 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!await checkRateLimit(webhookRateLimit, ip)) {
     return NextResponse.json({ ok: true }, { status: 429 });
+  }
+
+  const userAgent = req.headers.get('user-agent') ?? '';
+  const isLegacyFeed = userAgent.includes('Feed v2.0');
+
+  if (isLegacyFeed) {
+    // Formato legado do MP (Feed v2.0) — não usa o mesmo esquema de
+    // assinatura do WebHook v1.0. Sempre falharia HMAC por desenho,
+    // não é uma falha real. Ignorar silenciosamente, sem warning.
+    return NextResponse.json({ ok: true });
   }
 
   try {
