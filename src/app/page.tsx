@@ -142,6 +142,8 @@ const COMO_FUNCIONA_STEPS = [
     img: '/screenshot-setup.png',
     imgAlt: 'Tela de setup: escolha entre enviar currículo, preencher manualmente ou pular a etapa',
     imgRatio: 'video' as const,
+    mobileImg: '/screenshot-curriculo-vaga.png',
+    mobileImgAlt: 'Formulário de currículo preenchido no celular, com nome, cargo e habilidades',
   },
   {
     num: '02',
@@ -151,6 +153,8 @@ const COMO_FUNCIONA_STEPS = [
     img: '/screenshot-config.png',
     imgAlt: 'Tela de configuração: quantidade de perguntas, nível e escolha entre os entrevistadores Sarah, Carlos e Alex',
     imgRatio: 'video' as const,
+    mobileImg: '/screenshot-configuracao.png',
+    mobileImgAlt: 'Tela de configuração da entrevista no celular, com idioma, tipo e entrevistador selecionados',
   },
   {
     num: '03',
@@ -160,6 +164,8 @@ const COMO_FUNCIONA_STEPS = [
     img: '/screenshot-entrevista.png',
     imgAlt: 'Tela da entrevista com a entrevistadora Sarah e a transcrição da conversa em tempo real',
     imgRatio: 'video' as const,
+    mobileImg: '/screenshot-entrevista-mobile.png',
+    mobileImgAlt: 'Tela da entrevista no celular com a entrevistadora Sarah e a transcrição da conversa',
   },
   {
     num: '04',
@@ -169,6 +175,8 @@ const COMO_FUNCIONA_STEPS = [
     img: '/screenshot-relatorio.png',
     imgAlt: 'Relatório da entrevista com nota geral, competências e análise por pergunta',
     imgRatio: 'portrait' as const,
+    mobileImg: '/screenshot-relatorio-mobile.png',
+    mobileImgAlt: 'Relatório da entrevista no celular com nota geral, pontos fortes e análise por pergunta',
   },
 ];
 
@@ -583,17 +591,28 @@ export default function LandingPage() {
                             scrollbar-none -mx-6 px-6 pb-1">
               {COMO_FUNCIONA_STEPS.map((step) => (
                 <div key={step.num}
-                     className="snap-start shrink-0 w-[85%] bg-card rounded-xl p-6 border border-border">
-                  <span aria-hidden="true"
-                        className="block text-[36px] font-bold font-mono tabular-nums
-                                   text-zinc-200 dark:text-zinc-700 leading-none mb-4">
-                    {step.num}
-                  </span>
-                  <div className="mb-3" aria-hidden="true">{step.icon}</div>
-                  <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
+                     className="snap-start shrink-0 w-[85%] bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="aspect-[9/16] bg-muted">
+                    <Image
+                      src={step.mobileImg}
+                      alt={step.mobileImgAlt}
+                      width={780}
+                      height={1600}
+                      className="w-full h-full object-cover object-top"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <span aria-hidden="true"
+                          className="block text-[36px] font-bold font-mono tabular-nums
+                                     text-zinc-200 dark:text-zinc-700 leading-none mb-4">
+                      {step.num}
+                    </span>
+                    <div className="mb-3" aria-hidden="true">{step.icon}</div>
+                    <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-2">
+                      {step.title}
+                    </h3>
+                    <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
