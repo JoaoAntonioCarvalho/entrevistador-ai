@@ -17,7 +17,7 @@ export default function CameraWidget({ candidateName }: Props) {
   const [isMobile, setIsMobile] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
-  // ── Drag com snap (mobile apenas) ──────────────────────────────────────────
+  // ── Drag com snap (mobile E desktop) ────────────────────────────────────
   const [lado, setLado] = useState<'direita' | 'esquerda'>('direita');
   const [dragging, setDragging] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -46,19 +46,24 @@ export default function CameraWidget({ candidateName }: Props) {
 
   // Hint "Arraste para mover": uma única vez por sessão, some sozinho em 4s
   useEffect(() => {
-    if (!isMobile) return;
     if (sessionStorage.getItem('camera-drag-hint') === 'true') return;
     sessionStorage.setItem('camera-drag-hint', 'true');
     setShowHint(true);
     const t = setTimeout(() => setShowHint(false), 4000);
     return () => clearTimeout(t);
-  }, [isMobile]);
+  }, []);
 
   function onPointerDown(e: React.PointerEvent) {
-    if (!isMobile || snapAnimRef.current) return;
+    if (snapAnimRef.current) return;
     const el = wrapRef.current;
     if (!el) return;
-    // rect capturado com transform zerado — é a âncora do arraste
+    // CAPTURA IMEDIATA — não esperar detectar movimento. Capturar só depois
+    // (na versão anterior) criava uma corrida contra o navegador: no toque
+    // touch, o gesto podia ser "roubado" antes do threshold de 8px ser
+    // atingido, e o widget parecia travado (pointermove parava de chegar).
+    // Capturando no down, garantimos receber TODOS os eventos do ponteiro
+    // deste gesto, independente de para onde ele se mover.
+    el.setPointerCapture(e.pointerId);
     dragRef.current = {
       pointerId: e.pointerId,
       startX:    e.clientX,
@@ -75,11 +80,11 @@ export default function CameraWidget({ candidateName }: Props) {
     const dx = e.clientX - d.startX;
     const dy = e.clientY - d.startY;
     if (!d.moved) {
-      // < 8px é clique, não arraste — não capturar para não roubar o click
-      // dos botões internos
+      // < 8px continua sendo tratado como clique, não arraste — mas o
+      // ponteiro já está capturado desde o down, então não há risco de
+      // perder eventos entre aqui e o momento em que moved vira true
       if (Math.hypot(dx, dy) < 8) return;
       d.moved = true;
-      el.setPointerCapture(e.pointerId);
       setDragging(true);
     }
     // Clamp aos limites da viewport — o widget nunca sai da tela
@@ -107,8 +112,8 @@ export default function CameraWidget({ candidateName }: Props) {
     setDragging(false);
 
     // Snap: canto inferior mais próximo do centro do widget; vertical sempre
-    // volta ao bottom fixo (acima do footer do microfone). Cantos superiores
-    // nunca são usados.
+    // volta ao bottom fixo (acima do footer do microfone no mobile, ou
+    // posição padrão no desktop). Cantos superiores nunca são usados.
     const margem = 8;
     const left = Math.min(
       Math.max(d.rect.left + (e.clientX - d.startX), margem),
@@ -124,8 +129,6 @@ export default function CameraWidget({ candidateName }: Props) {
     el.style.transition = 'transform 250ms ease-out';
     el.style.transform  = `translate3d(${targetLeft - d.rect.left}px, 0, 0)`;
     snapTimeoutRef.current = setTimeout(() => {
-      // Troca a âncora (classe left/right) e zera o transform de uma vez,
-      // sem transição — visualmente o widget não se move
       const wrap = wrapRef.current;
       if (wrap) {
         wrap.style.transition = '';
@@ -136,12 +139,13 @@ export default function CameraWidget({ candidateName }: Props) {
     }, 260);
   }
 
-  // touch-action: none — sem isso o iOS rola a página junto com o drag
-  const wrapClass = `fixed z-50 touch-none ${
+  // touch-none — sem isso o iOS rola a página junto com o drag.
+  // Agora sem gate de isMobile: drag + snap funcionam em ambos os ambientes.
+  const wrapClass = `fixed z-50 touch-none select-none ${
     isMobile
-      ? `bottom-36 ${lado === 'direita' ? 'right-3' : 'left-3'}${dragging ? ' cursor-grabbing' : ''}`
-      : 'bottom-24 right-4'
-  }`;
+      ? `bottom-36 ${lado === 'direita' ? 'right-3' : 'left-3'}`
+      : `bottom-24 ${lado === 'direita' ? 'right-4' : 'left-4'}`
+  } ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`;
 
   const dragProps = {
     ref:             wrapRef,
@@ -149,8 +153,6 @@ export default function CameraWidget({ candidateName }: Props) {
     onPointerMove,
     onPointerUp:     onPointerEnd,
     onPointerCancel: onPointerEnd,
-    // Após um arraste real, o click subsequente (retargetado pela captura)
-    // não deve acionar handlers internos (abrir câmera, fechar etc.)
     onClickCapture: (e: React.MouseEvent) => {
       if (suppressClickRef.current) {
         suppressClickRef.current = false;
@@ -166,21 +168,18 @@ export default function CameraWidget({ candidateName }: Props) {
     </div>
   ) : null;
 
-  // Connect stream to video element when both are available
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
 
-  // Stop tracks when stream changes (cleanup previous stream)
   useEffect(() => {
     return () => {
       stream?.getTracks().forEach(t => t.stop());
     };
   }, [stream]);
 
-  // Auto-open if user enabled camera in camera-check
   useEffect(() => {
     const cameraEnabled = sessionStorage.getItem('camera-enabled') === 'true';
     if (!cameraEnabled) return;
@@ -196,15 +195,12 @@ export default function CameraWidget({ candidateName }: Props) {
         setHasPermission('denied');
         setIsOpen(false);
       });
-  // Run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleOpen() {
     setIsOpen(true);
-    // If already denied, just show the denied UI — don't call getUserMedia again
     if (hasPermission === 'denied') return;
-    // If already have a stream, nothing to do
     if (stream) return;
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -226,12 +222,11 @@ export default function CameraWidget({ candidateName }: Props) {
 
   const initial = (candidateName.charAt(0) || '?').toUpperCase();
 
-  // ── CLOSED ──────────────────────────────────────────────────────────────────
   if (!isOpen) {
     return (
       <div
         {...dragProps}
-        className={`${wrapClass} cursor-pointer group`}
+        className={`${wrapClass} group`}
         onClick={handleOpen}
         title="Abrir câmera"
       >
@@ -250,7 +245,6 @@ export default function CameraWidget({ candidateName }: Props) {
     );
   }
 
-  // ── OPEN — DENIED ────────────────────────────────────────────────────────────
   if (hasPermission === 'denied') {
     return (
       <div {...dragProps} className={wrapClass}>
@@ -272,11 +266,8 @@ export default function CameraWidget({ candidateName }: Props) {
     );
   }
 
-  // ── OPEN — GRANTED ───────────────────────────────────────────────────────────
   return (
     <div {...dragProps} className={wrapClass}>
-      {/* Mobile: compacto fixo (não cobre mic/chat em 390px);
-          desktop: proporcional à viewport com limites, aspect 4:3 preservado */}
       {hint}
       <div className="relative w-28 md:w-[clamp(140px,13vw,260px)] aspect-[4/3] rounded-xl overflow-hidden border-2 border-zinc-600">
         <video
