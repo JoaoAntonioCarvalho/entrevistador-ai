@@ -440,7 +440,7 @@ export default function LandingPage() {
           <p className="text-[13px] text-muted-fg mb-12">
             {hasHistory && user
               ? 'Adicione créditos para continuar praticando'
-              : '9 perguntas grátis · Sem cartão · Sem cadastro'}
+              : '3 perguntas grátis · Sem cartão · Sem cadastro'}
           </p>
 
           {/* Social proof — repete o que já está na seção de Recursos, então some no mobile */}
@@ -1027,7 +1027,7 @@ export default function LandingPage() {
                     </p>
                     <p className="text-2xl font-bold font-mono text-foreground leading-none mb-3">R$0</p>
                     <ul className="space-y-1.5 mb-4 flex-1">
-                      {['9 perguntas grátis', 'Sem cadastro', 'Veja antes de pagar']
+                      {['3 perguntas grátis', 'Sem cadastro', 'Veja antes de pagar']
                         .map((f) => (
                         <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
                           <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
@@ -1181,7 +1181,7 @@ export default function LandingPage() {
                   </p>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
-                  {['9 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
+                  {['3 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
                     .map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
                       <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"

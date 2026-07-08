@@ -417,9 +417,12 @@ export async function POST(req: NextRequest) {
   const totalPerguntas    = body.totalPerguntas ?? 7;
   // authUserId já foi derivado do token verificado no topo do handler.
 
-  // Rate limit por IP para anônimos: 9 perguntas / 24h
-  // Aplica SOMENTE nos primeiros 9 turnos — a partir do 10° o payment gate assume o
-  // controle independentemente do authUserId (cobre race condition de auth loading).
+  // Rate limit por IP para anônimos: 9 perguntas / 24h (limite Upstash,
+  // independente do gate de pagamento por sessão logo abaixo, que corta em 3).
+  // Janela deliberadamente mais larga que o gate de sessão — cobre qualquer
+  // cenário onde perguntasRespondidas (vindo do cliente) não reflita o gate
+  // de sessão real, garantindo que o teto verdadeiro de 9/dia por IP nunca
+  // fique sem essa checagem.
   if (!authUserId && freeQuestionsLimit && perguntasRespondidas < 9) {
     const { success: temGratis } = await freeQuestionsLimit.limit(ip);
     if (!temGratis) {
@@ -482,7 +485,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Gate de pagamento — mesma lógica de /api/credits/check para consistência
-  if (!isFirstTurn && perguntasRespondidas >= 9) {
+  if (!isFirstTurn && perguntasRespondidas >= 3) {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!

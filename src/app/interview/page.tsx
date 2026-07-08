@@ -486,7 +486,7 @@ export default function InterviewPage() {
   useEffect(() => {
     if (user?.id && prevUserRef.current === null) {
       const candidateTurns = session.conversation.filter(t => t.role === 'candidate').length;
-      if (candidateTurns >= 9) {
+      if (candidateTurns >= 3) {
         verificarPagamentoAntesDeContinar();
       }
     }
