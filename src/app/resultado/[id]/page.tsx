@@ -49,11 +49,13 @@ export default function ResultadoPage() {
   const [session, setSession] = useState<SessionRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied,  setCopied]  = useState(false);
+  const [processando, setProcessando] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    getSessionById(id).then(data => {
+    getSessionById(id).then(({ session: data, processando: proc }) => {
       setSession(data);
+      setProcessando(!!proc);
       setLoading(false);
     });
   }, [id]);
@@ -68,6 +70,27 @@ export default function ResultadoPage() {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-border border-t-foreground rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (processando) {
+    return (
+      <div className="min-h-dvh bg-background flex flex-col items-center
+                      justify-center gap-4 text-center px-4">
+        <div className="w-8 h-8 border-2 border-border border-t-foreground
+                        rounded-full animate-spin" />
+        <p className="text-muted-fg">
+          Este relatório ainda está sendo processado. Tente novamente
+          em alguns instantes.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-lg border border-border px-6 py-2.5
+                     text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Atualizar
+        </button>
       </div>
     );
   }

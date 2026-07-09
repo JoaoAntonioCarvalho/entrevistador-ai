@@ -115,7 +115,7 @@ export async function getHistoryByJob(jobTitulo: string): Promise<SessionSummary
 // pública (sem transcript, sem resposta_ideal, sem auth_user_id). A anon key
 // não lê mais `sessions` diretamente — ver db/rls-policies.sql (Opção A).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getSessionById(id: string): Promise<any | null> {
+export async function getSessionById(id: string): Promise<{ session: any | null; processando: boolean }> {
   if (process.env.NEXT_PUBLIC_USE_SUPABASE === 'true' && typeof window !== 'undefined') {
     try {
       const res = await fetch('/api/session/result', {
@@ -125,7 +125,8 @@ export async function getSessionById(id: string): Promise<any | null> {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.session) return data.session;
+        if (data.session) return { session: data.session, processando: false };
+        if (data.processando) return { session: null, processando: true };
       }
     } catch { /* fallback para localStorage */ }
   }
@@ -134,11 +135,11 @@ export async function getSessionById(id: string): Promise<any | null> {
   try {
     const raw = localStorage.getItem(`entrevistador-ai-session-${id}`);
     if (raw) {
-      return JSON.parse(raw);
+      return { session: JSON.parse(raw), processando: false };
     }
   } catch { /* não encontrado */ }
 
-  return null;
+  return { session: null, processando: false };
 }
 
 // ── Fallback localStorage ─────────────────────────────────

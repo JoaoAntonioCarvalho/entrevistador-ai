@@ -512,12 +512,12 @@ export default function InterviewPage() {
   }, []);
 
   // Aviso de saída (fechar aba, atualizar, digitar nova URL) durante a
-  // entrevista — suprimido no redirect deliberado para o Mercado Pago e
-  // depois que a entrevista termina
+  // entrevista — suprimido apenas no redirect deliberado para o Mercado Pago.
+  // Continua ativo durante a transição 'ended' → /feedback: esse componente
+  // só desmonta (e remove este listener) quando a navegação de fato ocorre.
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       if (suppressLeaveWarningRef.current) return;
-      if (interviewState === 'ended') return;
       if (!session.candidate) return;
 
       e.preventDefault();
@@ -527,7 +527,7 @@ export default function InterviewPage() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [interviewState, session.candidate]);
+  }, [session.candidate]);
 
   // Auto-ocultar dica de primeira pergunta após 6 segundos
   useEffect(() => {

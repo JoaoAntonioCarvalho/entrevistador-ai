@@ -47,6 +47,20 @@ export default function FeedbackPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Aviso de saída — cobre a janela entre o fim da entrevista e o
+  // salvamento completo do relatório (com scores reais). `done` só vira
+  // true depois que saveSessionToSupabase já foi tentado em gerarFeedback.
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (done) return;
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [done]);
+
   // Avançar steps visualmente a cada 1.2s
   useEffect(() => {
     const interval = setInterval(() => {

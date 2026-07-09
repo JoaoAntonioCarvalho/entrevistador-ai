@@ -51,6 +51,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ session: null }, { status: 404 });
     }
 
+    // Sessão existe mas o feedback ainda não terminou de processar (janela
+    // entre o fim da entrevista e o salvamento com scores reais em
+    // /feedback). Sinaliza ao frontend para não exibir score zerado.
+    const feedbackCompleto =
+      data.score_geral !== null &&
+      data.score_geral !== undefined &&
+      data.competencia_comunicacao !== null &&
+      data.competencia_comunicacao !== undefined;
+
+    if (!feedbackCompleto) {
+      return NextResponse.json({ session: null, processando: true }, { status: 200 });
+    }
+
     // Sanitizar evaluations: manter só o que a página exibe, descartando
     // pergunta/resposta/resposta_ideal (conteúdo interno da avaliação).
     const evaluationsSeguras = Array.isArray(data.evaluations)
