@@ -32,6 +32,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Nunca fazer upsert cego por id: sem essa checagem, quem soubesse o UUID
+    // de uma sessão alheia poderia sobrescrever seu conteúdo e, pior,
+    // reatribuir auth_user_id para si mesmo (sequestro de sessão).
+    const { data: existente } = await supabase
+      .from('sessions')
+      .select('auth_user_id, user_id')
+      .eq('id', session.id)
+      .maybeSingle();
+
+    if (existente) {
+      const donoAtualEhOutraConta =
+        !!existente.auth_user_id && existente.auth_user_id !== authUserId;
+      const donoAtualEhOutroAnonimo =
+        !existente.auth_user_id && !!existente.user_id &&
+        existente.user_id !== 'anonymous' && existente.user_id !== userId;
+
+      if (donoAtualEhOutraConta || donoAtualEhOutroAnonimo) {
+        return NextResponse.json(
+          { error: 'Você não tem permissão para modificar esta sessão.' },
+          { status: 403 },
+        );
+      }
+    }
+
     const sessionData: Record<string, unknown> = {
       id:                          session.id,
       user_id:                     userId ?? 'anonymous',

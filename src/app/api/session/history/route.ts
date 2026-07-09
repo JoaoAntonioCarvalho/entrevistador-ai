@@ -43,17 +43,26 @@ export async function POST(req: NextRequest) {
       sessions = data ?? [];
     }
 
-    // 2. Buscar por user_id local e mesclar (cobre sessões com auth_user_id NULL)
+    // 2. Buscar por user_id local e mesclar (cobre sessões com auth_user_id
+    // NULL) — nunca sessões já pertencentes a OUTRA conta autenticada, senão
+    // um user_id local coincidente (localStorage vazado/compartilhado)
+    // vazaria histórico entre contas diferentes.
     if (localUserId && localUserId !== 'server') {
       const idsExistentes = sessions.map(s => s.id);
 
-      const { data: byLocal } = await supabase
+      let query = supabase
         .from('sessions')
         .select(CAMPOS)
         .eq('user_id', localUserId)
         .in('status', STATUS_VALIDOS)
         .order('created_at', { ascending: false })
         .limit(50);
+
+      query = authUserId
+        ? query.or(`auth_user_id.is.null,auth_user_id.eq.${authUserId}`)
+        : query.is('auth_user_id', null);
+
+      const { data: byLocal } = await query;
 
       const novas = (byLocal ?? []).filter(
         s => !idsExistentes.includes(s.id),
