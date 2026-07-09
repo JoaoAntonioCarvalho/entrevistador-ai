@@ -57,6 +57,8 @@ export default function CameraWidget({ candidateName }: Props) {
     if (snapAnimRef.current) return;
     const el = wrapRef.current;
     if (!el) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return; // não inicia drag em botões internos
     // CAPTURA IMEDIATA — não esperar detectar movimento. Capturar só depois
     // (na versão anterior) criava uma corrida contra o navegador: no toque
     // touch, o gesto podia ser "roubado" antes do threshold de 8px ser
