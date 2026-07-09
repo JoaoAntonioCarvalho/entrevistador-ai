@@ -50,8 +50,8 @@ function SnapDots({ count, active }: { count: number; active: number }) {
     <div className="flex md:hidden justify-center gap-1.5 mt-5" aria-hidden="true">
       {Array.from({ length: count }).map((_, i) => (
         <span key={i}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
-                active === i ? 'w-5 bg-foreground' : 'w-1.5 bg-border'
+              className={`h-2 rounded-full transition-all duration-200 ${
+                active === i ? 'w-5 bg-zinc-900 dark:bg-white' : 'w-2 bg-zinc-300'
               }`} />
       ))}
     </div>
@@ -591,8 +591,17 @@ export default function LandingPage() {
                             scrollbar-none -mx-6 px-6 pb-1">
               {COMO_FUNCIONA_STEPS.map((step) => (
                 <div key={step.num}
-                     className="snap-start shrink-0 w-[85%] bg-card rounded-xl border border-border overflow-hidden">
-                  <div className="aspect-[9/16] bg-muted">
+                     className="snap-start shrink-0 w-[85%] bg-card rounded-xl border border-border p-6">
+                  <span aria-hidden="true"
+                        className="block text-[36px] font-bold font-mono tabular-nums
+                                   text-zinc-200 dark:text-zinc-700 leading-none mb-3">
+                    {step.num}
+                  </span>
+                  <div className="mb-3" aria-hidden="true">{step.icon}</div>
+                  <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-4">
+                    {step.title}
+                  </h3>
+                  <div className="h-36 rounded-lg overflow-hidden bg-muted mb-4">
                     <Image
                       src={step.mobileImg}
                       alt={step.mobileImgAlt}
@@ -601,18 +610,7 @@ export default function LandingPage() {
                       className="w-full h-full object-cover object-top"
                     />
                   </div>
-                  <div className="p-6">
-                    <span aria-hidden="true"
-                          className="block text-[36px] font-bold font-mono tabular-nums
-                                     text-zinc-200 dark:text-zinc-700 leading-none mb-4">
-                      {step.num}
-                    </span>
-                    <div className="mb-3" aria-hidden="true">{step.icon}</div>
-                    <h3 className="font-semibold text-foreground text-[14px] leading-snug mb-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
-                  </div>
+                  <p className="text-muted-fg text-sm leading-[1.7]">{step.desc}</p>
                 </div>
               ))}
             </div>
@@ -999,6 +997,42 @@ export default function LandingPage() {
 
             {pricingTab === 'avulso' ? (
               <div className="grid grid-cols-2 gap-3">
+                {/* Card pago primeiro no mobile — visitante deslogado vindo de
+                    anúncio vê o protagonista antes do plano grátis */}
+                <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-4
+                                border border-transparent relative flex flex-col">
+                  <div className="absolute -top-2.5 left-4">
+                    <span className="bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950
+                                     text-[9px] font-semibold px-2 py-0.5 rounded-full">
+                      Mais popular
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-3">
+                    Avulso
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-white dark:text-zinc-950 leading-none mb-1">
+                    R$12,90
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mb-3">
+                    ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$22,90</span> p/ 14 perguntas
+                  </p>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {['Entrevista completa', 'Nota e feedback', 'Sem assinatura']
+                      .map((f) => (
+                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-zinc-300 dark:text-zinc-600">
+                        <Check className="w-3 h-3 text-zinc-400 shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/planos"
+                    className="block w-full text-center bg-white dark:bg-zinc-950
+                               text-zinc-950 dark:text-white py-2 min-h-[44px] flex items-center justify-center
+                               rounded-lg text-xs font-semibold">
+                    Ver opções
+                  </Link>
+                </div>
+
                 {hasHistory && user ? (
                   <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
                     <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
@@ -1042,40 +1076,6 @@ export default function LandingPage() {
                     </Link>
                   </div>
                 )}
-
-                <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-4
-                                border border-transparent relative flex flex-col">
-                  <div className="absolute -top-2.5 left-4">
-                    <span className="bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950
-                                     text-[9px] font-semibold px-2 py-0.5 rounded-full">
-                      Mais popular
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-zinc-500 mb-3">
-                    Avulso
-                  </p>
-                  <p className="text-2xl font-bold font-mono text-white dark:text-zinc-950 leading-none mb-1">
-                    R$12,90
-                  </p>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mb-3">
-                    ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$22,90</span> p/ 14 perguntas
-                  </p>
-                  <ul className="space-y-1.5 mb-4 flex-1">
-                    {['Entrevista completa', 'Nota e feedback', 'Sem assinatura']
-                      .map((f) => (
-                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-zinc-300 dark:text-zinc-600">
-                        <Check className="w-3 h-3 text-zinc-400 shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/planos"
-                    className="block w-full text-center bg-white dark:bg-zinc-950
-                               text-zinc-950 dark:text-white py-2 min-h-[44px] flex items-center justify-center
-                               rounded-lg text-xs font-semibold">
-                    Ver opções
-                  </Link>
-                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
