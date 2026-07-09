@@ -285,7 +285,20 @@ export default function LandingPage() {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user } = useAuth();
-  const { hasHistory } = useHasHistory();
+  const { hasHistory, hasCredit } = useHasHistory();
+
+  function destinoCTA(): '/setup' | '/planos' {
+    if (!user) return '/setup';               // deslogado → grátis
+    if (hasCredit) return '/setup';            // tem crédito → vai direto
+    if (hasHistory) return '/planos';          // já usou, sem crédito → comprar
+    return '/setup';                            // nunca usou, sem crédito → grátis
+  }
+
+  function labelCTA(): string {
+    if (user && (hasCredit || hasHistory)) return 'Fazer entrevista';
+    return 'Começar grátis';
+  }
+
   const [mounted, setMounted]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq]   = useState<number | null>(null);
@@ -357,10 +370,10 @@ export default function LandingPage() {
             )}
 
             <button
-              onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
+              onClick={() => router.push(destinoCTA())}
               className="text-sm bg-foreground text-background px-4 py-2 rounded-lg
                          font-medium hover:opacity-90 transition-opacity duration-150">
-              {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
+              {labelCTA()}
             </button>
 
             {mounted ? (
@@ -412,11 +425,11 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3
                           animate-fade-in-up-delay-3">
             <button
-              onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
+              onClick={() => router.push(destinoCTA())}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2
                          bg-foreground text-background px-7 py-3.5 rounded-lg
                          font-semibold text-[15px] hover:opacity-90 transition-opacity duration-150">
-              {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
+              {labelCTA()}
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
 
@@ -1089,7 +1102,7 @@ export default function LandingPage() {
                   </Link>
                 </div>
 
-                {hasHistory && user ? (
+                {(hasHistory || hasCredit) && user ? (
                   <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
                     <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
                       Sua conta
@@ -1197,7 +1210,7 @@ export default function LandingPage() {
           <div className="hidden md:grid md:grid-cols-4 gap-4 mb-6">
 
             {/* Grátis / Sua conta */}
-            {hasHistory && user ? (
+            {(hasHistory || hasCredit) && user ? (
               <div className="bg-card rounded-xl p-7 border border-border flex flex-col
                               hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
                 <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
@@ -1490,10 +1503,10 @@ export default function LandingPage() {
             são grátis — dá tempo de descobrir onde você trava hoje.
           </p>
           <button
-            onClick={() => router.push(hasHistory && user ? '/planos' : '/setup')}
+            onClick={() => router.push(destinoCTA())}
             className="bg-white text-zinc-950 px-9 py-4 rounded-lg font-semibold
                        text-[15px] hover:bg-zinc-100 transition-colors duration-150">
-            {hasHistory && user ? 'Fazer entrevista' : 'Começar grátis'}
+            {labelCTA()}
           </button>
           <p className="text-zinc-500 text-[13px] mt-4">
             {hasHistory && user
