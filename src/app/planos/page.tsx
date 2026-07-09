@@ -87,15 +87,17 @@ function PlanosContent() {
   const returnTo = searchParams.get('return');
   const { user } = useAuth();
   const { open } = useAuthModal();
-  const session = useSessionStore(s => s.session);
   const { pending: pendingSession } = usePendingSession();
 
   const [tab, setTab] = useState<'avulso' | 'mensal'>('avulso');
 
-  const temEntrevistaAtiva =
-    !!session?.candidate?.nome &&
-    session?.status === 'active' &&
-    (session?.conversation?.length ?? 0) > 0;
+  // Fonte da verdade é o backend (usePendingSession → /api/session/pending),
+  // nunca o Zustand local: o store pode estar desatualizado ou vazio (outro
+  // dispositivo, sessão local limpa) enquanto ainda existe uma entrevista
+  // pendente real do usuário no banco — e vice-versa. Comprar "finalizar
+  // entrevista atual" sem saber, com certeza, qual sessão finalizar gera
+  // crédito órfão (session_id NULL) e cobrança duplicada.
+  const temEntrevistaAtiva = !!pendingSession?.sessionId;
 
   async function handleComprar(plano: string) {
     if (plano === 'finalizar-atual' && !temEntrevistaAtiva) {
@@ -109,7 +111,9 @@ function PlanosContent() {
     }
 
     try {
-      const sessionId = useSessionStore.getState().session?.id ?? null;
+      const sessionId = plano === 'finalizar-atual'
+        ? (pendingSession?.sessionId ?? null)
+        : (useSessionStore.getState().session?.id ?? null);
 
       // Planos mensais são assinatura recorrente (PreApproval); os demais são
       // compra avulsa (Preference).

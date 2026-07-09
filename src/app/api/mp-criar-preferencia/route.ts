@@ -44,6 +44,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 'finalizar-atual' sem sessionId válido gera crédito órfão (session_id
+    // NULL) — a sessão nunca é encontrada de volta e o usuário acaba pagando
+    // de novo. Nunca confiar só no frontend para essa amarração.
+    if (plano === 'finalizar-atual') {
+      if (!sessionId || !UUID_RE.test(sessionId)) {
+        return NextResponse.json(
+          { error: 'Sessão inválida para finalizar entrevista.' },
+          { status: 400 }
+        );
+      }
+
+      const { data: sess } = await supabase
+        .from('sessions')
+        .select('id, auth_user_id, status, payment_status')
+        .eq('id', sessionId)
+        .maybeSingle();
+
+      if (!sess || sess.auth_user_id !== authUserId) {
+        return NextResponse.json(
+          { error: 'Sessão não encontrada.' },
+          { status: 404 }
+        );
+      }
+      if (sess.payment_status === 'paid') {
+        return NextResponse.json(
+          { error: 'Esta entrevista já foi paga.' },
+          { status: 409 }
+        );
+      }
+    }
+
     const baseUrl = (
       process.env.NEXT_PUBLIC_APP_URL ?? 'https://entrevistador-ai.vercel.app'
     ).replace(/\/$/, '');
