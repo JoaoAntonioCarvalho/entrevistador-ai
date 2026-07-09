@@ -52,6 +52,14 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_APP_URL ?? 'https://entrevistador-ai.vercel.app'
     ).replace(/\/$/, '');
 
+    console.error('[mp-criar-assinatura][debug] payload enviado:', JSON.stringify({
+      reason: DESCRICOES_CURTAS[plano as keyof typeof DESCRICOES_CURTAS],
+      external_reference: `${authUser.id}|${plano}`,
+      payer_email: authUser.email,
+      back_url: `${baseUrl}/pagamento/sucesso?plano=${plano}`,
+      transaction_amount: PRECOS[plano as PlanoKey],
+    }));
+
     const preapproval = new PreApproval(mpConfig);
     const result = await preapproval.create({
       body: {
@@ -89,6 +97,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ initPoint: result.init_point });
 
   } catch (error) {
+    console.error('[mp-criar-assinatura][debug] erro completo:', error);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err = error as any;
+    console.error('[mp-criar-assinatura][debug] message:', err?.message);
+    console.error('[mp-criar-assinatura][debug] cause:', JSON.stringify(err?.cause ?? null));
+    console.error('[mp-criar-assinatura][debug] response (SDK MP):', JSON.stringify(err?.response ?? err?.error ?? null));
+    console.error('[mp-criar-assinatura][debug] status:', err?.status ?? err?.statusCode);
     Sentry.captureException(error, { tags: { route: 'mp-criar-assinatura' } });
     return NextResponse.json(
       { error: 'Erro ao criar assinatura.' },
