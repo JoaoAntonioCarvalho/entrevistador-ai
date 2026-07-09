@@ -503,18 +503,25 @@ export async function POST(req: NextRequest) {
       if (sess?.payment_status === 'paid') liberado = true;
     }
 
-    // 2. Crédito disponível por authUserId (mesma query do credits/check)
+    // 2. Crédito disponível por authUserId, do TAMANHO exato da sessão atual.
+    // Avulso não tem sobreposição (crédito de 7 não libera sessão de 14 e
+    // vice-versa) — mensal continua flexível dentro do limite do plano.
     if (!liberado && authUserId) {
-      const { data: credit } = await supabaseAdmin
+      const { data: creditosDisponiveis } = await supabaseAdmin
         .from('credits')
-        .select('id, perguntas, expires_at')
+        .select('id, perguntas, tipo, expires_at')
         .eq('auth_user_id', authUserId)
         .eq('usado', false)
         .eq('mp_status', 'approved')
-        .or('expires_at.is.null,expires_at.gt.now()')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .or('expires_at.is.null,expires_at.gt.now()');
+
+      const credit = (creditosDisponiveis ?? []).find(c => {
+        const perguntasCredito = Number(c.perguntas) || 0;
+        const isMensalCredit = typeof c.tipo === 'string' && c.tipo.startsWith('mensal-');
+        return isMensalCredit
+          ? perguntasCredito >= totalPerguntas
+          : perguntasCredito === totalPerguntas;
+      });
       if (credit) liberado = true;
     }
 

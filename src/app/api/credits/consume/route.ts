@@ -41,13 +41,14 @@ export async function POST(req: NextRequest) {
 
     const tamanho = Number(perguntas) || 0;
 
-    // Consumir o crédito mais adequado ao tamanho da entrevista: o MENOR crédito
-    // que cobre `tamanho` (ex.: uma entrevista de 7 não gasta um crédito de 14
-    // se houver um de 7). Empate de tamanho → mais antigo primeiro. Se nenhum
-    // cobrir (não deveria acontecer com o lock do /setup), cai no mais antigo.
+    // Consumir o crédito do tamanho EXATO da entrevista — avulso não tem
+    // sobreposição (um crédito de 14 não gasta numa entrevista de 7 nem
+    // vice-versa). Mensal continua flexível: qualquer crédito do plano que
+    // cubra o tamanho serve, já que o limite é por ciclo, não por compra
+    // avulsa. Empate de tamanho → mais antigo primeiro.
     const { data: creditos } = await supabase
       .from('credits')
-      .select('id, perguntas, created_at')
+      .select('id, perguntas, tipo, created_at')
       .eq('auth_user_id', authUserId)
       .eq('usado', false)
       .eq('mp_status', 'approved')
@@ -59,10 +60,20 @@ export async function POST(req: NextRequest) {
     }
 
     const cobrem = creditos
-      .filter(c => (Number(c.perguntas) || 0) >= tamanho)
+      .filter(c => {
+        const perguntasCredito = Number(c.perguntas) || 0;
+        const isMensalCredit = typeof c.tipo === 'string' && c.tipo.startsWith('mensal-');
+        return isMensalCredit ? perguntasCredito >= tamanho : perguntasCredito === tamanho;
+      })
       .sort((a, b) => (Number(a.perguntas) || 0) - (Number(b.perguntas) || 0));
 
-    const alvo = cobrem[0] ?? creditos[0];
+    // Sem crédito do tamanho exato (nem mensal cobrindo) — não deveria
+    // acontecer com o lock do /setup. Não consome nada em vez de gastar um
+    // crédito do tamanho errado.
+    const alvo = cobrem[0];
+    if (!alvo) {
+      return NextResponse.json({ ok: true });
+    }
 
     await supabase
       .from('credits')

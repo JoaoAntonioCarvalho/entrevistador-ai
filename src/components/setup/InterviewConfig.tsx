@@ -58,8 +58,12 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
 
   function opcaoBloqueada(qtd: number): boolean {
     if (loadingCredits) return true;
-    if (maxPerguntas >= qtd) return false;
-    if (qtd === 7 && !hasHistory) return false;
+    const temCreditoExato = (creditosPorPerguntas[qtd] ?? 0) > 0;
+    if (temCreditoExato) return false;
+    // Mensal continua flexível dentro do limite do plano — diferente do
+    // avulso, que agora é travado por tamanho (sem sobreposição).
+    if (isMensal && maxPerguntas >= qtd && !mensalEsgotado) return false;
+    if (qtd === 7 && !hasHistory) return false; // preview grátis
     return true;
   }
 
@@ -163,7 +167,11 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
             {OPCOES_PERGUNTAS.map(n => {
               const bloqueado = opcaoBloqueada(n);
               const carregando = n !== 7 && !!user && loadingCredits;
-              const gratis = n === 7 && maxPerguntas < 7;
+              // "Grátis" só quando o desbloqueio veio do preview grátis —
+              // não de um crédito real (exato ou mensal cobrindo)
+              const temCreditoExatoN = (creditosPorPerguntas[n] ?? 0) > 0;
+              const mensalCobreN = isMensal && maxPerguntas >= n && !mensalEsgotado;
+              const gratis = n === 7 && !bloqueado && !temCreditoExatoN && !mensalCobreN;
               return (
                 <button
                   key={n}
