@@ -586,6 +586,13 @@ export default function InterviewPage() {
     setPerguntasRespondidas(perguntasJaRespondidas);
     firstTurnCalledRef.current = true; // impede auto-first-turn na restauração
 
+    // currentQuestion é state local, não persistido — sem isso a próxima
+    // avaliação grava a pergunta como string vazia após o reload
+    const lastInterviewerMsg = session.conversation
+      .filter(t => t.role === 'interviewer')
+      .slice(-1)[0]?.text ?? '';
+    setCurrentQuestion(lastInterviewerMsg);
+
     if (perguntasJaRespondidas < totalPerguntas) {
       setInterviewState('waiting');
       setIsThinking(false);
@@ -644,6 +651,13 @@ export default function InterviewPage() {
           const candidateTurns = conv.filter(t => t.role === 'candidate');
           const count      = candidateTurns.length;
           const lastText   = candidateTurns[count - 1]?.text ?? '';
+
+          // currentQuestion é state local, não persistido — sem isso a
+          // avaliação do turno pós-retomada grava a pergunta como string vazia
+          const lastInterviewerMsg = conv
+            .filter(t => t.role === 'interviewer')
+            .slice(-1)[0]?.text ?? '';
+          setCurrentQuestion(lastInterviewerMsg);
 
           perguntasRespondidasRef.current = count;
           setPerguntasRespondidas(count);
