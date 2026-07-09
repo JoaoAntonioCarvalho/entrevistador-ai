@@ -59,6 +59,14 @@ export async function POST(req: NextRequest) {
       const isMensal = creditos.some(
         c => typeof c.tipo === 'string' && c.tipo.startsWith('mensal-'),
       );
+      // Contagem de créditos avulsos válidos por quantidade de perguntas —
+      // reaproveita `creditos` (já filtrado por usado/aprovado/não-expirado
+      // acima) em vez de uma segunda query.
+      const creditosPorPerguntas: Record<number, number> = {};
+      creditos.forEach(c => {
+        const qtd = Number(c.perguntas) || 0;
+        creditosPorPerguntas[qtd] = (creditosPorPerguntas[qtd] ?? 0) + 1;
+      });
       return NextResponse.json({
         hasCredit:     true,
         creditId:      creditos[0].id,   // mais antigo — mantém compatibilidade
@@ -66,6 +74,7 @@ export async function POST(req: NextRequest) {
         maxPerguntas,
         totalCreditos: creditos.length,
         isMensal,
+        creditosPorPerguntas,
       });
     }
 

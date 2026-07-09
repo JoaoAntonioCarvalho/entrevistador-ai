@@ -14,12 +14,13 @@ export function useCredits() {
     isMensal:       boolean;
     mensalEsgotado: boolean;
     renovaEm:       string | null;
+    creditosPorPerguntas: Record<number, number>;
     loading:        boolean;
-  }>({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, loading: true });
+  }>({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, creditosPorPerguntas: {}, loading: true });
 
   useEffect(() => {
     if (!userId) {
-      setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, loading: false });
+      setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, creditosPorPerguntas: {}, loading: false });
       return;
     }
 
@@ -38,10 +39,11 @@ export function useCredits() {
           isMensal:       data.isMensal ?? false,
           mensalEsgotado: data.mensalEsgotado ?? false,
           renovaEm:       data.renovaEm ?? null,
+          creditosPorPerguntas: data.creditosPorPerguntas ?? {},
           loading:        false,
         });
       } catch {
-        setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, loading: false });
+        setCreditInfo({ hasAnyCredit: false, maxPerguntas: 0, totalCreditos: 0, isMensal: false, mensalEsgotado: false, renovaEm: null, creditosPorPerguntas: {}, loading: false });
       }
     }
 

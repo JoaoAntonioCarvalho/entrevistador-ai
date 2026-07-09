@@ -52,15 +52,15 @@ const AVATAR_COLORS: Record<string, string> = {
 export default function InterviewConfig({ onComplete, job, profiles, loadingProfiles }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const { maxPerguntas, totalCreditos, isMensal, mensalEsgotado, renovaEm, hasAnyCredit, loading: loadingCredits } = useCredits();
+  const { maxPerguntas, totalCreditos, isMensal, mensalEsgotado, renovaEm, hasAnyCredit, creditosPorPerguntas, loading: loadingCredits } = useCredits();
   const { hasHistory } = useHasHistory();
   const [config, setConfig] = useState<IConfig>({ ...DEFAULT_CONFIG });
 
   function opcaoBloqueada(qtd: number): boolean {
-    if (qtd === 7) return false;
-    if (!user) return true;
     if (loadingCredits) return true;
-    return maxPerguntas < qtd;
+    if (maxPerguntas >= qtd) return false;
+    if (qtd === 7 && !hasHistory) return false;
+    return true;
   }
 
   const resolvedProfiles = useMemo(() => {
@@ -128,6 +128,9 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
           Quantidade de perguntas
         </h3>
+        {user && loadingCredits && (
+          <p className="text-xs -mt-1 text-zinc-400">Carregando créditos...</p>
+        )}
         {user && !loadingCredits && (hasAnyCredit || mensalEsgotado) && (
           <p className={`text-xs -mt-1 ${
             mensalEsgotado
@@ -143,67 +146,92 @@ export default function InterviewConfig({ onComplete, job, profiles, loadingProf
               : `${totalCreditos} ${totalCreditos === 1 ? 'crédito disponível' : 'créditos disponíveis'} · até ${maxPerguntas} perguntas por entrevista`}
           </p>
         )}
-        <div className="grid grid-cols-2 gap-3">
-          {OPCOES_PERGUNTAS.map(n => {
-            const bloqueado = opcaoBloqueada(n);
-            const carregando = n !== 7 && !!user && loadingCredits;
-            return (
-              <button
-                key={n}
-                type="button"
-                onClick={() => {
-                  if (bloqueado) {
-                    router.push('/planos?return=setup');
-                    return;
-                  }
-                  update('perguntas', n);
-                }}
-                className={`relative flex flex-col items-center justify-center
-                            rounded-xl border py-3 px-4 transition-all
-                            ${config.perguntas === n && !bloqueado
-                              ? 'border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-800'
-                              : 'border-zinc-200 dark:border-zinc-700'
-                            }
-                            ${bloqueado
-                              ? 'opacity-60 cursor-pointer'
-                              : 'hover:border-zinc-400 dark:hover:border-zinc-500'
-                            }
-                            ${carregando ? 'animate-pulse' : ''}`}
-              >
-                {bloqueado && !carregando && (
-                  <div className="absolute top-1.5 right-1.5">
-                    <svg width="12" height="12" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" strokeWidth="2"
-                         strokeLinecap="round" strokeLinejoin="round"
-                         className="text-zinc-400">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                  </div>
-                )}
-                <span className={`text-lg font-bold tabular-nums
-                                  ${bloqueado
-                                    ? 'text-zinc-400 dark:text-zinc-600'
-                                    : 'text-zinc-900 dark:text-white'}`}>
-                  {n}
-                </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {carregando
-                    ? '...'
-                    : bloqueado
-                    ? (!user
-                        ? 'Pago'
-                        : mensalEsgotado
-                        ? 'Plano esgotado'
-                        : hasAnyCredit
-                        ? 'Requer plano maior'
-                        : 'Sem crédito')
-                    : 'perguntas'}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {user && loadingCredits ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[0, 1].map(i => (
+              <div key={i} className="min-h-[88px] rounded-xl border border-zinc-200
+                                      dark:border-zinc-700 py-3 px-4
+                                      flex flex-col items-center justify-center gap-1
+                                      animate-pulse">
+                <div className="h-5 w-8 bg-zinc-200 dark:bg-zinc-700 rounded" />
+                <div className="h-3 w-16 bg-zinc-100 dark:bg-zinc-800 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {OPCOES_PERGUNTAS.map(n => {
+              const bloqueado = opcaoBloqueada(n);
+              const carregando = n !== 7 && !!user && loadingCredits;
+              const gratis = n === 7 && maxPerguntas < 7;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => {
+                    if (bloqueado) {
+                      router.push('/planos?return=setup');
+                      return;
+                    }
+                    update('perguntas', n);
+                  }}
+                  className={`relative min-h-[88px] flex flex-col items-center justify-center
+                              rounded-xl border py-3 px-4 transition-all
+                              ${config.perguntas === n && !bloqueado
+                                ? 'border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-800'
+                                : 'border-zinc-200 dark:border-zinc-700'
+                              }
+                              ${bloqueado
+                                ? 'opacity-60 cursor-pointer'
+                                : 'hover:border-zinc-400 dark:hover:border-zinc-500'
+                              }
+                              ${carregando ? 'animate-pulse' : ''}`}
+                >
+                  {bloqueado && !carregando && (
+                    <div className="absolute top-1.5 right-1.5">
+                      <svg width="12" height="12" viewBox="0 0 24 24"
+                           fill="none" stroke="currentColor" strokeWidth="2"
+                           strokeLinecap="round" strokeLinejoin="round"
+                           className="text-zinc-400">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                    </div>
+                  )}
+                  <span className={`text-lg font-bold tabular-nums
+                                    ${bloqueado
+                                      ? 'text-zinc-400 dark:text-zinc-600'
+                                      : 'text-zinc-900 dark:text-white'}`}>
+                    {n}
+                  </span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {carregando
+                      ? '...'
+                      : bloqueado
+                      ? (!user
+                          ? 'Pago'
+                          : mensalEsgotado
+                          ? 'Plano esgotado'
+                          : hasAnyCredit
+                          ? 'Requer plano maior'
+                          : 'Sem crédito')
+                      : gratis
+                      ? 'Grátis'
+                      : 'perguntas'}
+                  </span>
+                  {!carregando && !bloqueado && !isMensal && !gratis &&
+                   (creditosPorPerguntas[n] ?? 0) > 0 && (
+                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500
+                                     mt-0.5 tabular-nums">
+                      {creditosPorPerguntas[n]} {creditosPorPerguntas[n] === 1
+                        ? 'crédito disponível' : 'créditos disponíveis'}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Nível */}
