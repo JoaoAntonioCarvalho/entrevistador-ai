@@ -460,7 +460,8 @@ export default function LandingPage() {
       <section className="pb-16 pt-2 sm:pb-24 sm:pt-4 lg:pb-32 lg:pt-6 px-6 bg-background">
         <div className="max-w-[800px] mx-auto">
 
-          <div className="relative mx-4 sm:mx-0 max-h-[70vh] sm:max-h-none
+          {/* Desktop: mockup real da tela de entrevista */}
+          <div className="hidden md:block relative
                           rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700
                           shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]">
             <Image
@@ -472,6 +473,55 @@ export default function LandingPage() {
               priority
             />
           </div>
+
+          {/* Mobile: conversa em bolhas nativa — texto real, legível, sem
+              chrome de tela encolhida. Argumento nº 1 pra quem vem de
+              anúncio no celular: "é uma conversa de verdade, por voz". */}
+          <div className="md:hidden mx-4 bg-white dark:bg-zinc-900 rounded-2xl
+                          border border-zinc-200 dark:border-zinc-700 p-4
+                          shadow-[0_2px_8px_rgba(0,0,0,0.04),0_24px_56px_rgba(0,0,0,0.10)]
+                          animate-fade-in-up">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center
+                              justify-center text-white text-xs font-semibold shrink-0">
+                S
+              </div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                Sarah <span className="text-zinc-400 dark:text-zinc-500">· Recrutadora Tech</span>
+              </p>
+              <span className="ml-auto flex items-center gap-1 text-[11px] text-zinc-500
+                               dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-full
+                               shrink-0">
+                <Mic className="w-3 h-3" aria-hidden="true" />
+                por voz
+              </span>
+            </div>
+
+            <div className="relative max-h-[380px] overflow-hidden">
+              <div className="flex flex-col gap-3">
+                <p className="self-start max-w-[85%] bg-zinc-100 text-zinc-900
+                              text-sm leading-relaxed rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+                  Você mencionou otimização de campanhas no seu currículo. Me
+                  conta uma situação em que o resultado veio abaixo do
+                  esperado — e o que você fez.
+                </p>
+                <p className="self-end max-w-[85%] bg-zinc-900 dark:bg-zinc-700 text-white
+                              text-sm leading-relaxed rounded-2xl rounded-tr-sm px-3.5 py-2.5">
+                  No segundo trimestre, uma campanha ficou 30% abaixo da
+                  meta. Refiz a segmentação analisando os dados de
+                  conversão e...
+                </p>
+                <p className="self-start max-w-[85%] bg-zinc-100 text-zinc-900
+                              text-sm leading-relaxed rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+                  Boa. E como você mediu se a nova segmentação...
+                </p>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-14
+                              bg-gradient-to-t from-white dark:from-zinc-900 to-transparent
+                              pointer-events-none" />
+            </div>
+          </div>
+
           <p className="text-center text-[13px] text-muted-fg mt-4">
             Entrevista real, por voz, com a Sarah — uma das 3 entrevistadoras.
           </p>
