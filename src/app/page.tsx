@@ -393,8 +393,7 @@ export default function LandingPage() {
           <h1 className="text-4xl sm:text-[60px] lg:text-[72px] font-bold
                          tracking-display leading-[1.08] sm:leading-[1.02] text-foreground mb-6
                          animate-fade-in-up-delay-1">
-            A entrevista real não tem<br />
-            segunda chance. O treino tem.
+            Tem entrevista de emprego que só vem uma vez. Chegue nela pronto.
           </h1>
 
           {/* Mobile: versão curta de 1 frase. Desktop: versão longa. */}
