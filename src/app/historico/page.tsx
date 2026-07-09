@@ -166,7 +166,7 @@ export default function HistoricoPage() {
         {!loading && sessions.length > 0 && (
           <>
             {/* Resumo */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 items-stretch">
               {[
                 {
                   label: 'Total',
@@ -175,6 +175,7 @@ export default function HistoricoPage() {
                 },
                 {
                   label: 'Melhor pontuação',
+                  labelMobile: 'Melhor nota',
                   value: bestScore?.toString() ?? '—',
                   sub: 'de 100 pontos',
                 },
@@ -182,6 +183,7 @@ export default function HistoricoPage() {
                   label: 'Evolução',
                   value: evolution === null ? '—' : evolution > 0 ? `+${evolution}` : `${evolution}`,
                   sub: 'pontos desde a 1ª sessão',
+                  subBreakMobile: true,
                   valueClass:
                     evolution === null ? 'text-muted-fg' :
                     evolution > 0 ? 'text-[#16a34a]' :
@@ -189,17 +191,31 @@ export default function HistoricoPage() {
                 },
               ].map((stat, i) => (
                 <div key={i}
-                     className="bg-card border border-border rounded-xl p-6 flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-muted-fg
-                                   uppercase tracking-eyebrow mb-2">
-                    {stat.label}
+                     className="bg-card border border-border rounded-xl p-4 md:p-6 flex flex-col gap-1 h-full min-w-0">
+                  <span className="text-[10px] md:text-[11px] font-semibold text-muted-fg
+                                   uppercase tracking-eyebrow mb-2 whitespace-nowrap">
+                    {stat.labelMobile ? (
+                      <>
+                        <span className="md:hidden">{stat.labelMobile}</span>
+                        <span className="hidden md:inline">{stat.label}</span>
+                      </>
+                    ) : stat.label}
                   </span>
-                  <span className={`text-4xl font-bold font-mono tabular-nums ${
+                  <span className={`text-3xl md:text-4xl font-bold font-mono tabular-nums ${
                     stat.valueClass ?? 'text-foreground'
                   }`}>
                     {stat.value}
                   </span>
-                  <span className="text-sm text-muted-fg mt-1">{stat.sub}</span>
+                  <span className={`text-muted-fg mt-1 ${
+                    stat.subBreakMobile ? 'text-[11px] md:text-sm' : 'text-sm'
+                  }`}>
+                    {stat.subBreakMobile ? (
+                      <>
+                        <span className="md:hidden">pontos desde<br />a 1ª sessão</span>
+                        <span className="hidden md:inline">{stat.sub}</span>
+                      </>
+                    ) : stat.sub}
+                  </span>
                 </div>
               ))}
             </div>
