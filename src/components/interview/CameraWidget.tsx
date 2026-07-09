@@ -65,7 +65,11 @@ export default function CameraWidget({ candidateName }: Props) {
     // atingido, e o widget parecia travado (pointermove parava de chegar).
     // Capturando no down, garantimos receber TODOS os eventos do ponteiro
     // deste gesto, independente de para onde ele se mover.
-    el.setPointerCapture(e.pointerId);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      return; // captura falhou (ex: ponteiro já capturado alhures) — não inicia o drag
+    }
     dragRef.current = {
       pointerId: e.pointerId,
       startX:    e.clientX,
@@ -111,6 +115,10 @@ export default function CameraWidget({ candidateName }: Props) {
     if (!d.moved || !el) return; // clique normal — deixa o onClick seguir
 
     suppressClickRef.current = true;
+    // Rede de segurança: se por algum motivo o click subsequente que
+    // resetaria essa flag nunca chegar (ex: onClickCapture não disparar
+    // após um drag real), nunca deixar cliques suprimidos indefinidamente.
+    setTimeout(() => { suppressClickRef.current = false; }, 500);
     setDragging(false);
 
     // Snap: canto inferior mais próximo do centro do widget; vertical sempre
@@ -143,7 +151,12 @@ export default function CameraWidget({ candidateName }: Props) {
 
   // touch-none — sem isso o iOS rola a página junto com o drag.
   // Agora sem gate de isMobile: drag + snap funcionam em ambos os ambientes.
-  const wrapClass = `fixed z-50 touch-none select-none ${
+  // z-[100] — inequivocamente acima de qualquer outro elemento fixed/absolute
+  // da tela de entrevista (maior valor encontrado ali era z-50: overlay de
+  // desbloqueio de áudio iOS, modal de erro, gate de pagamento, popup de modo
+  // silencioso). pointer-events-auto explícito: nunca herdar pointer-events
+  // desabilitado de um pai, independente do estado.
+  const wrapClass = `fixed z-[100] pointer-events-auto touch-none select-none ${
     isMobile
       ? `bottom-36 ${lado === 'direita' ? 'right-3' : 'left-3'}`
       : `bottom-24 ${lado === 'direita' ? 'right-4' : 'left-4'}`
@@ -155,6 +168,13 @@ export default function CameraWidget({ candidateName }: Props) {
     onPointerMove,
     onPointerUp:     onPointerEnd,
     onPointerCancel: onPointerEnd,
+    onLostPointerCapture: () => {
+      // Rede de segurança adicional: se o navegador liberar a captura sem
+      // disparar onPointerUp/onPointerCancel, não deixar o drag travado.
+      dragRef.current = null;
+      setDragging(false);
+      suppressClickRef.current = false;
+    },
     onClickCapture: (e: React.MouseEvent) => {
       if (suppressClickRef.current) {
         suppressClickRef.current = false;
@@ -259,7 +279,7 @@ export default function CameraWidget({ candidateName }: Props) {
               e.stopPropagation();
               handleClose();
             }}
-            className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors"
+            className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors pointer-events-auto"
           >
             <X className="w-3.5 h-3.5 text-white" />
           </button>
@@ -284,7 +304,7 @@ export default function CameraWidget({ candidateName }: Props) {
             e.stopPropagation();
             handleClose();
           }}
-          className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors"
+          className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors pointer-events-auto"
         >
           <X className="w-3.5 h-3.5 text-white" />
         </button>
