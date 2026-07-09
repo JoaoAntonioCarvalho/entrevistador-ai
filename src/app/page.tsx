@@ -1102,49 +1102,26 @@ export default function LandingPage() {
                   </Link>
                 </div>
 
-                {(hasHistory || hasCredit) && user ? (
-                  <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
-                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
-                      Sua conta
-                    </p>
-                    <p className="text-2xl font-bold font-mono text-foreground leading-none mb-3">✓</p>
-                    <ul className="space-y-1.5 mb-4 flex-1">
-                      {['Histórico salvo', 'Resultados anteriores', 'Continue evoluindo']
-                        .map((f) => (
-                        <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
-                          <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link href="/historico"
-                      className="block w-full text-center border border-border text-muted-fg
-                                 py-2 min-h-[44px] flex items-center justify-center rounded-lg text-xs font-medium">
-                      Ver histórico
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
-                    <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
-                      Grátis
-                    </p>
-                    <p className="text-2xl font-bold font-mono text-foreground leading-none mb-3">R$0</p>
-                    <ul className="space-y-1.5 mb-4 flex-1">
-                      {['3 perguntas grátis', 'Sem cadastro', 'Veja antes de pagar']
-                        .map((f) => (
-                        <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
-                          <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link href="/setup"
-                      className="block w-full text-center border border-border text-muted-fg
-                                 py-2 min-h-[44px] flex items-center justify-center rounded-lg text-xs font-medium">
-                      Começar
-                    </Link>
-                  </div>
-                )}
+                <div className="bg-card rounded-xl p-4 border border-border flex flex-col">
+                  <p className="text-[10px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-3">
+                    Grátis
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-foreground leading-none mb-3">R$0</p>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {['3 perguntas grátis', 'Sem cadastro', 'Veja antes de pagar']
+                      .map((f) => (
+                      <li key={f} className="flex items-start gap-1.5 text-[11px] text-muted-fg">
+                        <Check className="w-3 h-3 text-foreground shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden="true" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/setup"
+                    className="block w-full text-center border border-border text-muted-fg
+                               py-2 min-h-[44px] flex items-center justify-center rounded-lg text-xs font-medium">
+                    Começar
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -1210,63 +1187,33 @@ export default function LandingPage() {
           <div className="hidden md:grid md:grid-cols-4 gap-4 mb-6">
 
             {/* Grátis / Sua conta */}
-            {(hasHistory || hasCredit) && user ? (
-              <div className="bg-card rounded-xl p-7 border border-border flex flex-col
-                              hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-                <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
-                  Sua conta
+            <div className="bg-card rounded-xl p-7 border border-border flex flex-col
+                            hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
+              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
+                Grátis
+              </p>
+              <div className="mb-7">
+                <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
+                  R$0
                 </p>
-                <div className="mb-7">
-                  <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
-                    ✓
-                  </p>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {['Histórico salvo', 'Resultados anteriores', 'Continue evoluindo']
-                    .map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
-                      <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
-                             strokeWidth={2.5} aria-hidden="true" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/historico"
-                  className="block w-full text-center border border-border text-muted-fg
-                             py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
-                             hover:text-foreground transition-all duration-150">
-                  Ver histórico
-                </Link>
               </div>
-            ) : (
-              <div className="bg-card rounded-xl p-7 border border-border flex flex-col
-                              hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
-                <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-muted-fg mb-5">
-                  Grátis
-                </p>
-                <div className="mb-7">
-                  <p className="text-[44px] font-bold font-mono tabular-nums text-foreground leading-none">
-                    R$0
-                  </p>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {['3 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
-                    .map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
-                      <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
-                             strokeWidth={2.5} aria-hidden="true" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/setup"
-                  className="block w-full text-center border border-border text-muted-fg
-                             py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
-                             hover:text-foreground transition-all duration-150">
-                  Começar agora
-                </Link>
-              </div>
-            )}
+              <ul className="space-y-3 mb-8 flex-1">
+                {['3 perguntas grátis', 'Sem cadastro para começar', 'Veja como é antes de pagar']
+                  .map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-muted-fg">
+                    <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5"
+                           strokeWidth={2.5} aria-hidden="true" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/setup"
+                className="block w-full text-center border border-border text-muted-fg
+                           py-2.5 rounded-lg text-sm font-medium hover:border-border-strong
+                           hover:text-foreground transition-all duration-150">
+                Começar agora
+              </Link>
+            </div>
 
             {/* Avulso — destaque */}
             <div className="bg-zinc-950 dark:bg-zinc-100 rounded-xl p-7
