@@ -457,7 +457,7 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────
           SEÇÃO 2 — PROVA IMEDIATA (mockup da entrevista)
       ───────────────────────────────────────────── */}
-      <section className="pb-16 pt-2 sm:pb-24 sm:pt-4 lg:pb-32 lg:pt-6 px-6 bg-background">
+      <section className="pb-4 pt-2 sm:pb-6 sm:pt-4 lg:pb-8 lg:pt-6 px-6 bg-background">
         <div className="max-w-[800px] mx-auto">
 
           {/* Desktop: mockup real da tela de entrevista */}
@@ -525,6 +525,9 @@ export default function LandingPage() {
           <p className="text-center text-[13px] text-muted-fg mt-4">
             Entrevista real, por voz, com a Sarah — uma das 3 entrevistadoras.
           </p>
+          <p className="text-center text-sm text-zinc-400 mt-2">
+            ↓ Veja por que treinar sozinho não funciona
+          </p>
 
         </div>
       </section>
@@ -532,7 +535,11 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────
           SEÇÃO 2 — PROBLEMA
       ───────────────────────────────────────────── */}
-      <section id="problema" className="py-24 lg:py-32 px-6 bg-zinc-950 dark:bg-zinc-900">
+      <section id="problema" className="relative pt-8 pb-24 lg:pt-12 lg:pb-32 px-6 bg-zinc-950 dark:bg-zinc-900">
+        <div aria-hidden="true"
+             className="absolute top-0 left-0 right-0 h-8 sm:h-10 lg:h-12
+                        bg-gradient-to-b from-background to-zinc-950 dark:to-zinc-900
+                        pointer-events-none" />
         <div className="max-w-[1120px] mx-auto">
 
           <div className="max-w-[600px] mb-14">
