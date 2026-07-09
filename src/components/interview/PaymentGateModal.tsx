@@ -80,11 +80,11 @@ export function PaymentGateModal({
                   </div>
                   <h2 className="text-[17px] font-bold text-zinc-900
                                  dark:text-white leading-snug">
-                    Você já praticou hoje!
+                    Você já usou suas perguntas gratuitas de hoje.
                   </h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Crie uma conta ou escolha um plano para continuar
-                    praticando sem limites.
+                    Para finalizar esta entrevista e ver seu feedback
+                    completo, escolha um plano abaixo.
                   </p>
                 </>
               ) : (
