@@ -227,7 +227,7 @@ export function PaymentGateModal({
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { plano: 'credito-7',  preco: 'R$12,90', label: '7 perguntas',  sub: 'Nova entrevista' },
-                  { plano: 'credito-14', preco: 'R$22,90', label: '14 perguntas', sub: 'Aprofundado' },
+                  { plano: 'credito-14', preco: 'R$22,90', label: '14 perguntas', sub: 'Nova entrevista aprofundada' },
                 ].map(({ plano, preco, label, sub }) => (
                   <div key={plano}
                        className="border border-zinc-200 dark:border-zinc-700
@@ -239,6 +239,9 @@ export function PaymentGateModal({
                     </p>
                     <p className="text-[11px] text-zinc-400 mb-3 flex-1">
                       {label}
+                    </p>
+                    <p className="text-[9px] text-zinc-400 dark:text-zinc-500 mb-2 leading-tight">
+                      Começa do início — não é esta entrevista
                     </p>
                     <button
                       onClick={() => handlePagar(plano)}
