@@ -217,18 +217,28 @@ async function handlePayment(paymentId: string, ip: string) {
     }
   }
 
-  const creditos = Array.from({ length: quantidade }, () => ({
+  const creditos = Array.from({ length: quantidade }, (_, i) => ({
     auth_user_id:  authUserId,
     tipo:          plano,
     perguntas,
     usado:         false,
     session_id:    plano === 'finalizar-atual' ? sessionIdValido : null,
     mp_payment_id: String(paymentId),
+    payment_seq:   i,
     mp_status:     'approved',
     expires_at:    isMensal ? new Date(Date.now() + 30 * 864e5).toISOString() : null,
   }));
 
-  const { error: creditError } = await supabase.from('credits').insert(creditos);
+  // upsert com onConflict em (mp_payment_id, payment_seq) — a constraint
+  // única no banco (credits_payment_dedup) é quem de fato impede duplicata
+  // sob concorrência; o SELECT em creditosExistentes acima é só um atalho
+  // para não repetir trabalho em retentativas do MP, não a proteção real.
+  const { error: creditError } = await supabase
+    .from('credits')
+    .upsert(creditos, {
+      onConflict: 'mp_payment_id,payment_seq',
+      ignoreDuplicates: true,
+    });
   if (creditError) Sentry.captureException(creditError, { tags: { route: 'mp-webhook', step: 'credits' } });
 
   if (plano === 'finalizar-atual' && sessionIdValido) {
@@ -300,18 +310,26 @@ async function handleAuthorizedPayment(authorizedPaymentId: string, ip: string) 
   const perguntas = Number(sub.perguntas) || PERGUNTAS_POR_PLANO[sub.plano as PlanoKey] || 7;
   const expiresAt = new Date(Date.now() + 32 * 864e5).toISOString();
 
-  const creditos = Array.from({ length: MENSAL_QTD }, () => ({
+  const creditos = Array.from({ length: MENSAL_QTD }, (_, i) => ({
     auth_user_id:  sub.auth_user_id,
     tipo:          sub.plano,
     perguntas,
     usado:         false,
     session_id:    null,
     mp_payment_id: String(authorizedPaymentId),
+    payment_seq:   i,
     mp_status:     'approved',
     expires_at:    expiresAt,
   }));
 
-  const { error: creditError } = await supabase.from('credits').insert(creditos);
+  // upsert com onConflict em (mp_payment_id, payment_seq) — mesma proteção
+  // de credits_payment_dedup usada em handlePayment (ver comentário lá).
+  const { error: creditError } = await supabase
+    .from('credits')
+    .upsert(creditos, {
+      onConflict: 'mp_payment_id,payment_seq',
+      ignoreDuplicates: true,
+    });
   if (creditError) {
     Sentry.captureException(creditError, { tags: { route: 'mp-webhook', step: 'sub-credits' } });
     return;
