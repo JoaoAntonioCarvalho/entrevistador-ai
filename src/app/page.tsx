@@ -338,7 +338,16 @@ export default function LandingPage() {
         <div className="max-w-[1120px] mx-auto px-6 h-16 flex items-center justify-between">
 
           <Link href="/"
-            className="text-[15px] font-semibold tracking-tight text-foreground select-none">
+            className="flex items-center gap-2 text-[15px] font-semibold
+                       tracking-tight text-foreground select-none">
+            <Image
+              src={mounted && isDark ? '/icon-mono-white-transparent.png' : '/icon-mono-transparent.png'}
+              alt=""
+              width={24}
+              height={24}
+              className="w-6 h-6"
+              priority
+            />
             Entrevistador<span className="text-zinc-400">.</span>IA
           </Link>
 
@@ -1472,7 +1481,14 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
 
             <div className="md:col-span-1">
-              <p className="text-[15px] font-semibold text-white mb-3">
+              <p className="flex items-center gap-2 text-[15px] font-semibold text-white mb-3">
+                <Image
+                  src="/icon-mono-white-transparent.png"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                />
                 Entrevistador<span className="text-zinc-500">.</span>IA
               </p>
               <p className="text-zinc-400 text-sm leading-[1.75] mb-4">

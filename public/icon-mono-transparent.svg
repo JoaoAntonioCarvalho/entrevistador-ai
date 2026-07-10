@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <defs>
+    <mask id="gap">
+      <rect x="0" y="0" width="100" height="100" fill="#ffffff"></rect>
+      <polygon points="37,37 89,37 89,89 53,89 37,73" fill="#000000"></polygon>
+    </mask>
+  </defs>
+  <polygon points="14,14 66,14 66,66 32,66 14,48" fill="#0C0C0A" mask="url(#gap)"></polygon>
+  <polygon points="40,40 86,40 86,86 56,86 40,70" fill="#0C0C0A"></polygon>
+</svg>

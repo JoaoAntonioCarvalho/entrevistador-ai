@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,9 +40,18 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
 
         <button
           onClick={() => router.push('/')}
-          className="text-[15px] font-semibold tracking-tight text-foreground
+          className="flex items-center gap-2 text-[15px] font-semibold
+                     tracking-tight text-foreground
                      hover:opacity-70 transition-opacity duration-150"
         >
+          <Image
+            src={mounted && isDark ? '/icon-mono-white-transparent.png' : '/icon-mono-transparent.png'}
+            alt=""
+            width={24}
+            height={24}
+            className="w-6 h-6"
+            priority
+          />
           Entrevistador.IA
         </button>
 
