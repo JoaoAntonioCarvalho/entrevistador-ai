@@ -222,6 +222,10 @@ export default function InterviewPage() {
 
       if (!data?.fala) throw new Error('Resposta inválida da API');
 
+      // Turno confirmado com sucesso — só falhas CONSECUTIVAS devem acionar
+      // o modal de recuperação; uma falha isolada seguida de sucesso não conta.
+      consecutiveErrors.current = 0;
+
       if (data._usage) {
         addCustoIA(data._usage.inputTokens, data._usage.outputTokens, data._usage.model);
       }
@@ -245,10 +249,36 @@ export default function InterviewPage() {
       await voiceOutput.speak(data.fala);
 
     } catch {
+      // Reverter o turno do candidato e o contador incrementados antes da
+      // chamada, já que ela não foi confirmada com sucesso — evita
+      // desalinhamento entre perguntasRespondidasRef e evaluations.length, e
+      // evita perder uma pergunta paga sem avaliação correspondente.
+      if (!isFirst && response) {
+        useSessionStore.setState(state => ({
+          session: {
+            ...state.session,
+            conversation: state.session.conversation.slice(0, -1),
+          },
+        }));
+        perguntasRespondidasRef.current = Math.max(0, perguntasRespondidasRef.current - 1);
+        setPerguntasRespondidas(perguntasRespondidasRef.current);
+      }
+
       setIsThinking(false);
       setInterviewState('waiting');
       resetVoiceInputRef.current();
-      toast.error('Erro ao processar resposta. Tente novamente.');
+
+      // Rastreia falhas consecutivas para oferecer a via de recuperação
+      // (modal "Tentar novamente" / "Encerrar entrevista") em vez de deixar
+      // o usuário preso num loop de toasts em falha persistente da API.
+      consecutiveErrors.current += 1;
+      lastCandidateResponse.current = response ?? '';
+
+      if (consecutiveErrors.current >= 2) {
+        setShowErrorModal(true);
+      } else {
+        toast.error('Erro ao processar resposta. Tente novamente.');
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, totalPerguntas, currentQuestion, addEvaluation, voiceOutput]);
