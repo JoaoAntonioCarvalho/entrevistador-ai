@@ -20,16 +20,20 @@ export async function POST(req: NextRequest) {
     const { sessionId } = await req.json();
     const authUserId = await getAuthUserId(req);
 
-    // Verificar payment_status da sessão ANTES de checar authUserId —
-    // o webhook do MP seta payment_status independentemente do auth carregar no frontend.
-    if (sessionId) {
+    // Verificar payment_status da sessão — EXIGE que pertença ao chamador.
+    // O id de uma sessão paga é o mesmo exposto publicamente em
+    // /resultado/[id]; sem checar auth_user_id, qualquer pessoa com esse
+    // link herdaria hasCredit:true de uma sessão alheia. Pagar sempre exige
+    // login, então uma sessão paga sempre tem dono autenticado — exigir
+    // authUserId aqui não afeta o fluxo legítimo.
+    if (sessionId && authUserId) {
       const { data: sessionData } = await supabase
         .from('sessions')
-        .select('payment_status')
+        .select('payment_status, auth_user_id')
         .eq('id', sessionId)
         .maybeSingle();
 
-      if (sessionData?.payment_status === 'paid') {
+      if (sessionData?.payment_status === 'paid' && sessionData?.auth_user_id === authUserId) {
         return NextResponse.json({
           hasCredit: true, creditId: 'session-paid',
           perguntas: 7, maxPerguntas: 7, totalCreditos: 1, isMensal: false,

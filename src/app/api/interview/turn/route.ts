@@ -376,13 +376,18 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    if (sessionIdRL && sessionIdRL !== 'unknown') {
+    // Exige dono: o id de uma sessão paga é o mesmo exposto publicamente em
+    // /resultado/[id] — sem checar auth_user_id, qualquer pessoa com esse
+    // link poderia herdar o status "pago" de uma sessão alheia.
+    if (sessionIdRL && sessionIdRL !== 'unknown' && authUserIdRL) {
       const { data: sess } = await supabaseAdmin
         .from('sessions')
-        .select('payment_status')
+        .select('payment_status, auth_user_id')
         .eq('id', sessionIdRL)
         .maybeSingle();
-      if (sess?.payment_status === 'paid') isPaid = true;
+      if (sess?.payment_status === 'paid' && sess?.auth_user_id === authUserIdRL) {
+        isPaid = true;
+      }
     }
 
     if (!isPaid && authUserIdRL) {
@@ -417,39 +422,6 @@ export async function POST(req: NextRequest) {
   const totalPerguntas    = body.totalPerguntas ?? 7;
   // authUserId já foi derivado do token verificado no topo do handler.
 
-  // Rate limit por IP para anônimos: 9 perguntas / 24h (limite Upstash,
-  // independente do gate de pagamento por sessão logo abaixo, que corta em 3).
-  // Janela deliberadamente mais larga que o gate de sessão — cobre qualquer
-  // cenário onde perguntasRespondidas (vindo do cliente) não reflita o gate
-  // de sessão real, garantindo que o teto verdadeiro de 9/dia por IP nunca
-  // fique sem essa checagem.
-  if (!authUserId && freeQuestionsLimit && perguntasRespondidas < 9) {
-    const { success: temGratis } = await freeQuestionsLimit.limit(ip);
-    if (!temGratis) {
-      return NextResponse.json(
-        {
-          error:   'payment_required',
-          message: 'Você já usou suas perguntas gratuitas. Crie uma conta para continuar.',
-          motivo:  'free_limit_exceeded',
-        },
-        { status: 402 }
-      );
-    }
-  }
-
-  // Disjuntor global de custo: quando o gasto estimado do dia com tráfego
-  // gratuito atinge o teto (DAILY_COST_CAP_USD), anônimos param de ser
-  // atendidos. Autenticados nunca são bloqueados — pagar exige conta.
-  if (!authUserId && await isDailyCapExceeded()) {
-    return NextResponse.json(
-      {
-        error:   'daily_cap_exceeded',
-        message: 'Estamos com alta demanda no plano gratuito. Tente novamente mais tarde ou crie uma conta.',
-      },
-      { status: 503 }
-    );
-  }
-
   if (!candidate || !job || !config) {
     return NextResponse.json({ error: 'Dados da sessão incompletos.' }, { status: 400 });
   }
@@ -466,10 +438,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Rejeitar sessão descartada + derivar a contagem real de perguntas do
-  // transcript já salvo. O gate de pagamento abaixo NUNCA deve confiar cegamente
-  // em perguntasRespondidas do corpo: um cliente manipulado sempre poderia
-  // mandar um valor baixo (ex: 0) e contornar o limite de perguntas grátis
-  // indefinidamente, já que era a única fonte de verdade usada.
+  // transcript já salvo. Nenhuma checagem de limite abaixo (rate limit
+  // gratuito por IP, gate de pagamento) deve confiar cegamente em
+  // perguntasRespondidas do corpo: um cliente manipulado sempre poderia
+  // mandar um valor forjado — baixo para contornar o gate de pagamento, ou
+  // alto para pular o rate limit gratuito — já que era a única fonte usada.
   let perguntasReaisNoServidor = 0;
   if (sessionId && sessionId !== 'unknown') {
     const supabaseCheck = createClient(
@@ -499,6 +472,40 @@ export async function POST(req: NextRequest) {
   // cujo transcript ainda não foi persistido no servidor.
   const perguntasParaGate = Math.max(perguntasRespondidas, perguntasReaisNoServidor);
 
+  // Rate limit por IP para anônimos: 9 perguntas / 24h (limite Upstash,
+  // independente do gate de pagamento por sessão logo abaixo, que corta em 3).
+  // Janela deliberadamente mais larga que o gate de sessão — cobre qualquer
+  // cenário onde perguntasParaGate não reflita o gate de sessão real,
+  // garantindo que o teto verdadeiro de 9/dia por IP nunca fique sem essa
+  // checagem. Usa perguntasParaGate, nunca o valor cru do corpo — senão um
+  // anônimo forjando perguntasRespondidas alto pularia esse limite inteiro.
+  if (!authUserId && freeQuestionsLimit && perguntasParaGate < 9) {
+    const { success: temGratis } = await freeQuestionsLimit.limit(ip);
+    if (!temGratis) {
+      return NextResponse.json(
+        {
+          error:   'payment_required',
+          message: 'Você já usou suas perguntas gratuitas. Crie uma conta para continuar.',
+          motivo:  'free_limit_exceeded',
+        },
+        { status: 402 }
+      );
+    }
+  }
+
+  // Disjuntor global de custo: quando o gasto estimado do dia com tráfego
+  // gratuito atinge o teto (DAILY_COST_CAP_USD), anônimos param de ser
+  // atendidos. Autenticados nunca são bloqueados — pagar exige conta.
+  if (!authUserId && await isDailyCapExceeded()) {
+    return NextResponse.json(
+      {
+        error:   'daily_cap_exceeded',
+        message: 'Estamos com alta demanda no plano gratuito. Tente novamente mais tarde ou crie uma conta.',
+      },
+      { status: 503 }
+    );
+  }
+
   // Gate de pagamento — mesma lógica de /api/credits/check para consistência
   if (!isFirstTurn && perguntasParaGate >= 3) {
     const supabaseAdmin = createClient(
@@ -508,14 +515,25 @@ export async function POST(req: NextRequest) {
 
     let liberado = false;
 
-    // 1. Sessão já marcada como paga
-    if (sessionId) {
+    // 1. Sessão já marcada como paga — EXIGE que pertença ao chamador.
+    // O id de uma sessão paga é o mesmo exposto publicamente em
+    // /resultado/[id]; sem checar auth_user_id, qualquer pessoa com esse
+    // link poderia herdar o status "pago" de uma sessão alheia. Exigir
+    // authUserId aqui é seguro porque pagar sempre exige login — uma sessão
+    // paga sempre tem dono autenticado.
+    if (sessionId && authUserId) {
       const { data: sess } = await supabaseAdmin
         .from('sessions')
-        .select('payment_status')
+        .select('payment_status, auth_user_id, status')
         .eq('id', sessionId)
         .maybeSingle();
-      if (sess?.payment_status === 'paid') liberado = true;
+      if (
+        sess?.payment_status === 'paid' &&
+        sess?.auth_user_id === authUserId &&
+        sess?.status !== 'discarded'
+      ) {
+        liberado = true;
+      }
     }
 
     // 2. Crédito disponível por authUserId, do TAMANHO exato da sessão atual.
