@@ -465,7 +465,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Contagem de perguntas inválida.' }, { status: 400 });
   }
 
-  // Rejeitar sessão descartada
+  // Rejeitar sessão descartada + derivar a contagem real de perguntas do
+  // transcript já salvo. O gate de pagamento abaixo NUNCA deve confiar cegamente
+  // em perguntasRespondidas do corpo: um cliente manipulado sempre poderia
+  // mandar um valor baixo (ex: 0) e contornar o limite de perguntas grátis
+  // indefinidamente, já que era a única fonte de verdade usada.
+  let perguntasReaisNoServidor = 0;
   if (sessionId && sessionId !== 'unknown') {
     const supabaseCheck = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -473,7 +478,7 @@ export async function POST(req: NextRequest) {
     );
     const { data: sessCheck } = await supabaseCheck
       .from('sessions')
-      .select('status')
+      .select('status, transcript')
       .eq('id', sessionId)
       .maybeSingle();
     if (sessCheck?.status === 'discarded') {
@@ -482,10 +487,20 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
+    if (Array.isArray(sessCheck?.transcript)) {
+      perguntasReaisNoServidor = sessCheck.transcript.filter(
+        (t: { role?: string }) => t.role === 'candidate'
+      ).length;
+    }
   }
 
+  // Nunca aceitar um valor menor que o que o servidor já sabe ser verdade —
+  // o valor do cliente (perguntasRespondidas) só prevalece em sessões novas,
+  // cujo transcript ainda não foi persistido no servidor.
+  const perguntasParaGate = Math.max(perguntasRespondidas, perguntasReaisNoServidor);
+
   // Gate de pagamento — mesma lógica de /api/credits/check para consistência
-  if (!isFirstTurn && perguntasRespondidas >= 3) {
+  if (!isFirstTurn && perguntasParaGate >= 3) {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
