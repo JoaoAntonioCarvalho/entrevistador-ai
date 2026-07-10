@@ -46,13 +46,13 @@ export function Header({ backTo, backLabel, rightContent }: HeaderProps) {
         >
           <Image
             src={mounted && isDark ? '/icon-mono-white-transparent.png' : '/icon-mono-transparent.png'}
-            alt=""
-            width={24}
-            height={24}
-            className="w-6 h-6"
+            alt="Entrevistador.IA"
+            width={28}
+            height={28}
+            className="w-7 h-7 md:w-6 md:h-6"
             priority
           />
-          Entrevistador.IA
+          <span className="hidden md:inline">Entrevistador.IA</span>
         </button>
 
         <div className="flex items-center gap-4">
