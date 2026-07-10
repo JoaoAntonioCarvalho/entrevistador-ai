@@ -22,33 +22,17 @@ function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
     : process.env.MP_WEBHOOK_SECRET_TEST
   )?.trim();
 
-  console.error('[mp-webhook][debug] isProducao:', isProducao);
-  console.error('[mp-webhook][debug] secret length:', secret?.length ?? 0);
-  console.error('[mp-webhook][debug] secret preview:',
-    secret ? `${secret.slice(0,6)}...${secret.slice(-4)}` : 'AUSENTE');
-
-  if (!secret) {
-    console.error('[mp-webhook][debug] SEM secret configurado');
-    return false;
-  }
+  if (!secret) return false;
 
   const xSignature = req.headers.get('x-signature');
   const xRequestId = req.headers.get('x-request-id') ?? '';
-  console.error('[mp-webhook][debug] x-signature header:', xSignature);
-  console.error('[mp-webhook][debug] x-request-id header:', xRequestId);
 
-  if (!xSignature) {
-    console.error('[mp-webhook][debug] SEM header x-signature');
-    return false;
-  }
+  if (!xSignature) return false;
 
   const ts = xSignature.split(',').find(p => p.startsWith('ts='))?.split('=')[1];
   const v1 = xSignature.split(',').find(p => p.startsWith('v1='))?.split('=')[1];
 
-  if (!ts || !v1) {
-    console.error('[mp-webhook][debug] ts ou v1 ausentes');
-    return false;
-  }
+  if (!ts || !v1) return false;
 
   const dataIdQuery = req.nextUrl.searchParams.get('data.id');
   let dataIdBody = '';
@@ -58,16 +42,9 @@ function verificarAssinaturaMP(req: NextRequest, bodyText: string): boolean {
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const hmac = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
 
-  console.error('[mp-webhook][debug] dataId usado:', dataId);
-  console.error('[mp-webhook][debug] manifest completo:', manifest);
-  console.error('[mp-webhook][debug] hmac calculado:', hmac);
-  console.error('[mp-webhook][debug] v1 recebido:   ', v1);
-  console.error('[mp-webhook][debug] tamanhos - hmac:', hmac.length, '| v1:', v1.length);
-
   try {
     return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
-  } catch (e) {
-    console.error('[mp-webhook][debug] timingSafeEqual falhou:', e);
+  } catch {
     return false;
   }
 }
@@ -79,19 +56,15 @@ export async function POST(req: NextRequest) {
   }
 
   const userAgent = req.headers.get('user-agent') ?? '';
-  console.error('[mp-webhook][debug] user-agent completo:', userAgent);
 
   const isLegacyFeed = userAgent.toLowerCase().includes('feed');
 
   if (isLegacyFeed) {
-    console.error('[mp-webhook][debug] identificado como legado (Feed) — ignorando sem validar assinatura');
     // Formato legado do MP (Feed v2.0) — não usa o mesmo esquema de
     // assinatura do WebHook v1.0. Sempre falharia HMAC por desenho,
     // não é uma falha real. Ignorar silenciosamente, sem warning.
     return NextResponse.json({ ok: true });
   }
-
-  console.error('[mp-webhook][debug] NÃO é legado — prosseguindo para validação de assinatura');
 
   const isOrdersApiNotification = userAgent.includes('payments_via_orders');
 
@@ -99,7 +72,6 @@ export async function POST(req: NextRequest) {
     const bodyText = await req.text();
 
     if (isOrdersApiNotification) {
-      console.error('[mp-webhook][debug] notificação payments_via_orders detectada — HMAC não validável com o manifest atual, verificando legitimidade via API do MP');
       Sentry.captureMessage(
         'mp-webhook: notificação payments_via_orders processada via verificação direta na API (manifest de assinatura ainda não suportado)',
         { level: 'info', tags: { route: 'mp-webhook', tipo: 'payments_via_orders' } }
@@ -109,7 +81,6 @@ export async function POST(req: NextRequest) {
       // pagamento diretamente na API do MP com nosso próprio access
       // token (não forjável) antes de criar qualquer crédito.
     } else if (!verificarAssinaturaMP(req, bodyText)) {
-      console.error('[mp-webhook][debug] assinatura HMAC inválida — rejeitando');
       Sentry.captureMessage(
         'mp-webhook: assinatura HMAC inválida — request rejeitado',
         { level: 'warning', tags: { route: 'mp-webhook' } }

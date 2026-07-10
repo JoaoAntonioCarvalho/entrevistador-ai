@@ -36,42 +36,32 @@ interface Blocos {
 }
 
 function calcularBlocos(total: number): Blocos {
-  if (total <= 5) {
-    return {
-      abertura:   { inicio: 0, fim: 0 },
-      curriculo:  { inicio: 1, fim: 1 },
-      vaga:       { inicio: 2, fim: 2 },
-      tecnico:    { inicio: 3, fim: 3 },
-      fechamento: { inicio: 4, fim: 4 },
-    };
-  }
+  // Proporções alvo sobre o restante (total menos a pergunta de
+  // fechamento, que é sempre a última): abertura 15%, currículo 20%,
+  // vaga 20%, técnico o que sobrar. Faixas fixas (versão anterior) só
+  // funcionavam para alguns valores específicos de total — para total=7
+  // (o formato mais vendido), o bloco técnico virava um intervalo
+  // invertido (6..5) e nunca era alcançado mesmo com tipo 'tecnica'.
+  const fechamentoInicio = total - 1;
+  const restante = total - 1; // exclui a pergunta de fechamento
 
-  if (total <= 10) {
-    return {
-      abertura:   { inicio: 0, fim: 1 },
-      curriculo:  { inicio: 2, fim: 3 },
-      vaga:       { inicio: 4, fim: 5 },
-      tecnico:    { inicio: 6, fim: total - 2 },
-      fechamento: { inicio: total - 1, fim: total - 1 },
-    };
-  }
-
-  if (total <= 15) {
-    return {
-      abertura:   { inicio: 0, fim: 2 },
-      curriculo:  { inicio: 3, fim: 5 },
-      vaga:       { inicio: 6, fim: 8 },
-      tecnico:    { inicio: 9, fim: total - 2 },
-      fechamento: { inicio: total - 1, fim: total - 1 },
-    };
-  }
+  const aberturaFim  = Math.max(0, Math.round(restante * 0.15) - 1);
+  const curriculoFim = Math.max(
+    aberturaFim + 1,
+    aberturaFim + Math.round(restante * 0.20)
+  );
+  const vagaFim = Math.max(
+    curriculoFim + 1,
+    curriculoFim + Math.round(restante * 0.20)
+  );
+  const tecnicoFim = Math.max(vagaFim + 1, fechamentoInicio - 1);
 
   return {
-    abertura:   { inicio: 0,  fim: 3  },
-    curriculo:  { inicio: 4,  fim: 7  },
-    vaga:       { inicio: 8,  fim: 11 },
-    tecnico:    { inicio: 12, fim: 17 },
-    fechamento: { inicio: 18, fim: 19 },
+    abertura:   { inicio: 0,                fim: aberturaFim },
+    curriculo:  { inicio: aberturaFim + 1,  fim: curriculoFim },
+    vaga:       { inicio: curriculoFim + 1, fim: vagaFim },
+    tecnico:    { inicio: vagaFim + 1,      fim: tecnicoFim },
+    fechamento: { inicio: fechamentoInicio, fim: fechamentoInicio },
   };
 }
 

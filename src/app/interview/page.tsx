@@ -90,6 +90,9 @@ export default function InterviewPage() {
   const consecutiveErrors         = useRef(0);
   const lastCandidateResponse     = useRef('');
   const isProcessingTurnRef       = useRef(false);
+  // Controller do fetch de /api/interview/turn em voo — permite cancelar de
+  // verdade (não só destravar o estado local) quando o turno demora demais.
+  const currentAbortRef           = useRef<AbortController | null>(null);
   const resetVoiceInputRef        = useRef<() => void>(() => {});
   const voiceErrorCallbackRef     = useRef<() => void>(() => {});
   const pendingInterviewerTextRef = useRef<string>('');
@@ -159,9 +162,13 @@ export default function InterviewPage() {
         perguntasAtualizadas ?? perguntasRespondidasRef.current;
       const isLastTurn = !isFirst && perguntasParaCalculo >= totalPerguntas;
 
+      const controller = new AbortController();
+      currentAbortRef.current = controller;
+
       const res = await authedFetch('/api/interview/turn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           candidate:            session.candidate,
           job:                  session.job,
@@ -248,11 +255,13 @@ export default function InterviewPage() {
       setCurrentQuestion(data.fala);
       await voiceOutput.speak(data.fala);
 
-    } catch {
+    } catch (error) {
       // Reverter o turno do candidato e o contador incrementados antes da
       // chamada, já que ela não foi confirmada com sucesso — evita
       // desalinhamento entre perguntasRespondidasRef e evaluations.length, e
-      // evita perder uma pergunta paga sem avaliação correspondente.
+      // evita perder uma pergunta paga sem avaliação correspondente. Vale
+      // tanto para erro real quanto para abort intencional (timeout de
+      // escape) — nos dois casos o turno nunca foi confirmado pela API.
       if (!isFirst && response) {
         useSessionStore.setState(state => ({
           session: {
@@ -267,6 +276,13 @@ export default function InterviewPage() {
       setIsThinking(false);
       setInterviewState('waiting');
       resetVoiceInputRef.current();
+
+      // Cancelamento intencional (timeout de escape abortou o fetch) — não é
+      // uma falha real da API, então não conta para consecutiveErrors nem
+      // mostra toast/modal: o handler do timeout já avisou o usuário.
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
 
       // Rastreia falhas consecutivas para oferecer a via de recuperação
       // (modal "Tentar novamente" / "Encerrar entrevista") em vez de deixar
@@ -303,13 +319,18 @@ export default function InterviewPage() {
 
     const novasPerguntas = incrementarPerguntas();
 
-    // Safety: libera a trava após 20s mesmo se a API travar
+    // Safety: cancela de verdade o fetch em voo se ele passar do teto real da
+    // API (maxDuration=60s em /api/interview/turn) — só destravar o estado
+    // local sem abortar deixava o fetch anterior "esquecido" ainda rodando,
+    // e uma segunda resposta do usuário disparava um callTurn concorrente.
     const turnTimeout = setTimeout(() => {
       if (isProcessingTurnRef.current) {
+        currentAbortRef.current?.abort();
         isProcessingTurnRef.current = false;
         setInterviewState('waiting');
+        toast.error('A resposta demorou demais. Tente novamente.');
       }
-    }, 20000);
+    }, 65000); // alinhado ao maxDuration=60s da rota + margem
 
     // callTurnRef.current garante que chamamos sempre o callTurn mais recente
     // (com session.conversation atualizado) mesmo com handleTranscript estável
