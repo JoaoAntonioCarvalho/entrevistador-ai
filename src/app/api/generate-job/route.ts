@@ -64,17 +64,35 @@ Requisitos:
 - Stack técnica apenas se for vaga técnica (senão array vazio)
 - Empresa com nome brasileiro convincente mas fictício`;
 
-    const job = normalizeJob(await callAIJSON<Job>(
-      'parsing',
-      systemPrompt,
-      userMessage,
-      1500,
-      sessionId ?? 'unknown'
-    ));
+    try {
+      const job = normalizeJob(await callAIJSON<Job>(
+        'parsing',
+        systemPrompt,
+        userMessage,
+        1500,
+        sessionId ?? 'unknown'
+      ));
 
-    if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
+      if (!authUserId) await addDailyCost(PARSE_CALL_COST_USD);
 
-    return NextResponse.json({ job });
+      return NextResponse.json({ job });
+    } catch {
+      // callAIJSON agora lança em vez de devolver formato de entrevista
+      // disfarçado de Job — degrada graciosamente em vez de 500 genérico.
+      const fallbackJob: Job = {
+        titulo: cargo.trim(),
+        empresa: '',
+        requisitos_obrigatorios: [],
+        requisitos_desejaveis: [],
+        responsabilidades: [],
+        stack_tecnica: [],
+        descricao_completa: '',
+      };
+      return NextResponse.json({
+        job: fallbackJob,
+        warning: 'Não foi possível gerar a vaga automaticamente — preencha os campos manualmente.',
+      });
+    }
 
   } catch {
     return NextResponse.json(

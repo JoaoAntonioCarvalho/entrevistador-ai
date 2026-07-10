@@ -239,14 +239,26 @@ export async function callAIJSONWithUsage<T>(
     }
   } catch { /* fall through */ }
 
-  // Estratégia 4: fallback seguro — não travar a entrevista por erro de parse
-  console.error('[turn] parse falhou — resposta inválida da IA');
-  const falaMatch = conteudo.match(/"fala"\s*:\s*"([^"]+)"/);
-  const fala = falaMatch?.[1] ?? 'Obrigado pela sua resposta.';
-  return {
-    data: { fala, avaliacao: { nota: 7, positivo: '', melhoria: '', resposta_ideal: '' }, encerrar: false } as unknown as T,
-    ...meta,
-  };
+  // Estratégia 4: fallback final. O formato { fala, avaliacao, encerrar } é
+  // específico de TURNO DE ENTREVISTA — devolvê-lo para qualquer outra task
+  // (parsing, feedback) mascararia a falha com um objeto que não corresponde
+  // ao que o chamador espera (Candidate, Job, etc.), e normalizeCandidate/
+  // normalizeJob não lançam erro para um formato errado — o catch específico
+  // de cada rota (que já trata bem esse cenário, ex: extractName/
+  // extractSkills) nunca rodaria. Só finge sucesso quando task === 'interview'
+  // (onde não travar a conversa é o comportamento certo); qualquer outra task
+  // lança erro de verdade.
+  console.error(`[${task}] parse falhou — resposta inválida da IA`);
+  if (task === 'interview') {
+    const falaMatch = conteudo.match(/"fala"\s*:\s*"([^"]+)"/);
+    const fala = falaMatch?.[1] ?? 'Obrigado pela sua resposta.';
+    return {
+      data: { fala, avaliacao: { nota: 7, positivo: '', melhoria: '', resposta_ideal: '' }, encerrar: false } as unknown as T,
+      ...meta,
+    };
+  }
+
+  throw new Error(`Falha ao parsear resposta JSON da IA para task "${task}"`);
 }
 
 export async function callAIJSON<T>(
