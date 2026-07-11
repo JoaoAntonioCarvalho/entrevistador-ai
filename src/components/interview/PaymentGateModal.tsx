@@ -28,7 +28,11 @@ export function PaymentGateModal({
   async function handlePagar(plano: string) {
     if (!user) {
       localStorage.setItem('pending-interview-session', sessionId);
-      open({ motivo: 'Para continuar sua entrevista' });
+      open({
+        motivo:                 'Para continuar sua entrevista',
+        returnTo:               `/interview?resume=true&sessionId=${sessionId}`,
+        onBeforeRedirectToAuth: onBeforeRedirectToPayment,
+      });
       return;
     }
     setLoading(plano);

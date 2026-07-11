@@ -7,10 +7,12 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 
 interface AuthModalProps {
-  isOpen:     boolean;
-  onClose:    () => void;
-  onSuccess?: () => void;
-  motivo?:    string;
+  isOpen:                  boolean;
+  onClose:                 () => void;
+  onSuccess?:              () => void;
+  motivo?:                 string;
+  returnTo?:               string;
+  onBeforeRedirectToAuth?: () => void;
 }
 
 export function AuthModal({
@@ -18,6 +20,8 @@ export function AuthModal({
   onClose,
   onSuccess,
   motivo,
+  returnTo,
+  onBeforeRedirectToAuth,
 }: AuthModalProps) {
   const { signIn, signUp, signInWithGoogle } = useAuth();
 
@@ -149,7 +153,8 @@ export function AuthModal({
           <button
             type="button"
             onClick={async () => {
-              const { error } = await signInWithGoogle();
+              onBeforeRedirectToAuth?.();
+              const { error } = await signInWithGoogle(returnTo);
               if (error) toast.error('Erro ao conectar com Google.');
             }}
             className="w-full flex items-center justify-center gap-3

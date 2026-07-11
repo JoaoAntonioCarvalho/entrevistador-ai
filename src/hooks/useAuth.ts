@@ -43,13 +43,19 @@ export function useAuth() {
     return { error };
   }
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(returnTo?: string) {
     const supabase = createClient();
     if (!supabase) return { error: new Error('Client not available') };
+    // returnTo vira o query param "return" do /auth/callback, que já sabe
+    // redirecionar de volta a qualquer caminho interno (proteção contra
+    // open redirect implementada lá). Sem returnTo, cai no default (/historico).
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+    if (returnTo) callbackUrl.searchParams.set('return', returnTo);
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl.toString(),
       },
     });
     return { error };
