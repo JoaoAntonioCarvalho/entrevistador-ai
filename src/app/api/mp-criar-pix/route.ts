@@ -182,7 +182,9 @@ export async function POST(req: NextRequest) {
       expiresIn:    30 * 60,
     });
 
-  } catch {
+  } catch (error) {
+    console.error('[mp-criar-pix][debug] EXCEÇÃO NÃO TRATADA:', error);
+    console.error('[mp-criar-pix][debug] stack:', error instanceof Error ? error.stack : 'sem stack');
     return NextResponse.json(
       { error: 'Erro ao criar cobrança Pix.' },
       { status: 500 }
