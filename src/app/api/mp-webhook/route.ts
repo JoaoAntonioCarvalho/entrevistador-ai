@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Payment, PreApproval } from 'mercadopago';
 import { mpConfig, MP_ACCESS_TOKEN, PERGUNTAS_POR_PLANO, isProducao, type PlanoKey } from '@/lib/mp-config';
 import { webhookRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { sendTelegramNotification } from '@/lib/services/telegram-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -210,7 +211,19 @@ async function handlePayment(paymentId: string, ip: string) {
       onConflict: 'mp_payment_id,payment_seq',
       ignoreDuplicates: true,
     });
-  if (creditError) Sentry.captureException(creditError, { tags: { route: 'mp-webhook', step: 'credits' } });
+  if (creditError) {
+    Sentry.captureException(creditError, { tags: { route: 'mp-webhook', step: 'credits' } });
+  } else {
+    // Fire-and-forget — nunca deixar uma falha de notificação atrasar ou
+    // quebrar o fluxo real de pagamento.
+    void sendTelegramNotification(
+      `✅ Pagamento CONFIRMADO\n` +
+      `Plano: ${plano}\n` +
+      `Valor: R$ ${payment.transaction_amount?.toFixed(2)?.replace('.', ',') ?? '?'}\n` +
+      `Método: Cartão (Mercado Pago)\n` +
+      `Payment ID: ${paymentId}`
+    ).catch(() => {});
+  }
 
   if (plano === 'finalizar-atual' && sessionIdValido) {
     const { error: sessError } = await supabase

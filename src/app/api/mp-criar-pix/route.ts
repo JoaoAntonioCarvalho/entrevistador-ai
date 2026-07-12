@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { isProducao, PRECOS, type PlanoKey } from '@/lib/mp-config';
+import { isProducao, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUser, splitName } from '@/lib/services/auth-server';
+import { sendTelegramNotification } from '@/lib/services/telegram-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -194,6 +195,16 @@ export async function POST(req: NextRequest) {
     const payment = order.transactions?.payments?.[0];
     const qrCode = payment?.payment_method?.qr_code;
     const qrCodeBase64 = payment?.payment_method?.qr_code_base64;
+
+    // Fire-and-forget — nunca deixar uma falha de notificação atrasar ou
+    // quebrar o fluxo real de pagamento.
+    void sendTelegramNotification(
+      `🛒 Checkout Pix iniciado\n` +
+      `Plano: ${DESCRICOES[plano as PlanoKey]}\n` +
+      `Valor: R$ ${PRECOS[plano as PlanoKey].toFixed(2).replace('.', ',')}\n` +
+      `Método: Pix\n` +
+      `Usuário: ${authUser.email ?? 'não identificado'}`
+    ).catch(() => {});
 
     return NextResponse.json({
       orderId:      order.id,

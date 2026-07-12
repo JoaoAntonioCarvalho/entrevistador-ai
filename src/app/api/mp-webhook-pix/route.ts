@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
-import { isProducao, PERGUNTAS_POR_PLANO, type PlanoKey } from '@/lib/mp-config';
+import { isProducao, PERGUNTAS_POR_PLANO, PRECOS, type PlanoKey } from '@/lib/mp-config';
 import { webhookRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { sendTelegramNotification } from '@/lib/services/telegram-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,7 +157,21 @@ export async function POST(req: NextRequest) {
         mp_status:     'approved',
         expires_at:    null,
       }], { onConflict: 'mp_payment_id,payment_seq', ignoreDuplicates: true });
-    if (creditError) Sentry.captureException(creditError, { tags: { route: 'mp-webhook-pix', step: 'credits' } });
+    if (creditError) {
+      Sentry.captureException(creditError, { tags: { route: 'mp-webhook-pix', step: 'credits' } });
+    } else {
+      // Fire-and-forget — nunca deixar uma falha de notificação atrasar ou
+      // quebrar o fluxo real de pagamento. Valor vem de PRECOS (mesma fonte
+      // usada pra criar a cobrança) em vez de um campo de resposta da Orders
+      // API não confirmado (order.total_paid_amount não foi verificado).
+      void sendTelegramNotification(
+        `✅ Pagamento Pix CONFIRMADO\n` +
+        `Plano: ${plano}\n` +
+        `Valor: R$ ${PRECOS[plano as PlanoKey].toFixed(2).replace('.', ',')}\n` +
+        `Método: Pix\n` +
+        `Payment ID: ${mpPaymentId}`
+      ).catch(() => {});
+    }
 
     if (plano === 'finalizar-atual' && sessionIdValido) {
       const { error: sessError } = await supabase
