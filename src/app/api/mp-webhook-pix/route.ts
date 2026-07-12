@@ -77,16 +77,19 @@ export async function POST(req: NextRequest) {
 
     const order = await resp.json();
 
-    // INSTRUMENTAÇÃO TEMPORÁRIA — remover assim que a 1ª notificação real de
-    // Pix aprovado confirmar os valores exatos de status/status_detail
-    // observados abaixo. A doc pública documenta o estado pendente
-    // (action_required/waiting_transfer) e, separadamente, um estado final
-    // "processed"/"accredited" — mas isso ainda não foi confirmado com um
-    // pagamento real desta integração.
-    console.error('[mp-webhook-pix] order recebida:', JSON.stringify(order));
-
     const payment = order?.transactions?.payments?.[0];
-    const aprovado = order?.status === 'processed' && payment?.status === 'approved';
+
+    // Confirmado via teste ao vivo (1ª notificação real de Pix aprovado):
+    // a order vem com status "processed" e o pagamento em
+    // transactions.payments[0] com status_detail "accredited" — não
+    // payment.status "approved" (esse campo não é usado pra Pix nesse
+    // endpoint). Substitui a instrumentação temporária que logava a order
+    // inteira pra descobrir esses valores.
+    console.error('[mp-webhook-pix] status:', order?.status, '/ status_detail:', payment?.status_detail);
+
+    const pagamentoAprovado =
+      order?.status === 'processed' &&
+      payment?.status_detail === 'accredited';
 
     // external_reference é só um UUID curto (ver mp-criar-pix/route.ts — a
     // Orders API limita a 64 chars, não cabe mais a string concatenada de
@@ -115,7 +118,10 @@ export async function POST(req: NextRequest) {
         .eq('mp_preference_id', shortRef);
     }
 
-    if (!aprovado) return NextResponse.json({ ok: true });
+    if (!pagamentoAprovado) {
+      console.error('[mp-webhook-pix] pagamento ainda não confirmado, status:', order?.status, payment?.status_detail);
+      return NextResponse.json({ ok: true });
+    }
     if (!authUserId || !UUID_RE.test(authUserId) || !plano || !payment?.id) {
       return NextResponse.json({ ok: true });
     }
