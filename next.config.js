@@ -56,7 +56,11 @@ const securityHeaders = [
     key:   'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      // https://www.mercadopago.com: security.js (Device ID, ver
+      // PaymentFlow.tsx) — recomendação nº 1 do MP p/ reduzir recusa de
+      // cartão. Sem isso o CSP bloqueia o script e o Device ID nunca é
+      // gerado (X-meli-session-id fica ausente em mp-criar-preferencia).
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.mercadopago.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' https://fonts.gstatic.com",
@@ -68,6 +72,7 @@ const securityHeaders = [
         "https://openrouter.ai",
         "https://api.openai.com",
         "https://api.mercadopago.com",
+        "https://www.mercadopago.com",
         "https://api.mercadolibre.com",
         "https://api.telegram.org",
         "https://*.ingest.sentry.io",
