@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { lightQueryRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,7 @@ const STATUS_VALIDOS = ['completed', 'feedback', 'active'];
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  if (!await checkRateLimit(aiRateLimit, ip)) {
+  if (!await checkRateLimit(lightQueryRateLimit, ip)) {
     return NextResponse.json({ sessions: [] }, { status: 429 });
   }
 

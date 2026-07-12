@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
-import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { lightQueryRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  if (!await checkRateLimit(aiRateLimit, ip)) {
+  if (!await checkRateLimit(lightQueryRateLimit, ip)) {
     return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
   }
 

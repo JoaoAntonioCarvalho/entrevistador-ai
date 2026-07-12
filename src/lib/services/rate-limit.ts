@@ -27,6 +27,9 @@ export const aiRateLimit = makeLimit(50, '10 m', 'ratelimit:ai');
 // Parsing (currículo/vaga/geração): 10 chamadas / 10 min por IP
 export const parseRateLimit = makeLimit(10, '10 m', 'ratelimit:parse');
 
+// Consultas leves de conta/dados (sem custo de IA): 60 / 10 min por IP
+export const lightQueryRateLimit = makeLimit(60, '10 m', 'ratelimit:light-query');
+
 // Sessões completas por dia (anti-abuso): 5 entrevistas / 24h por IP
 export const sessionRateLimit = makeLimit(5, '24 h', 'ratelimit:session');
 

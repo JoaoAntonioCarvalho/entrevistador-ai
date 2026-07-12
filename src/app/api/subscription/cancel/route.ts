@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { PreApproval } from 'mercadopago';
 import { mpConfig } from '@/lib/mp-config';
-import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
+import { lightQueryRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUserId } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ const supabase = createClient(
 // pago continua até os créditos expirarem — apenas não renova.
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  if (!await checkRateLimit(aiRateLimit, ip)) {
+  if (!await checkRateLimit(lightQueryRateLimit, ip)) {
     return NextResponse.json({ error: 'Muitas requisições. Aguarde.' }, { status: 429 });
   }
 
