@@ -23,10 +23,14 @@ export async function getAuthUserId(req: NextRequest): Promise<string | null> {
  * Como `getAuthUserId`, mas retorna também o e-mail verificado do usuário —
  * necessário, por exemplo, para criar a assinatura no MercadoPago (payer_email).
  * O e-mail vem do token verificado, não do cliente, então não é forjável.
+ *
+ * `name`/`createdAt` também vêm do token verificado (`user_metadata` e
+ * `created_at` do Supabase Auth). `name` só existe de fato para quem entrou
+ * via Google (login por email/senha não coleta nome hoje) — pode vir `null`.
  */
 export async function getAuthUser(
   req: NextRequest,
-): Promise<{ id: string; email: string | null } | null> {
+): Promise<{ id: string; email: string | null; name: string | null; createdAt: string | null } | null> {
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.toLowerCase().startsWith('bearer ')) return null;
 
@@ -41,8 +45,27 @@ export async function getAuthUser(
     const supabase = createClient(url, key);
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) return null;
-    return { id: data.user.id, email: data.user.email ?? null };
+    const metadata = data.user.user_metadata ?? {};
+    const name = (metadata.full_name ?? metadata.name ?? null) as string | null;
+    return {
+      id:        data.user.id,
+      email:     data.user.email ?? null,
+      name,
+      createdAt: data.user.created_at ?? null,
+    };
   } catch {
     return null;
   }
+}
+
+/**
+ * Divide um nome completo em first/last name para os payloads do Mercado
+ * Pago. Retorna campos ausentes (não vazios) quando não houver o que dividir
+ * — MP trata ausência de campo melhor do que string vazia.
+ */
+export function splitName(name: string | null): { firstName?: string; lastName?: string } {
+  if (!name?.trim()) return {};
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return { firstName: parts[0] };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
 }

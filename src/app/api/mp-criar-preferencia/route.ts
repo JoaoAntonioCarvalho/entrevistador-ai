@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Preference } from 'mercadopago';
 import { mpConfig, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
-import { getAuthUserId } from '@/lib/services/auth-server';
+import { getAuthUser, splitName } from '@/lib/services/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,18 +24,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { plano, sessionId } = body;
 
-    // Identidade só do token verificado — o external_reference do pagamento é
-    // amarrado a esse UUID e o webhook credita a partir dele. Aceitar authUserId
-    // do corpo permitiria criar/creditar pagamento em nome de outro usuário.
-    const authUserId = await getAuthUserId(req);
+    // Identidade (+ email/nome/data de cadastro) só do token verificado — o
+    // external_reference do pagamento é amarrado a esse UUID e o webhook
+    // credita a partir dele. Aceitar authUserId do corpo permitiria
+    // criar/creditar pagamento em nome de outro usuário.
+    const authUser = await getAuthUser(req);
 
     if (!plano) {
       return NextResponse.json({ error: 'Plano é obrigatório.' }, { status: 400 });
     }
 
-    if (!authUserId || !UUID_RE.test(authUserId)) {
+    if (!authUser || !UUID_RE.test(authUser.id)) {
       return NextResponse.json({ error: 'Usuário inválido.' }, { status: 401 });
     }
+
+    const authUserId = authUser.id;
 
     if (!(plano in PRECOS)) {
       return NextResponse.json(
@@ -81,8 +84,20 @@ export async function POST(req: NextRequest) {
 
     const externalRef = `${authUserId}|${plano}|${sessionId ?? 'novo'}`;
 
+    // Dados extras do comprador para reduzir recusa por antifraude no MP.
+    // `name` só existe de fato pra quem entrou via Google — cadastro por
+    // email/senha (AuthForm.tsx) não coleta nome hoje, então first/last_name
+    // ficam ausentes (nunca vazios) pra maioria dos usuários.
+    const { firstName, lastName } = splitName(authUser.name);
+
+    // Device ID (window.MP_DEVICE_SESSION_ID, gerado pelo security.js do MP
+    // — ver PaymentFlow.tsx) reduz recusa de cartão por antifraude. Só
+    // aplica ao Checkout Pro avulso, opcional: nunca falhar por ausência.
+    const meliSessionId = req.headers.get('x-meli-session-id') ?? undefined;
+
     const preference = new Preference(mpConfig);
     const result = await preference.create({
+      requestOptions: meliSessionId ? { meliSessionId } : undefined,
       body: {
         items: [{
           id:          plano,
@@ -90,7 +105,31 @@ export async function POST(req: NextRequest) {
           quantity:    1,
           unit_price:  PRECOS[plano as PlanoKey],
           currency_id: 'BRL',
+          category_id: 'services',
         }],
+        payer: {
+          ...(authUser.email && { email: authUser.email }),
+          ...(firstName && { first_name: firstName }),
+          ...(lastName && { last_name: lastName }),
+        },
+        // O SDK tipa `additional_info` como `string`, mas a API REST do MP
+        // aceita (e esse campo antifraude documentado exige) um objeto —
+        // cast só pra satisfazer o compilador, sem mudar o payload enviado.
+        additional_info: ({
+          items: [{
+            id:          plano,
+            title:       DESCRICOES[plano as PlanoKey],
+            description: 'Crédito para simulação de entrevista de emprego com IA',
+            category_id: 'services',
+            quantity:    1,
+            unit_price:  PRECOS[plano as PlanoKey],
+          }],
+          payer: {
+            ...(firstName && { first_name: firstName }),
+            ...(lastName && { last_name: lastName }),
+            ...(authUser.createdAt && { registration_date: authUser.createdAt }),
+          },
+        } as unknown) as string,
         back_urls: {
           success: `${baseUrl}/pagamento/sucesso?plano=${plano}&session=${sessionId ?? ''}`,
           failure: `${baseUrl}/pagamento/falhou?plano=${plano}&session=${sessionId ?? ''}`,
