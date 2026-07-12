@@ -114,6 +114,10 @@ export async function POST(req: NextRequest) {
       });
 
     if (insertError) {
+      console.error('[mp-criar-pix][debug] erro ao inserir payment_sessions:', insertError);
+      console.error('[mp-criar-pix][debug] código do erro:', insertError.code);
+      console.error('[mp-criar-pix][debug] mensagem:', insertError.message);
+      console.error('[mp-criar-pix][debug] detalhe:', insertError.details);
       return NextResponse.json({ error: 'Erro ao criar cobrança Pix.' }, { status: 500 });
     }
 
