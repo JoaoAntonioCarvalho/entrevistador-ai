@@ -90,6 +90,33 @@ export async function POST(req: NextRequest) {
     // MP que força aprovação automática; em produção usa o nome real ou omite.
     const { firstName, lastName } = splitName(authUser.name);
 
+    const requestBody = {
+      type: 'online',
+      external_reference: externalRef,
+      total_amount: valor,
+      processing_mode: 'automatic',
+      payer: {
+        ...(authUser.email && { email: authUser.email }),
+        ...(firstName && { first_name: firstName }),
+        ...(lastName && { last_name: lastName }),
+      },
+      transactions: {
+        payments: [{
+          amount: valor,
+          payment_method: { id: 'pix', type: 'bank_transfer' },
+          expiration_time: 'PT30M',
+        }],
+      },
+    };
+
+    // DIAGNÓSTICO TEMPORÁRIO — remover após identificar a causa das falhas
+    // no Pix. Exceção pontual à regra do CLAUDE.md de não reintroduzir logs
+    // verbosos; nunca loga o access token completo.
+    console.error('[mp-criar-pix][debug] isProducao:', isProducao);
+    console.error('[mp-criar-pix][debug] access token length:', MP_ORDERS_ACCESS_TOKEN?.length ?? 0);
+    console.error('[mp-criar-pix][debug] access token preview:', MP_ORDERS_ACCESS_TOKEN ? `${MP_ORDERS_ACCESS_TOKEN.slice(0, 10)}...` : 'AUSENTE');
+    console.error('[mp-criar-pix][debug] payload enviado:', JSON.stringify(requestBody));
+
     const resp = await fetch('https://api.mercadopago.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -97,30 +124,20 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         'X-Idempotency-Key': crypto.randomUUID(),
       },
-      body: JSON.stringify({
-        type: 'online',
-        external_reference: externalRef,
-        total_amount: valor,
-        processing_mode: 'automatic',
-        payer: {
-          ...(authUser.email && { email: authUser.email }),
-          ...(firstName && { first_name: firstName }),
-          ...(lastName && { last_name: lastName }),
-        },
-        transactions: {
-          payments: [{
-            amount: valor,
-            payment_method: { id: 'pix', type: 'bank_transfer' },
-            expiration_time: 'PT30M',
-          }],
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
-    const order = await resp.json();
+    const order = await resp.json().catch(() => null);
+
+    console.error('[mp-criar-pix][debug] status HTTP do MP:', resp.status);
+    console.error('[mp-criar-pix][debug] corpo da resposta do MP:', JSON.stringify(order));
 
     if (!resp.ok || !order?.id) {
-      return NextResponse.json({ error: 'Erro ao criar cobrança Pix.' }, { status: 502 });
+      console.error('[mp-criar-pix][debug] REQUEST FALHOU — payload enviado:', JSON.stringify(requestBody));
+      return NextResponse.json(
+        { error: 'Erro ao criar cobrança Pix.', debug: order },
+        { status: 502 }
+      );
     }
 
     const payment = order.transactions?.payments?.[0];
