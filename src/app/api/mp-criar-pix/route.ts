@@ -99,6 +99,22 @@ export async function POST(req: NextRequest) {
     // MP que força aprovação automática; em produção usa o nome real ou omite.
     const { firstName, lastName } = splitName(authUser.name);
 
+    // session_id tem FK para sessions(id) — nunca gravar o sessionId cru do
+    // corpo. Só 'finalizar-atual' amarra a uma sessão específica (créditos
+    // avulsos como credito-7/14 não dependem de nenhuma sessão existir);
+    // mesmo padrão defensivo já usado em mp-webhook/route.ts (handlePayment,
+    // "sessionIdValido") — um sessionId inexistente ou de outro plano
+    // violava a FK e derrubava o insert com 500 sem detalhe.
+    let sessionIdValido: string | null = null;
+    if (plano === 'finalizar-atual' && sessionId) {
+      const { data: sessExiste } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('id', sessionId)
+        .maybeSingle();
+      sessionIdValido = sessExiste ? sessionId : null;
+    }
+
     // Insere ANTES de chamar o MP: o webhook depende dessa linha existir pra
     // recuperar auth_user_id/plano/session_id a partir do shortRef. Se isso
     // falhar, não faz sentido seguir e criar uma cobrança que o webhook nunca
@@ -106,7 +122,7 @@ export async function POST(req: NextRequest) {
     const { error: insertError } = await supabase
       .from('payment_sessions')
       .insert({
-        session_id:       sessionId ?? null,
+        session_id:       sessionIdValido,
         auth_user_id:     authUser.id,
         plano,
         mp_preference_id: shortRef,
