@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
-import { authedFetch } from '@/lib/services/api-client';
 import { usePendingSession } from '@/hooks/usePendingSession';
 import { Header } from '@/components/layout/Header';
+import { PaymentFlow } from '@/components/payment/PaymentFlow';
 import { Check, ChevronLeft } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useSessionStore } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
@@ -90,6 +89,7 @@ function PlanosContent() {
   const { pending: pendingSession } = usePendingSession();
 
   const [tab, setTab] = useState<'avulso' | 'mensal'>('avulso');
+  const [pagamentoAtivo, setPagamentoAtivo] = useState<{ plano: string; sessionId: string | null } | null>(null);
 
   // Fonte da verdade é o backend (usePendingSession → /api/session/pending),
   // nunca o Zustand local: o store pode estar desatualizado ou vazio (outro
@@ -99,7 +99,7 @@ function PlanosContent() {
   // crédito órfão (session_id NULL) e cobrança duplicada.
   const temEntrevistaAtiva = !!pendingSession?.sessionId;
 
-  async function handleComprar(plano: string) {
+  function handleComprar(plano: string) {
     if (plano === 'finalizar-atual' && !temEntrevistaAtiva) {
       router.push('/setup');
       return;
@@ -110,32 +110,11 @@ function PlanosContent() {
       return;
     }
 
-    try {
-      const sessionId = plano === 'finalizar-atual'
-        ? (pendingSession?.sessionId ?? null)
-        : (useSessionStore.getState().session?.id ?? null);
+    const sessionId = plano === 'finalizar-atual'
+      ? (pendingSession?.sessionId ?? null)
+      : (useSessionStore.getState().session?.id ?? null);
 
-      // Planos mensais são assinatura recorrente (PreApproval); os demais são
-      // compra avulsa (Preference).
-      const isMensal = plano === 'mensal-starter' || plano === 'mensal-pro';
-      const endpoint = isMensal ? '/api/mp-criar-assinatura' : '/api/mp-criar-preferencia';
-
-      const res = await authedFetch(endpoint, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plano, sessionId }),
-      });
-
-      const data = await res.json();
-
-      if (data.initPoint) {
-        window.location.href = data.initPoint;
-      } else {
-        toast.error('Erro ao iniciar pagamento. Tente novamente.');
-      }
-    } catch {
-      toast.error('Erro ao iniciar pagamento. Tente novamente.');
-    }
+    setPagamentoAtivo({ plano, sessionId });
   }
 
   return (
@@ -468,6 +447,14 @@ function PlanosContent() {
         </div>
 
       </div>
+
+      {pagamentoAtivo && (
+        <PaymentFlow
+          plano={pagamentoAtivo.plano}
+          sessionId={pagamentoAtivo.sessionId}
+          onClose={() => setPagamentoAtivo(null)}
+        />
+      )}
     </div>
   );
 }

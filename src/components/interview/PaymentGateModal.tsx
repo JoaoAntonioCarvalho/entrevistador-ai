@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
-import { authedFetch } from '@/lib/services/api-client';
-import { Loader2, X, Check, Zap, Calendar } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { PaymentFlow } from '@/components/payment/PaymentFlow';
+import { X, Check, Zap, Calendar } from 'lucide-react';
 
 interface PaymentGateModalProps {
   sessionId: string;
@@ -22,10 +21,10 @@ export function PaymentGateModal({
 }: PaymentGateModalProps) {
   const { user } = useAuth();
   const { open } = useAuthModal();
-  const [loading, setLoading] = useState<string | null>(null);
   const [tab, setTab] = useState<'avulso' | 'mensal'>('avulso');
+  const [pagamentoAtivo, setPagamentoAtivo] = useState<string | null>(null);
 
-  async function handlePagar(plano: string) {
+  function handlePagar(plano: string) {
     if (!user) {
       localStorage.setItem('pending-interview-session', sessionId);
       open({
@@ -35,29 +34,7 @@ export function PaymentGateModal({
       });
       return;
     }
-    setLoading(plano);
-    try {
-      // Mensais são assinatura recorrente; avulsos são compra única.
-      const isMensal = plano === 'mensal-starter' || plano === 'mensal-pro';
-      const endpoint = isMensal ? '/api/mp-criar-assinatura' : '/api/mp-criar-preferencia';
-
-      const res = await authedFetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plano, sessionId }),
-      });
-      const data = await res.json();
-      if (data.initPoint) {
-        onBeforeRedirectToPayment?.();
-        window.location.href = data.initPoint;
-      } else {
-        toast.error('Erro ao iniciar pagamento.');
-        setLoading(null);
-      }
-    } catch {
-      toast.error('Erro ao iniciar pagamento.');
-      setLoading(null);
-    }
+    setPagamentoAtivo(plano);
   }
 
   return (
@@ -213,16 +190,12 @@ export function PaymentGateModal({
 
                 <button
                   onClick={() => handlePagar('finalizar-atual')}
-                  disabled={loading !== null}
                   className="w-full bg-white dark:bg-zinc-900 text-zinc-900
                              dark:text-white py-2.5 rounded-full text-xs
                              font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800
-                             disabled:opacity-50 transition-colors
-                             flex items-center justify-center gap-2"
+                             transition-colors flex items-center
+                             justify-center gap-2"
                 >
-                  {loading === 'finalizar-atual'
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : null}
                   Finalizar por R$9,90
                 </button>
               </div>
@@ -249,18 +222,14 @@ export function PaymentGateModal({
                     </p>
                     <button
                       onClick={() => handlePagar(plano)}
-                      disabled={loading !== null}
                       className="w-full border border-zinc-200
                                  dark:border-zinc-700 text-zinc-700
                                  dark:text-zinc-300 py-2 rounded-full
                                  text-[11px] font-medium
                                  hover:bg-zinc-50 dark:hover:bg-zinc-800
-                                 disabled:opacity-50 transition-colors
-                                 flex items-center justify-center gap-1"
+                                 transition-colors flex items-center
+                                 justify-center gap-1"
                     >
-                      {loading === plano
-                        ? <Loader2 className="w-3 h-3 animate-spin" />
-                        : null}
                       Comprar
                     </button>
                   </div>
@@ -357,19 +326,14 @@ export function PaymentGateModal({
                   </p>
                   <button
                     onClick={() => handlePagar(plano)}
-                    disabled={loading !== null}
                     className={`w-full py-2.5 rounded-full text-xs
-                                font-bold disabled:opacity-50
-                                transition-colors flex items-center
-                                justify-center gap-2
+                                font-bold transition-colors flex
+                                items-center justify-center gap-2
                       ${destaque
                         ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
                         : 'border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                       }`}
                   >
-                    {loading === plano
-                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      : null}
                     Assinar {label}
                   </button>
                 </div>
@@ -393,6 +357,15 @@ export function PaymentGateModal({
         </div>
 
       </div>
+
+      {pagamentoAtivo && (
+        <PaymentFlow
+          plano={pagamentoAtivo}
+          sessionId={sessionId}
+          onClose={() => setPagamentoAtivo(null)}
+          onBeforeNavigateAway={onBeforeRedirectToPayment}
+        />
+      )}
     </div>
   );
 }
