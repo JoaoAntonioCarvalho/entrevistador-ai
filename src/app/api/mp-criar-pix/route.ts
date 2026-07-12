@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
     const { plano, sessionId } = body;
 
     // Mesma regra de segurança de mp-criar-preferencia: identidade só do
-    // token verificado, nunca do corpo — o external_reference é amarrado a
-    // esse UUID e o webhook credita a partir dele.
+    // token verificado, nunca do corpo — auth_user_id é salvo direto na
+    // linha de payment_sessions e o webhook credita a partir dela.
     const authUser = await getAuthUser(req);
 
     if (!plano) {
@@ -80,7 +80,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const externalRef = `${authUser.id}|${plano}|${sessionId ?? 'novo'}`;
+    // A Orders API (diferente do Checkout Pro clássico) limita
+    // external_reference a 64 caracteres — dois UUIDs concatenados (ex:
+    // `${authUserId}|${plano}|${sessionId}`) passam disso e o MP rejeita com
+    // 400 "length must be <= 64". Por isso aqui o external_reference é só um
+    // UUID curto (36 chars); authUserId/plano/sessionId ficam salvos como
+    // colunas próprias em payment_sessions, e o webhook (mp-webhook-pix)
+    // recupera esses dados fazendo lookup por esse UUID em vez de decodificar
+    // a string. O fluxo de cartão (mp-criar-preferencia, Preference API
+    // clássica) não tem esse limite e continua usando a string concatenada.
+    const shortRef = crypto.randomUUID();
     const valor = PRECOS[plano as PlanoKey].toFixed(2);
 
     // `name` só existe de fato pra quem entrou via Google — cadastro por
@@ -90,9 +99,27 @@ export async function POST(req: NextRequest) {
     // MP que força aprovação automática; em produção usa o nome real ou omite.
     const { firstName, lastName } = splitName(authUser.name);
 
+    // Insere ANTES de chamar o MP: o webhook depende dessa linha existir pra
+    // recuperar auth_user_id/plano/session_id a partir do shortRef. Se isso
+    // falhar, não faz sentido seguir e criar uma cobrança que o webhook nunca
+    // vai conseguir reconciliar.
+    const { error: insertError } = await supabase
+      .from('payment_sessions')
+      .insert({
+        session_id:       sessionId ?? null,
+        auth_user_id:     authUser.id,
+        plano,
+        mp_preference_id: shortRef,
+        status:           'pending',
+      });
+
+    if (insertError) {
+      return NextResponse.json({ error: 'Erro ao criar cobrança Pix.' }, { status: 500 });
+    }
+
     const requestBody = {
       type: 'online',
-      external_reference: externalRef,
+      external_reference: shortRef,
       total_amount: valor,
       processing_mode: 'automatic',
       payer: {
@@ -134,6 +161,10 @@ export async function POST(req: NextRequest) {
 
     if (!resp.ok || !order?.id) {
       console.error('[mp-criar-pix][debug] REQUEST FALHOU — payload enviado:', JSON.stringify(requestBody));
+      await supabase
+        .from('payment_sessions')
+        .update({ status: 'error' })
+        .eq('mp_preference_id', shortRef);
       return NextResponse.json(
         { error: 'Erro ao criar cobrança Pix.', debug: order },
         { status: 502 }
@@ -143,16 +174,6 @@ export async function POST(req: NextRequest) {
     const payment = order.transactions?.payments?.[0];
     const qrCode = payment?.payment_method?.qr_code;
     const qrCodeBase64 = payment?.payment_method?.qr_code_base64;
-
-    await supabase
-      .from('payment_sessions')
-      .insert({
-        session_id:       sessionId ?? null,
-        auth_user_id:     authUser.id,
-        plano,
-        mp_preference_id: String(order.id),
-        status:           'pending',
-      });
 
     return NextResponse.json({
       orderId:      order.id,

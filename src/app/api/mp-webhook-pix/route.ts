@@ -88,18 +88,31 @@ export async function POST(req: NextRequest) {
     const payment = order?.transactions?.payments?.[0];
     const aprovado = order?.status === 'processed' && payment?.status === 'approved';
 
-    const ref = String(order?.external_reference ?? '');
-    const [authUserId, plano, sessionRef] = ref.split('|');
-    const sessionId = sessionRef && sessionRef !== 'novo' ? sessionRef : null;
+    // external_reference é só um UUID curto (ver mp-criar-pix/route.ts — a
+    // Orders API limita a 64 chars, não cabe mais a string concatenada de
+    // authUserId|plano|sessionId). auth_user_id/plano/session_id vêm direto
+    // das colunas da linha de payment_sessions criada antes da order, não de
+    // decodificar o ref.
+    const shortRef = String(order?.external_reference ?? '');
 
-    if (orderId) {
+    const { data: paymentSession } = await supabase
+      .from('payment_sessions')
+      .select('auth_user_id, plano, session_id')
+      .eq('mp_preference_id', shortRef)
+      .maybeSingle();
+
+    const authUserId = paymentSession?.auth_user_id ?? null;
+    const plano       = paymentSession?.plano ?? null;
+    const sessionId   = paymentSession?.session_id ?? null;
+
+    if (shortRef) {
       await supabase
         .from('payment_sessions')
         .update({
           mp_payment_id: payment?.id ? String(payment.id) : null,
           status:        order?.status ?? 'unknown',
         })
-        .eq('mp_preference_id', String(orderId));
+        .eq('mp_preference_id', shortRef);
     }
 
     if (!aprovado) return NextResponse.json({ ok: true });
