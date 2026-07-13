@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
           quantity:    1,
           unit_price:  PRECOS[plano as PlanoKey],
           currency_id: 'BRL',
-          category_id: 'services',
+          category_id: 'learnings',
         }],
         payer: {
           ...(authUser.email && { email: authUser.email }),
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
             id:          plano,
             title:       DESCRICOES[plano as PlanoKey],
             description: 'Crédito para simulação de entrevista de emprego com IA',
-            category_id: 'services',
+            category_id: 'learnings',
             quantity:    1,
             unit_price:  PRECOS[plano as PlanoKey],
           }],

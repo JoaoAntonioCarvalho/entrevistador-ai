@@ -145,6 +145,15 @@ export async function POST(req: NextRequest) {
       external_reference: shortRef,
       total_amount: valor,
       processing_mode: 'automatic',
+      description: DESCRICOES[plano as PlanoKey],
+      items: [{
+        title:         DESCRICOES[plano as PlanoKey],
+        description:   'Crédito para simulação de entrevista de emprego com IA',
+        category_id:   'learnings',
+        external_code: plano,
+        quantity:      1,
+        unit_price:    valor,
+      }],
       payer: {
         ...(authUser.email && { email: authUser.email }),
         ...(firstName && { first_name: firstName }),
