@@ -173,9 +173,14 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
             >
               <QrCode className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               <span className="text-xs font-semibold text-zinc-900 dark:text-white">Pix</span>
-              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                R${PRECOS[plano as PlanoKey].toFixed(2).replace('.', ',')} → R${precoPorMetodo(plano as PlanoKey, 'pix').toFixed(2).replace('.', ',')}
-              </span>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-[11px] text-red-500 line-through">
+                  R${PRECOS[plano as PlanoKey].toFixed(2).replace('.', ',')}
+                </span>
+                <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                  R${precoPorMetodo(plano as PlanoKey, 'pix').toFixed(2).replace('.', ',')}
+                </span>
+              </div>
             </button>
             <button
               onClick={() => CARTAO_HABILITADO && setMetodo('cartao')}
