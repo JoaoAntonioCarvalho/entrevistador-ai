@@ -17,7 +17,7 @@ const PLANOS = {
   avulso: {
     finalizarAtual: {
       label:     'Finalizar entrevista atual',
-      preco:     9.90,
+      preco:     5.90,
       descricao: '7 perguntas — com desconto por já estar em andamento',
       features: [
         'Finaliza a entrevista que você já começou',
@@ -28,7 +28,7 @@ const PLANOS = {
     },
     credito7: {
       label:     '1 entrevista de 7 perguntas',
-      preco:     12.90,
+      preco:     8.90,
       descricao: 'Crédito para uma nova entrevista',
       features: [
         '1 entrevista completa de 7 perguntas',
@@ -39,7 +39,7 @@ const PLANOS = {
     },
     credito14: {
       label:     '1 entrevista de 14 perguntas',
-      preco:     22.90,
+      preco:     12.90,
       descricao: 'Crédito para uma nova entrevista aprofundada',
       features: [
         '1 entrevista completa de 14 perguntas',
@@ -138,7 +138,7 @@ function PlanosContent() {
               className="text-sm font-semibold text-amber-900 dark:text-amber-200
                          underline whitespace-nowrap"
             >
-              Finalizar por R$9,90 →
+              Finalizar por R$5,90 →
             </button>
           </div>
         </div>
@@ -278,7 +278,7 @@ function PlanosContent() {
                     </p>
                     <p className="text-3xl font-mono tabular-nums font-bold
                                    text-white dark:text-zinc-950 mb-1">
-                      R$9,90
+                      R$5,90
                     </p>
                     <p className="text-sm font-medium text-zinc-300 dark:text-zinc-700 mb-4">
                       {PLANOS.avulso.finalizarAtual.label}
@@ -297,7 +297,7 @@ function PlanosContent() {
                                  py-3 rounded-lg font-semibold text-sm
                                  hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
                     >
-                      Finalizar por R$9,90
+                      Finalizar por R$5,90
                     </button>
                   </div>
                 )}
@@ -308,7 +308,7 @@ function PlanosContent() {
                     {PLANOS.avulso.credito7.descricao}
                   </p>
                   <p className="text-3xl font-mono tabular-nums font-bold text-foreground mb-1">
-                    R$12,90
+                    R$8,90
                   </p>
                   <p className="text-sm font-medium text-foreground mb-4">
                     {PLANOS.avulso.credito7.label}
@@ -336,7 +336,7 @@ function PlanosContent() {
                     {PLANOS.avulso.credito14.descricao}
                   </p>
                   <p className="text-3xl font-mono tabular-nums font-bold text-foreground mb-1">
-                    R$22,90
+                    R$12,90
                   </p>
                   <p className="text-sm font-medium text-foreground mb-4">
                     {PLANOS.avulso.credito14.label}

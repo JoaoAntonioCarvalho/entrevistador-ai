@@ -1091,10 +1091,10 @@ export default function LandingPage() {
                     Avulso
                   </p>
                   <p className="text-2xl font-bold font-mono text-white dark:text-zinc-950 leading-none mb-1">
-                    R$12,90
+                    R$8,90
                   </p>
                   <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mb-3">
-                    ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$22,90</span> p/ 14 perguntas
+                    ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$12,90</span> p/ 14 perguntas
                   </p>
                   <ul className="space-y-1.5 mb-4 flex-1">
                     {['Entrevista completa', 'Nota e feedback', 'Sem assinatura']
@@ -1242,13 +1242,13 @@ export default function LandingPage() {
               <div className="mb-2">
                 <p className="text-[44px] font-bold font-mono tabular-nums
                                text-white dark:text-zinc-950 leading-none mb-1">
-                  R$12,90
+                  R$8,90
                 </p>
                 <p className="text-sm text-zinc-400 dark:text-zinc-500">/ entrevista de 7 perguntas</p>
               </div>
               <p className="text-sm text-zinc-400 dark:text-zinc-500 border-t
                             border-zinc-800 dark:border-zinc-200 pt-3 mt-3 mb-6">
-                ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$22,90</span> para 14 perguntas
+                ou <span className="font-semibold text-zinc-200 dark:text-zinc-700">R$12,90</span> para 14 perguntas
               </p>
               <ul className="space-y-3 mb-8 flex-1">
                 {['Entrevista completa personalizada', 'Relatório com nota e feedback', 'Sem assinatura']

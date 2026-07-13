@@ -56,9 +56,9 @@ const PLANO_LABEL: Record<string, string> = {
 // Valores espelham PRECOS de mp-config.ts, que não pode ser importado no
 // client (instancia MercadoPagoConfig com o access token no topo do módulo)
 const PLANO_PRECO: Record<string, string> = {
-  'finalizar-atual':  'R$9,90',
-  'credito-7':        'R$12,90',
-  'credito-14':       'R$22,90',
+  'finalizar-atual':  'R$5,90',
+  'credito-7':        'R$8,90',
+  'credito-14':       'R$12,90',
   'mensal-starter':   'R$39,90',
   'mensal-pro':       'R$59,90',
 };

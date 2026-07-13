@@ -148,7 +148,7 @@ export function PaymentGateModal({
                                    dark:text-zinc-900/90 px-2 py-0.5
                                    rounded-full border border-white/20
                                    dark:border-zinc-900/20">
-                    -23% OFF
+                    -34% OFF
                   </span>
                 </div>
 
@@ -161,11 +161,11 @@ export function PaymentGateModal({
                 <div className="flex items-baseline gap-2 mb-3">
                   <span className="text-[28px] font-bold text-white
                                    dark:text-zinc-900 leading-none">
-                    R$9,90
+                    R$5,90
                   </span>
                   <span className="text-sm text-white/40
                                    dark:text-zinc-900/40 line-through">
-                    R$12,90
+                    R$8,90
                   </span>
                 </div>
 
@@ -196,15 +196,15 @@ export function PaymentGateModal({
                              transition-colors flex items-center
                              justify-center gap-2"
                 >
-                  Finalizar por R$9,90
+                  Finalizar por R$5,90
                 </button>
               </div>
 
               {/* Cards secundários lado a lado */}
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { plano: 'credito-7',  preco: 'R$12,90', label: '7 perguntas',  sub: 'Nova entrevista' },
-                  { plano: 'credito-14', preco: 'R$22,90', label: '14 perguntas', sub: 'Nova entrevista aprofundada' },
+                  { plano: 'credito-7',  preco: 'R$8,90',  label: '7 perguntas',  sub: 'Nova entrevista' },
+                  { plano: 'credito-14', preco: 'R$12,90', label: '14 perguntas', sub: 'Nova entrevista aprofundada' },
                 ].map(({ plano, preco, label, sub }) => (
                   <div key={plano}
                        className="border border-zinc-200 dark:border-zinc-700

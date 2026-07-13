@@ -360,15 +360,15 @@ export default function SetupPage() {
                 <span className="bg-white dark:bg-zinc-900 text-zinc-900
                                  dark:text-white text-[11px] font-bold
                                  px-2 py-0.5 rounded-full">
-                  -23% OFF
+                  -34% OFF
                 </span>
               </div>
               <div className="flex items-baseline gap-2 mb-4">
                 <span className="text-3xl font-bold text-white dark:text-zinc-900">
-                  R$9,90
+                  R$5,90
                 </span>
                 <span className="text-base text-zinc-500 dark:text-zinc-400 line-through">
-                  R$12,90
+                  R$8,90
                 </span>
               </div>
               <button

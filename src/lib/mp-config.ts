@@ -28,9 +28,9 @@ export const MP_PUBLIC_KEY = isProducao
   : process.env.MP_PUBLIC_KEY_TEST!;
 
 export const PRECOS = {
-  'finalizar-atual': 9.90,
-  'credito-7':       12.90,
-  'credito-14':      22.90,
+  'finalizar-atual': 5.90,
+  'credito-7':       8.90,
+  'credito-14':      12.90,
   'mensal-starter':  39.90,
   'mensal-pro':      59.90,
 } as const;
