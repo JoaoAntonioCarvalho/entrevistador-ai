@@ -42,15 +42,21 @@ export function isAssinatura(plano: string): boolean {
   return plano === 'mensal-starter' || plano === 'mensal-pro';
 }
 
-// Pix (Checkout Transparente/Orders API) tem 10% de desconto — mensal é
-// assinatura e não aceita Pix (ver mp-criar-pix/route.ts), então o desconto
-// só se aplica aos avulsos.
-export const DESCONTO_PIX = 0.10;
+// Pix (Checkout Transparente/Orders API) tem preço fixo por plano, não um
+// percentual — mantém margem consistente entre planos em vez de repassar a
+// mesma % pra todos. Mensal é assinatura e não aceita Pix (ver
+// mp-criar-pix/route.ts), por isso fica de fora dessa tabela.
+export const PRECOS_PIX: Record<Exclude<PlanoKey, 'mensal-starter' | 'mensal-pro'>, number> = {
+  'finalizar-atual': 5.00,
+  'credito-7':       7.00,
+  'credito-14':      10.00,
+};
 
-export function precoComDesconto(plano: PlanoKey, metodo: 'cartao' | 'pix'): number {
-  const base = PRECOS[plano];
-  if (metodo !== 'pix') return base;
-  return Math.round(base * (1 - DESCONTO_PIX) * 100) / 100;
+export function precoPorMetodo(plano: PlanoKey, metodo: 'pix' | 'cartao'): number {
+  if (metodo === 'pix' && plano in PRECOS_PIX) {
+    return PRECOS_PIX[plano as keyof typeof PRECOS_PIX];
+  }
+  return PRECOS[plano]; // cartão sempre preço cheio; mensal sempre PRECOS (Pix não se aplica)
 }
 
 // Entrevistas por mês liberadas por qualquer plano mensal — usado só pra
