@@ -56,11 +56,15 @@ const securityHeaders = [
     key:   'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      // https://www.mercadopago.com: security.js (Device ID, ver
-      // PaymentFlow.tsx) — recomendação nº 1 do MP p/ reduzir recusa de
-      // cartão. Sem isso o CSP bloqueia o script e o Device ID nunca é
-      // gerado (X-meli-session-id fica ausente em mp-criar-preferencia).
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.mercadopago.com",
+      // https://*.mercadopago.com / https://*.mercadolibre.com: security.js
+      // + script de fingerprint do Device ID (ver PaymentFlow.tsx) —
+      // recomendação nº 1 do MP p/ reduzir recusa de cartão. O fingerprint
+      // real carrega de mercadolibre.com (domínio irmão usado internamente
+      // pelo MP, endpoints tipo jms/lgz/fingerprint) e abre iframe nesse
+      // domínio — cobrir só mercadopago.com bloqueia o Device ID inteiro
+      // (X-meli-session-id fica ausente em mp-criar-preferencia) e gera
+      // recusas por "pagamento suspeito".
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.mercadopago.com https://*.mercadolibre.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' https://fonts.gstatic.com",
@@ -71,15 +75,14 @@ const securityHeaders = [
         "https://api.anthropic.com",
         "https://openrouter.ai",
         "https://api.openai.com",
-        "https://api.mercadopago.com",
-        "https://www.mercadopago.com",
-        "https://api.mercadolibre.com",
+        "https://*.mercadopago.com",
+        "https://*.mercadolibre.com",
         "https://api.telegram.org",
         "https://*.ingest.sentry.io",
         "https://*.sentry.io",
       ].join(' '),
       "media-src 'self' blob:",
-      "frame-src https://www.mercadopago.com.br https://www.mercadopago.com",
+      "frame-src https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com",
       "worker-src 'self' blob:",
     ].join('; '),
   },
