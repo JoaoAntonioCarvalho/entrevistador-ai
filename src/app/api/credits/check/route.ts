@@ -17,8 +17,55 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { sessionId } = await req.json();
+    const { sessionId, paymentSessionRef } = await req.json();
     const authUserId = await getAuthUserId(req);
+
+    // Confirmação de um Pix específico (polling de usePixCheckout.ts) — NUNCA
+    // cai nos fallbacks abaixo, que respondem hasCredit:true pra QUALQUER
+    // crédito aprovado da conta (correto pra outros chamadores deste endpoint,
+    // mas dava falso positivo instantâneo com créditos órfãos de outra compra
+    // enquanto o Pix atual ainda nem tinha sido pago). paymentSessionRef é o
+    // shortRef devolvido por mp-criar-pix, salvo em
+    // payment_sessions.mp_preference_id; mp_payment_id só é preenchido pelo
+    // webhook depois que a order é processada, e a linha em credits só existe
+    // se mp-webhook-pix confirmou o pagamento (pagamentoAprovado) de verdade.
+    if (paymentSessionRef) {
+      if (!authUserId) {
+        return NextResponse.json({ hasCredit: false, creditId: null });
+      }
+
+      const { data: paymentSession } = await supabase
+        .from('payment_sessions')
+        .select('mp_payment_id')
+        .eq('mp_preference_id', paymentSessionRef)
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+
+      if (!paymentSession?.mp_payment_id) {
+        return NextResponse.json({ hasCredit: false, creditId: null });
+      }
+
+      const { data: credito } = await supabase
+        .from('credits')
+        .select('id, perguntas')
+        .eq('mp_payment_id', paymentSession.mp_payment_id)
+        .eq('auth_user_id', authUserId)
+        .eq('mp_status', 'approved')
+        .maybeSingle();
+
+      if (!credito) {
+        return NextResponse.json({ hasCredit: false, creditId: null });
+      }
+
+      return NextResponse.json({
+        hasCredit:     true,
+        creditId:      credito.id,
+        perguntas:     credito.perguntas,
+        maxPerguntas:  credito.perguntas,
+        totalCreditos: 1,
+        isMensal:      false,
+      });
+    }
 
     // Verificar payment_status da sessão — EXIGE que pertença ao chamador.
     // O id de uma sessão paga é o mesmo exposto publicamente em

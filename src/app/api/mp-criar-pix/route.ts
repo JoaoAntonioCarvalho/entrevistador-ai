@@ -218,10 +218,15 @@ export async function POST(req: NextRequest) {
     ).catch(() => {});
 
     return NextResponse.json({
-      orderId:      order.id,
+      orderId:           order.id,
+      // shortRef (não order.id) é o que fica salvo em
+      // payment_sessions.mp_preference_id — é essa a chave que
+      // /api/credits/check usa pra confirmar ESTE pagamento específico
+      // (ver usePixCheckout.ts), não "qualquer crédito aprovado da conta".
+      paymentSessionRef: shortRef,
       qrCode,
       qrCodeBase64,
-      expiresIn:    30 * 60,
+      expiresIn:         30 * 60,
     });
 
   } catch (error) {

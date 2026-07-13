@@ -52,6 +52,12 @@ export function usePixCheckout({ plano, sessionId, onConfirmado }: UsePixCheckou
       setSecondsLeft(data.expiresIn ?? 30 * 60);
       setStatus('ready');
 
+      // Identifica ESTE pagamento específico (shortRef salvo em
+      // payment_sessions.mp_preference_id) — capturado localmente, não em
+      // state, porque o polling abaixo roda inteiramente dentro deste mesmo
+      // criar(); não há re-render nem closure obsoleta a se preocupar.
+      const refDestePagamento = data.paymentSessionRef ?? null;
+
       countdownRef.current = setInterval(() => {
         setSecondsLeft(s => {
           if (s <= 1) {
@@ -68,7 +74,7 @@ export function usePixCheckout({ plano, sessionId, onConfirmado }: UsePixCheckou
           const check = await authedFetch('/api/credits/check', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId: plano === 'finalizar-atual' ? sessionId : null }),
+            body: JSON.stringify({ paymentSessionRef: refDestePagamento }),
           });
           const checkData = await check.json();
           if (checkData.hasCredit) {
