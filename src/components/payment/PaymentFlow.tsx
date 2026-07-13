@@ -5,8 +5,13 @@ import { useRouter } from 'next/navigation';
 import { authedFetch } from '@/lib/services/api-client';
 import { usePixCheckout } from '@/hooks/usePixCheckout';
 import { PixCheckoutPanel } from './PixCheckoutPanel';
+import { formatarCPF, validarCPF } from '@/lib/cpf';
 import { X, QrCode, CreditCard, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+function getDeviceId(): string | undefined {
+  return (window as unknown as { MP_DEVICE_SESSION_ID?: string }).MP_DEVICE_SESSION_ID;
+}
 
 interface PaymentFlowProps {
   plano:     string;
@@ -29,6 +34,11 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
   const isMensal  = MENSAL.has(plano);
   const [metodo, setMetodo]   = useState<'escolha' | 'pix' | 'cartao'>(isMensal ? 'cartao' : 'escolha');
   const [loadingCartao, setLoadingCartao] = useState(false);
+  const [deviceIdReady, setDeviceIdReady] = useState(false);
+  // CPF só é exigido no avulso (Checkout Pro) — a assinatura usa PreApproval,
+  // que não aceita payer.identification, e Pix já tem seu próprio fluxo.
+  const [cpf, setCpf] = useState('');
+  const cpfValido = validarCPF(cpf);
 
   // Mesma regra de destino usada em /pagamento/sucesso: finalizar-atual
   // retoma a entrevista, qualquer outro plano é crédito novo → /conta.
@@ -38,14 +48,39 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
 
   // security.js (recomendação nº 1 da doc do MP p/ reduzir recusa de cartão)
   // exige o atributo `view`, que não é um HTMLAttribute React válido — por
-  // isso é injetado manualmente em vez de via next/script.
+  // isso é injetado manualmente em vez de via next/script. `onload` só marca
+  // que o SCRIPT carregou — o fingerprint em si roda de forma assíncrona por
+  // dentro dele, então um polling curto confirma que window.MP_DEVICE_SESSION_ID
+  // de fato existe antes de liberar o botão "Continuar" (evita a corrida em
+  // que o usuário clica antes do Device ID estar pronto e o header nunca é
+  // enviado, mesmo com o script carregado).
   useEffect(() => {
-    if (document.getElementById('mp-security-script')) return;
     const s = document.createElement('script');
     s.id = 'mp-security-script';
     s.src = 'https://www.mercadopago.com/v2/security.js';
     s.setAttribute('view', 'checkout');
+
+    let pollId: ReturnType<typeof setInterval> | undefined;
+
+    s.onload = () => {
+      let tentativas = 0;
+      pollId = setInterval(() => {
+        tentativas++;
+        if (getDeviceId() || tentativas > 20) { // ~4s de teto — nunca trava o usuário
+          clearInterval(pollId);
+          setDeviceIdReady(true);
+        }
+      }, 200);
+    };
+    // Script falhou (rede/CSP/adblock) — segue sem Device ID em vez de travar.
+    s.onerror = () => setDeviceIdReady(true);
+
     document.body.appendChild(s);
+
+    return () => {
+      if (pollId) clearInterval(pollId);
+      s.remove();
+    };
   }, []);
 
   const pix = usePixCheckout({
@@ -59,6 +94,8 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
   });
 
   async function pagarCartao() {
+    if (!isMensal && !cpfValido) return;
+
     setLoadingCartao(true);
     try {
       const endpoint = isMensal ? '/api/mp-criar-assinatura' : '/api/mp-criar-preferencia';
@@ -68,14 +105,18 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
       // Checkout Pro avulso, não à assinatura nem ao Pix transparente.
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (!isMensal) {
-        const deviceId = (window as unknown as { MP_DEVICE_SESSION_ID?: string }).MP_DEVICE_SESSION_ID;
+        const deviceId = getDeviceId();
         if (deviceId) headers['X-meli-session-id'] = deviceId;
       }
 
       const res = await authedFetch(endpoint, {
         method:  'POST',
         headers,
-        body: JSON.stringify({ plano, sessionId }),
+        body: JSON.stringify({
+          plano,
+          sessionId,
+          ...(!isMensal && { cpf: cpf.replace(/\D/g, '') }),
+        }),
       });
       const data = await res.json();
       if (data.initPoint) {
@@ -180,9 +221,32 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
               Você será redirecionado ao Mercado Pago para inserir os dados
               do cartão com segurança.
             </p>
+
+            {!isMensal && (
+              <div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={cpf}
+                  onChange={e => setCpf(formatarCPF(e.target.value))}
+                  placeholder="CPF"
+                  maxLength={14}
+                  className="w-full border border-zinc-200 dark:border-zinc-700
+                             rounded-xl px-4 py-3 text-base text-zinc-900
+                             dark:text-white bg-white dark:bg-zinc-900
+                             placeholder-zinc-400 dark:placeholder-zinc-500
+                             focus:outline-none focus:border-zinc-400
+                             dark:focus:border-zinc-500 transition-colors"
+                />
+                <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1.5">
+                  Exigido pelo processador de pagamento para maior segurança da transação.
+                </p>
+              </div>
+            )}
+
             <button
               onClick={pagarCartao}
-              disabled={loadingCartao}
+              disabled={loadingCartao || (!isMensal && (!cpfValido || !deviceIdReady))}
               className="w-full bg-zinc-900 dark:bg-white text-white
                          dark:text-zinc-900 py-2.5 rounded-full text-xs
                          font-bold hover:opacity-90 disabled:opacity-50
@@ -190,7 +254,7 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
                          justify-center gap-2"
             >
               {loadingCartao ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Continuar
+              {!isMensal && !deviceIdReady ? 'Preparando pagamento seguro...' : 'Continuar'}
             </button>
           </div>
         )}

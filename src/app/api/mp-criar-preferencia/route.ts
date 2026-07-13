@@ -5,6 +5,7 @@ import { mpConfig, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUser, splitName } from '@/lib/services/auth-server';
 import { sendTelegramNotification } from '@/lib/services/telegram-server';
+import { validarCPF } from '@/lib/cpf';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { plano, sessionId } = body;
+    const { plano, sessionId, cpf } = body;
 
     // Identidade (+ email/nome/data de cadastro) só do token verificado — o
     // external_reference do pagamento é amarrado a esse UUID e o webhook
@@ -96,6 +97,13 @@ export async function POST(req: NextRequest) {
     // aplica ao Checkout Pro avulso, opcional: nunca falhar por ausência.
     const meliSessionId = req.headers.get('x-meli-session-id') ?? undefined;
 
+    // CPF coletado no momento do pagamento (PaymentFlow.tsx já bloqueia o
+    // botão até o dígito verificador ser válido) — revalidado aqui porque o
+    // cliente não é confiável. Mesma filosofia do Device ID: sinal extra
+    // pro antifraude do MP, opcional, nunca bloqueia o pagamento por ausência.
+    const cpfDigits = typeof cpf === 'string' ? cpf.replace(/\D/g, '') : '';
+    const cpfValidado = validarCPF(cpfDigits) ? cpfDigits : undefined;
+
     const preference = new Preference(mpConfig);
     const result = await preference.create({
       requestOptions: meliSessionId ? { meliSessionId } : undefined,
@@ -112,6 +120,7 @@ export async function POST(req: NextRequest) {
           ...(authUser.email && { email: authUser.email }),
           ...(firstName && { first_name: firstName }),
           ...(lastName && { last_name: lastName }),
+          ...(cpfValidado && { identification: { type: 'CPF', number: cpfValidado } }),
         },
         // O SDK tipa `additional_info` como `string`, mas a API REST do MP
         // aceita (e esse campo antifraude documentado exige) um objeto —
