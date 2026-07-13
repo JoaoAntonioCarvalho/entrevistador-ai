@@ -6,7 +6,7 @@ import { authedFetch } from '@/lib/services/api-client';
 import { usePixCheckout } from '@/hooks/usePixCheckout';
 import { PixCheckoutPanel } from './PixCheckoutPanel';
 import { formatarCPF, validarCPF } from '@/lib/cpf';
-import { PRECOS, precoPorMetodo, type PlanoKey } from '@/lib/mp-precos';
+import { PRECOS, precoPorMetodo, CARTAO_HABILITADO, type PlanoKey } from '@/lib/mp-precos';
 import { X, QrCode, CreditCard, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -178,13 +178,23 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
               </span>
             </button>
             <button
-              onClick={() => setMetodo('cartao')}
-              className="flex flex-col items-center gap-2 py-5 rounded-xl
+              onClick={() => CARTAO_HABILITADO && setMetodo('cartao')}
+              disabled={!CARTAO_HABILITADO}
+              className={`flex flex-col items-center gap-2 py-5 rounded-xl
                          border border-zinc-200 dark:border-zinc-700
-                         hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                         transition-colors ${
+                           CARTAO_HABILITADO
+                             ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                             : 'opacity-50 cursor-not-allowed'
+                         }`}
             >
               <CreditCard className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               <span className="text-xs font-semibold text-zinc-900 dark:text-white">Cartão</span>
+              {!CARTAO_HABILITADO && (
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                  Disponível em breve
+                </span>
+              )}
             </button>
           </div>
         )}

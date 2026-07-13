@@ -4,6 +4,12 @@
 // importar DAQUI, nunca de mp-config.ts (instanciar MercadoPagoConfig no
 // bundle do browser quebra, ver comentário em conta/page.tsx).
 
+// Temporário: cartão desabilitado enquanto a conta MP acumula histórico de
+// aprovações via Pix. Reativar trocando para true. Client-safe (usado tanto
+// pelo seletor de método no frontend quanto pelo bloqueio defensivo nas
+// rotas de cartão) — por isso vive aqui, não em mp-config.ts.
+export const CARTAO_HABILITADO = false;
+
 export const PRECOS = {
   'finalizar-atual': 5.90,
   'credito-7':       8.90,

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
 import { PaymentFlow } from '@/components/payment/PaymentFlow';
-import { descontoMensal, maiorDescontoMensal } from '@/lib/mp-precos';
+import { descontoMensal, maiorDescontoMensal, CARTAO_HABILITADO } from '@/lib/mp-precos';
 import { X, Check, Zap, Calendar } from 'lucide-react';
 
 interface PaymentGateModalProps {
@@ -331,16 +331,21 @@ export function PaymentGateModal({
                     {desc}
                   </p>
                   <button
-                    onClick={() => handlePagar(plano)}
+                    onClick={() => CARTAO_HABILITADO && handlePagar(plano)}
+                    disabled={!CARTAO_HABILITADO}
                     className={`w-full py-2.5 rounded-full text-xs
                                 font-bold transition-colors flex
                                 items-center justify-center gap-2
-                      ${destaque
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                        : 'border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      ${!CARTAO_HABILITADO
+                        ? destaque
+                          ? 'opacity-50 cursor-not-allowed bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white'
+                          : 'opacity-50 cursor-not-allowed border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
+                        : destaque
+                          ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          : 'border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                       }`}
                   >
-                    Assinar {label}
+                    {CARTAO_HABILITADO ? `Assinar ${label}` : 'Disponível em breve — em manutenção'}
                   </button>
                 </div>
               ))}

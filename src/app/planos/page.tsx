@@ -10,7 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { PaymentFlow } from '@/components/payment/PaymentFlow';
 import { Check, ChevronLeft } from 'lucide-react';
 import { useSessionStore } from '@/lib/store';
-import { descontoMensal, maiorDescontoMensal } from '@/lib/mp-precos';
+import { descontoMensal, maiorDescontoMensal, CARTAO_HABILITADO } from '@/lib/mp-precos';
 
 export const dynamic = 'force-dynamic';
 
@@ -420,14 +420,19 @@ function PlanosContent() {
                       ))}
                     </ul>
                     <button
-                      onClick={() => handleComprar(`mensal-${key}`)}
+                      onClick={() => CARTAO_HABILITADO && handleComprar(`mensal-${key}`)}
+                      disabled={!CARTAO_HABILITADO}
                       className={`w-full py-3 rounded-lg font-semibold text-sm transition-colors ${
-                        plano.destaque
-                          ? 'bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                          : 'border border-border text-foreground hover:bg-muted'
+                        !CARTAO_HABILITADO
+                          ? plano.destaque
+                            ? 'opacity-50 cursor-not-allowed bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white'
+                            : 'opacity-50 cursor-not-allowed border border-border text-foreground'
+                          : plano.destaque
+                            ? 'bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                            : 'border border-border text-foreground hover:bg-muted'
                       }`}
                     >
-                      Assinar {plano.label}
+                      {CARTAO_HABILITADO ? `Assinar ${plano.label}` : 'Disponível em breve — em manutenção'}
                     </button>
                   </div>
                 ))}

@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { PreApproval } from 'mercadopago';
 import {
-  mpConfig, PRECOS, DESCRICOES_CURTAS, PERGUNTAS_POR_PLANO, isAssinatura, type PlanoKey,
+  mpConfig, PRECOS, DESCRICOES_CURTAS, PERGUNTAS_POR_PLANO, isAssinatura, CARTAO_HABILITADO, type PlanoKey,
 } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUser } from '@/lib/services/auth-server';
@@ -23,6 +23,13 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!await checkRateLimit(aiRateLimit, ip)) {
     return NextResponse.json({ error: 'Muitas requisições. Aguarde alguns minutos.' }, { status: 429 });
+  }
+
+  if (!CARTAO_HABILITADO) {
+    return NextResponse.json(
+      { error: 'Pagamento por cartão temporariamente indisponível. Use Pix.' },
+      { status: 503 }
+    );
   }
 
   try {
