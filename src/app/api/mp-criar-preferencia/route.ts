@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
         items: [{
           id:          plano,
           title:       DESCRICOES[plano as PlanoKey],
+          description: 'Crédito para simulação de entrevista de emprego com IA',
           quantity:    1,
           unit_price:  PRECOS[plano as PlanoKey],
           currency_id: 'BRL',
