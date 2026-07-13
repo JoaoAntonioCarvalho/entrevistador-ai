@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { PaymentFlow } from '@/components/payment/PaymentFlow';
 import { Check, ChevronLeft } from 'lucide-react';
 import { useSessionStore } from '@/lib/store';
+import { descontoMensal, maiorDescontoMensal } from '@/lib/mp-precos';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,7 @@ const PLANOS = {
       preco:     39.90,
       descricao: '6 entrevistas de 7 perguntas por mês',
       destaque:  false,
+      desconto:  descontoMensal('mensal-starter'),
       features: [
         '6 entrevistas de 7 perguntas por mês',
         'Histórico completo de evolução',
@@ -68,6 +70,7 @@ const PLANOS = {
       preco:     59.90,
       descricao: '6 entrevistas de 14 perguntas por mês',
       destaque:  true,
+      desconto:  descontoMensal('mensal-pro'),
       features: [
         '6 entrevistas de 14 perguntas por mês',
         'Aprofundamento máximo — o dobro de perguntas',
@@ -168,7 +171,7 @@ function PlanosContent() {
           <p className="text-zinc-500 dark:text-zinc-400 text-base max-w-md leading-relaxed">
             Pague por entrevista ou assine mensalmente e economize até{' '}
             <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-              35%
+              {maiorDescontoMensal()}%
             </span>
           </p>
         </div>
@@ -200,7 +203,7 @@ function PlanosContent() {
               Plano mensal
               <span className="bg-emerald-500 text-white text-[10px] font-bold
                                px-1.5 py-0.5 rounded-full leading-none">
-                -35%
+                -{maiorDescontoMensal()}%
               </span>
             </button>
           </div>
@@ -229,7 +232,7 @@ function PlanosContent() {
               <div>
                 <p className="text-sm font-semibold text-emerald-800
                               dark:text-emerald-300">
-                  Economize até 35% com o plano mensal
+                  Economize até {maiorDescontoMensal()}% com o plano mensal
                 </p>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400">
                   A partir de R$6,65 por entrevista
@@ -401,6 +404,9 @@ function PlanosContent() {
                         plano.destaque ? 'text-zinc-400 dark:text-zinc-600' : 'text-muted-fg'
                       }`}>/mês</span>
                     </div>
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-4">
+                      -{plano.desconto}% vs avulso equivalente
+                    </p>
                     <ul className="space-y-2 mb-6">
                       {plano.features.map(f => (
                         <li key={f} className={`flex items-start gap-2 text-sm ${

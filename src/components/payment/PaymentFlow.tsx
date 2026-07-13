@@ -6,6 +6,7 @@ import { authedFetch } from '@/lib/services/api-client';
 import { usePixCheckout } from '@/hooks/usePixCheckout';
 import { PixCheckoutPanel } from './PixCheckoutPanel';
 import { formatarCPF, validarCPF } from '@/lib/cpf';
+import { PRECOS, precoComDesconto, type PlanoKey } from '@/lib/mp-precos';
 import { X, QrCode, CreditCard, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -172,6 +173,9 @@ export function PaymentFlow({ plano, sessionId, onClose, onBeforeNavigateAway }:
             >
               <QrCode className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               <span className="text-xs font-semibold text-zinc-900 dark:text-white">Pix</span>
+              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                R${PRECOS[plano as PlanoKey].toFixed(2).replace('.', ',')} → R${precoComDesconto(plano as PlanoKey, 'pix').toFixed(2).replace('.', ',')}
+              </span>
             </button>
             <button
               onClick={() => setMetodo('cartao')}

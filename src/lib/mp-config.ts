@@ -1,5 +1,11 @@
 import { MercadoPagoConfig } from 'mercadopago';
 
+// Preços/descrições/descontos vivem em mp-precos.ts (client-safe) — este
+// arquivo reexporta tudo e acrescenta só o que precisa de env var de
+// servidor (access token). Client components devem importar de mp-precos.ts
+// diretamente, nunca daqui (ver comentário no topo de mp-precos.ts).
+export * from './mp-precos';
+
 export const isProducao = process.env.MP_MODO === 'producao';
 
 
@@ -18,44 +24,6 @@ export const MP_ACCESS_TOKEN = isProducao
   ? process.env.MP_ACCESS_TOKEN_PROD!
   : process.env.MP_ACCESS_TOKEN_TEST!;
 
-// Planos que são assinatura recorrente (PreApproval), não compra avulsa.
-export function isAssinatura(plano: string): boolean {
-  return plano === 'mensal-starter' || plano === 'mensal-pro';
-}
-
 export const MP_PUBLIC_KEY = isProducao
   ? process.env.MP_PUBLIC_KEY_PROD!
   : process.env.MP_PUBLIC_KEY_TEST!;
-
-export const PRECOS = {
-  'finalizar-atual': 5.90,
-  'credito-7':       8.90,
-  'credito-14':      12.90,
-  'mensal-starter':  39.90,
-  'mensal-pro':      59.90,
-} as const;
-
-export const DESCRICOES = {
-  'finalizar-atual': 'Entrevistador.IA — Finalizar entrevista (7 perguntas)',
-  'credito-7':       'Entrevistador.IA — 1 entrevista de 7 perguntas',
-  'credito-14':      'Entrevistador.IA — 1 entrevista de 14 perguntas',
-  'mensal-starter':  'Entrevistador.IA — Plano Starter (6×7 perguntas/mês)',
-  'mensal-pro':      'Entrevistador.IA — Plano Pro (6×14 perguntas/mês)',
-} as const;
-
-// A API de assinaturas (PreApproval) limita `reason` a 40 caracteres —
-// o Checkout Pro avulso (DESCRICOES acima) não tem esse limite.
-export const DESCRICOES_CURTAS = {
-  'mensal-starter': 'Entrevistador.IA Starter',
-  'mensal-pro':     'Entrevistador.IA Pro',
-} as const;
-
-export const PERGUNTAS_POR_PLANO = {
-  'finalizar-atual': 7,
-  'credito-7':       7,
-  'credito-14':      14,
-  'mensal-starter':  7,
-  'mensal-pro':      14,
-} as const;
-
-export type PlanoKey = keyof typeof PRECOS;

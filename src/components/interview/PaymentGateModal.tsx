@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
 import { PaymentFlow } from '@/components/payment/PaymentFlow';
+import { descontoMensal, maiorDescontoMensal } from '@/lib/mp-precos';
 import { X, Check, Zap, Calendar } from 'lucide-react';
 
 interface PaymentGateModalProps {
@@ -125,7 +126,7 @@ export function PaymentGateModal({
               <span className="bg-emerald-500 text-white text-[9px]
                                font-bold px-1.5 py-0.5 rounded-full
                                leading-none">
-                -35%
+                -{maiorDescontoMensal()}%
               </span>
             </button>
           </div>
@@ -255,6 +256,7 @@ export function PaymentGateModal({
                   por:      'R$6,65/entrevista',
                   desc:     '6 entrevistas de 7 perguntas/mês',
                   destaque: false,
+                  desconto: descontoMensal('mensal-starter'),
                 },
                 {
                   plano:    'mensal-pro',
@@ -263,8 +265,9 @@ export function PaymentGateModal({
                   por:      'R$9,98/entrevista',
                   desc:     '6 entrevistas de 14 perguntas/mês',
                   destaque: true,
+                  desconto: descontoMensal('mensal-pro'),
                 },
-              ].map(({ plano, label, preco, por, desc, destaque }) => (
+              ].map(({ plano, label, preco, por, desc, destaque, desconto }) => (
                 <div key={plano}
                      className={`rounded-xl p-4 relative
                        ${destaque
@@ -315,6 +318,9 @@ export function PaymentGateModal({
                           ? 'text-white/80 dark:text-zinc-900/80'
                           : 'text-zinc-600 dark:text-zinc-300'}`}>
                         {por.split('/')[0]}
+                      </p>
+                      <p className="text-[10px] font-semibold text-emerald-500">
+                        -{desconto}% vs avulso
                       </p>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { isProducao, PRECOS, DESCRICOES, type PlanoKey } from '@/lib/mp-config';
+import { isProducao, PRECOS, DESCRICOES, precoComDesconto, type PlanoKey } from '@/lib/mp-config';
 import { aiRateLimit, checkRateLimit, getClientIp } from '@/lib/services/rate-limit';
 import { getAuthUser, splitName } from '@/lib/services/auth-server';
 import { sendTelegramNotification } from '@/lib/services/telegram-server';
@@ -91,7 +91,9 @@ export async function POST(req: NextRequest) {
     // a string. O fluxo de cartão (mp-criar-preferencia, Preference API
     // clássica) não tem esse limite e continua usando a string concatenada.
     const shortRef = crypto.randomUUID();
-    const valor = PRECOS[plano as PlanoKey].toFixed(2);
+    // Pix (Checkout Transparente) tem 10% de desconto — ver DESCONTO_PIX em
+    // mp-precos.ts. total_amount enviado ao MP já sai com o desconto aplicado.
+    const valor = precoComDesconto(plano as PlanoKey, 'pix').toFixed(2);
 
     // `name` só existe de fato pra quem entrou via Google — cadastro por
     // email/senha não coleta nome hoje (ver AuthForm.tsx), então
@@ -201,7 +203,7 @@ export async function POST(req: NextRequest) {
     void sendTelegramNotification(
       `🛒 Checkout Pix iniciado\n` +
       `Plano: ${DESCRICOES[plano as PlanoKey]}\n` +
-      `Valor: R$ ${PRECOS[plano as PlanoKey].toFixed(2).replace('.', ',')}\n` +
+      `Valor: R$ ${valor.replace('.', ',')} (com 10% de desconto Pix)\n` +
       `Método: Pix\n` +
       `Usuário: ${authUser.email ?? 'não identificado'}`
     ).catch(() => {});
