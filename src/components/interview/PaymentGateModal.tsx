@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
 import { PaymentFlow } from '@/components/payment/PaymentFlow';
-import { descontoMensal, maiorDescontoMensal, CARTAO_HABILITADO } from '@/lib/mp-precos';
+import { descontoMensal, maiorDescontoMensal, MENSAL_HABILITADO } from '@/lib/mp-precos';
 import { X, Check, Zap, Calendar } from 'lucide-react';
 
 interface PaymentGateModalProps {
@@ -331,12 +331,12 @@ export function PaymentGateModal({
                     {desc}
                   </p>
                   <button
-                    onClick={() => CARTAO_HABILITADO && handlePagar(plano)}
-                    disabled={!CARTAO_HABILITADO}
+                    onClick={() => MENSAL_HABILITADO && handlePagar(plano)}
+                    disabled={!MENSAL_HABILITADO}
                     className={`w-full py-2.5 rounded-full text-xs
                                 font-bold transition-colors flex
                                 items-center justify-center gap-2
-                      ${!CARTAO_HABILITADO
+                      ${!MENSAL_HABILITADO
                         ? destaque
                           ? 'opacity-50 cursor-not-allowed bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white'
                           : 'opacity-50 cursor-not-allowed border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300'
@@ -345,7 +345,7 @@ export function PaymentGateModal({
                           : 'border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                       }`}
                   >
-                    {CARTAO_HABILITADO ? `Assinar ${label}` : 'Disponível em breve — em manutenção'}
+                    {MENSAL_HABILITADO ? `Assinar ${label}` : 'Disponível em breve — em manutenção'}
                   </button>
                 </div>
               ))}

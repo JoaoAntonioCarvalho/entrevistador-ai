@@ -10,6 +10,12 @@
 // rotas de cartão) — por isso vive aqui, não em mp-config.ts.
 export const CARTAO_HABILITADO = false;
 
+// Temporário: planos mensais ainda não testados ponta a ponta. Reativar
+// trocando para true, depois de validar o fluxo completo de assinatura
+// (criação, cobrança recorrente, cancelamento). Independente de
+// CARTAO_HABILITADO — motivos diferentes, não devem ficar acoplados.
+export const MENSAL_HABILITADO = false;
+
 export const PRECOS = {
   'finalizar-atual': 5.90,
   'credito-7':       8.90,
