@@ -4,10 +4,11 @@
 // importar DAQUI, nunca de mp-config.ts (instanciar MercadoPagoConfig no
 // bundle do browser quebra, ver comentário em conta/page.tsx).
 
-// Client-safe (usado tanto pelo seletor de método no frontend quanto pelo
-// bloqueio defensivo nas rotas de cartão) — por isso vive aqui, não em
-// mp-config.ts.
-export const CARTAO_HABILITADO = true;
+// Temporário: cartão desabilitado enquanto a conta MP acumula histórico de
+// aprovações via Pix. Reativar trocando para true. Client-safe (usado tanto
+// pelo seletor de método no frontend quanto pelo bloqueio defensivo nas
+// rotas de cartão) — por isso vive aqui, não em mp-config.ts.
+export const CARTAO_HABILITADO = false;
 
 // Temporário: planos mensais ainda não testados ponta a ponta. Reativar
 // trocando para true, depois de validar o fluxo completo de assinatura
