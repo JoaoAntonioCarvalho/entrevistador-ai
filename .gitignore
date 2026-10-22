@@ -35,8 +35,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code — controle de loop de build
-.claude/.build-retry-count
-
-.vercel
+# env files (keep the example)
 .env*
+!.env.example
+
+# local logs and AI-assistant workspace
+dev.log
+*.log
+.claude/
+CLAUDE.md
